@@ -11,14 +11,14 @@
 # Site Basic Information
 # =============================================================================
 site:
-  title: 祈愿博客 # 网站名称
-  alternate: qiyuan # 网站英文名称 用于页脚、Logo、@ handle 等
-  subtitle: 记录技术、写作与日常灵感。 # 网站副标题
-  name: 你的名字 # 作者名称 - 请修改为你的名字
-  description: 祈愿博客，记录技术、写作与日常灵感。 # 网站描述
+  title: 烁烁 # 网站名称
+  alternate: SSS # 网站英文名称 用于页脚、Logo、@ handle 等
+  subtitle: 记录自己的一切 # 网站副标题
+  name: 烁 # 作者名称 - 请修改为你的名字
+  description: 写作与日常灵感。 # 网站描述
   avatar: /img/avatar.svg # 网站头像
   showLogo: true # 是否显示 Logo
-  author: 你的名字 # 作者名称 - 请修改为你的名字
+  author: 烁 # 作者名称 - 请修改为你的名字
   url: https://qiyuan.icu # 站点 URL 用于 RSS 和 SEO
   defaultOgImage: /img/avatar.svg # 默认 Open Graph 图片
   startYear: 2026 # 建站年份
