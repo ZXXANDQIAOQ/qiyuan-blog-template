@@ -4,12 +4,10 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import yaml from '@rollup/plugin-yaml';
 import tailwindcss from '@tailwindcss/vite';
-import umami from '@yeskunall/astro-umami';
 import { defineConfig } from 'astro/config';
 import icon from 'astro-icon';
 import mermaid from 'astro-mermaid';
 import pagefind from './integrations/safe-pagefind.mjs';
-import indexRagNeon from './integrations/index-rag-neon.mjs';
 import robotsTxt from 'astro-robots-txt';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeKatex from 'rehype-katex';
@@ -31,7 +29,6 @@ import { remarkShokaPreprocess } from './src/lib/markdown/remark-shoka-preproces
 import { remarkShokaRuby } from './src/lib/markdown/remark-shoka-ruby.ts';
 import { remarkShokaSpoiler } from './src/lib/markdown/remark-shoka-spoiler.ts';
 import { shokaMetaTransformer } from './src/lib/markdown/shiki-meta-transformer.ts';
-import { normalizeUrl } from './src/lib/utils.ts';
 
 // Load YAML config directly with Node.js (before Vite plugins are available)
 // This is only used in astro.config.mjs - other files use @rollup/plugin-yaml
@@ -47,13 +44,6 @@ const yamlConfig = loadConfigForAstro();
 // Use loadEnv to read .env file (astro.config.mjs runs before Vite loads .env)
 const { ANALYZE } = loadEnv(process.env.NODE_ENV || 'production', process.cwd(), '');
 const isAnalyze = ANALYZE === 'true';
-// Get Umami analytics config from YAML
-const umamiConfig = yamlConfig.analytics?.umami;
-const umamiEnabled = umamiConfig?.enabled ?? false;
-const umamiId = umamiConfig?.id;
-// Normalize endpoint URL to remove trailing slashes
-const umamiEndpoint = normalizeUrl(umamiConfig?.endpoint);
-
 // Get robots.txt config from YAML, then resolve relative sitemap filenames
 // to absolute https URLs — astro-robots-txt requires sitemap values to be full URLs,
 // so we keep YAML readable (filenames only) and build the real URLs here.
@@ -74,35 +64,6 @@ const i18nYaml = yamlConfig.i18n;
 const i18nDefaultLocale = i18nYaml?.defaultLocale ?? 'zh';
 const i18nLocales = (i18nYaml?.locales ?? [{ code: 'zh' }]).map((l) => l.code);
 const hasMultipleLocales = i18nLocales.length > 1;
-
-/**
- * Vite plugin for conditional Three.js bundling
- * When christmas snowfall is disabled, replaces SnowfallCanvas with a noop component
- * This saves ~879KB from the bundle
- */
-function conditionalSnowfall() {
-  const VIRTUAL_ID = 'virtual:snowfall-canvas';
-  const RESOLVED_ID = `\0${VIRTUAL_ID}`;
-  const christmas = yamlConfig.christmas || { enabled: false, features: {} };
-  const isEnabled = christmas.enabled && christmas.features?.snowfall;
-
-  return {
-    name: 'conditional-snowfall',
-    resolveId(id) {
-      if (id === VIRTUAL_ID) return RESOLVED_ID;
-      // Redirect the alias import to virtual module when disabled
-      if (!isEnabled && id === '@components/christmas/SnowfallCanvas') {
-        return RESOLVED_ID;
-      }
-    },
-    load(id) {
-      if (id === RESOLVED_ID) {
-        // Return noop component when christmas is disabled
-        return 'export function SnowfallCanvas() { return null; }';
-      }
-    },
-  };
-}
 
 // Build conditional plugin lists based on content config
 const contentConfig = yamlConfig.content || {};
@@ -217,18 +178,7 @@ export default defineConfig({
         ri: ['*'],
       },
     }),
-    // Umami analytics - configured via config/site.yaml
-    ...(umamiEnabled && umamiId
-      ? [
-          umami({
-            id: umamiId,
-            endpointUrl: umamiEndpoint,
-            hostUrl: umamiEndpoint,
-          }),
-        ]
-      : []),
     pagefind(),
-    indexRagNeon(),
     mermaid({
       autoTheme: true,
     }),
@@ -243,24 +193,7 @@ export default defineConfig({
       // Enable sourcemap for Sonda bundle analysis
       sourcemap: isAnalyze,
     },
-    server: {
-      // Local dev: proxy /api to the resource site backend until the EdgeOne edge function is live
-      proxy: {
-        // AI 站内助手走边缘函数 RAG 管线（硅基流动 + Neon + Moonshot）。
-        // 边缘函数挂在 /api/* 下，chat 实际端点为 /api/chat-api/chat/completions；
-        // dev 下把该路径直接转发到已部署的边缘函数（路径一致，无需重写；需先部署一次）。
-        // 必须放在 '/api' 之前，否则会被通用 /api 代理（resources 后端）抢匹配。
-        '/api/chat-api': {
-          target: 'https://www.qiyuan.icu',
-          changeOrigin: true,
-        },
-        '/api': {
-          target: process.env.RESOURCES_API_PROXY || 'https://resources.qiyuan.icu',
-          changeOrigin: true,
-        },
-      },
-    },
-    plugins: [yaml(), conditionalSnowfall(), svgr(), tailwindcss()],
+    plugins: [yaml(), svgr(), tailwindcss()],
     ssr: {
       noExternal: ['react-tweet'],
     },

@@ -20,7 +20,6 @@ import {
   escapeHtml,
   type FriendLinkData,
   type MediaItem,
-  renderAudioMedia,
   renderFriendLinks,
   renderVideoMedia,
 } from './shoka-renderers';
@@ -249,7 +248,6 @@ function processContainers(text: string, opts: ContainerOptions = {}, _depth = 0
     const mediaMatch = hexoTags && line.trim().match(/^{% media (audio|video) %}$/);
     if (mediaMatch) {
       flushTabs();
-      const mediaType = mediaMatch[1];
       const yamlLines: string[] = [];
       i++;
       while (i < lines.length && lines[i].trim() !== '{% endmedia %}') {
@@ -261,15 +259,9 @@ function processContainers(text: string, opts: ContainerOptions = {}, _depth = 0
       try {
         const data = YAML.load(yamlLines.join('\n')) as MediaItem[];
         if (Array.isArray(data)) {
-          if (mediaType === 'audio') {
-            output.push('');
-            output.push(renderAudioMedia(data));
-            output.push('');
-          } else {
-            output.push('');
-            output.push(renderVideoMedia(data));
-            output.push('');
-          }
+          output.push('');
+          output.push(renderVideoMedia(data));
+          output.push('');
         }
       } catch {
         output.push(`<!-- Failed to parse media YAML -->`);

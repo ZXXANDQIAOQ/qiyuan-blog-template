@@ -51,7 +51,7 @@ for (const key of Object.keys(summaries as SummariesData)) {
 export function getPostDescription(post: BlogPost, locale: string = defaultLocale, maxLength: number = 150): string {
   if (post.data.description) return post.data.description;
   if (post.data.password) return t(locale, 'encrypted.post.description');
-  return extractTextFromMarkdown(post.body, maxLength);
+  return extractTextFromMarkdown(post.body ?? '', maxLength);
 }
 
 /**
@@ -87,7 +87,7 @@ export function getPostDescriptionWithSummary(post: BlogPost, locale: string = d
   if (post.data.password) {
     return t(locale, 'encrypted.post.description');
   }
-  return getPostSummary(getPostSlug(post)) || extractTextFromMarkdown(post.body, maxLength);
+  return getPostSummary(getPostSlug(post)) || extractTextFromMarkdown(post.body ?? '', maxLength);
 }
 
 /**

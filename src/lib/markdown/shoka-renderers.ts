@@ -1,7 +1,7 @@
 /**
  * HTML renderers for Shoka preprocessor output.
  *
- * Generates HTML strings for friend links, audio players, and video embeds.
+ * Generates HTML strings for friend links and video embeds.
  * Separated from the preprocessor to keep parsing and rendering concerns distinct.
  */
 
@@ -35,11 +35,6 @@ export interface MediaItem {
   thumbnailUrl?: string;
 }
 
-interface AudioGroup {
-  title?: string;
-  list: string[];
-}
-
 export function renderFriendLinks(items: FriendLinkData[]): string {
   const jsonData = escapeHtml(JSON.stringify(items));
   const cards = items
@@ -54,23 +49,6 @@ export function renderFriendLinks(items: FriendLinkData[]): string {
     })
     .join('\n');
   return `<div class="friend-links-grid" data-links="${jsonData}">\n${cards}\n</div>`;
-}
-
-export function renderAudioMedia(items: MediaItem[]): string {
-  const groups: AudioGroup[] = [];
-
-  for (const item of items) {
-    if (item.list && Array.isArray(item.list)) {
-      groups.push({ title: item.title, list: item.list });
-    } else if (item.url) {
-      groups.push({ list: [item.url] });
-    }
-  }
-
-  if (groups.length === 0) return '';
-
-  const dataSrc = escapeHtml(JSON.stringify(groups));
-  return `<div data-audio-player data-src="${dataSrc}"></div>`;
 }
 
 export function renderVideoMedia(items: MediaItem[]): string {

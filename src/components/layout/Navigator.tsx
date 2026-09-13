@@ -6,7 +6,6 @@
  */
 
 import ThemeToggle from '@components/theme/ThemeToggle';
-import AnnouncementButton from '@components/announcement/AnnouncementButton';
 import { RESERVED_ROUTES } from '@constants/router';
 import { configuredSeriesSlugs, enabledSeriesSlugs, routers } from '@constants/site-config';
 import { useIsTablet } from '@hooks/useMediaQuery';
@@ -153,7 +152,6 @@ const Navigator = memo(function Navigator({ currentPath, locale = defaultLocale 
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <AnnouncementButton />
         <SearchTrigger />
         <div className="tablet:hidden flex-center">
           <LanguageSwitcher locale={locale} />

@@ -65,10 +65,6 @@ const blogCollection = defineCollection({
       quiz: z.boolean().optional(),
       password: z.string().optional(),
       keywords: z.array(z.string()).optional(),
-      // 文章朗读（Edge TTS 预生成音频）：audio: true 时构建脚本会生成 mp3 并接入播放器；
-      // audioVoice 可选，覆盖默认朗读音色（如 zh-CN-YunxiNeural）。
-      audio: z.boolean().optional(),
-      audioVoice: z.string().optional(),
     })
   ),
 });

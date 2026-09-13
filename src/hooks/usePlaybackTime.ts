@@ -2,14 +2,22 @@
  * Consumer hooks for PlaybackTimeStore.
  *
  * - `usePlaybackProgress` — imperative DOM updates for progress bars (zero re-renders)
- * - `usePlaybackLrcIndex` — discrete sync for lyric line changes (~0.1-0.5 re-renders/s)
  * - `usePlaybackFormattedTime` — discrete sync for time text (max 1 re-render/s)
  */
 
-import type { LrcLine } from '@components/markdown/audio-player/LrcParser';
-import { formatTime } from '@components/markdown/audio-player/utils';
 import type { PlaybackTimeStore } from '@lib/playback-time-store';
 import { type RefObject, useEffect, useRef, useSyncExternalStore } from 'react';
+
+/** Format seconds as "mm:ss"（或超过 1 小时显示 "h:mm:ss"）。 */
+function formatTime(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
 
 /**
  * Imperatively updates a progress bar element's width via ref.
@@ -36,45 +44,6 @@ export function usePlaybackProgress(
     sync();
     return timeStore.subscribe(sync);
   }, [timeStore]);
-}
-
-/** Binary search for the current lyric line index. */
-function findCurrentLrcIndex(lines: LrcLine[], time: number): number {
-  let lo = 0;
-  let hi = lines.length - 1;
-  let result = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1;
-    if (lines[mid].time <= time) {
-      result = mid;
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-  return result;
-}
-
-/**
- * Returns the current lyric line index via useSyncExternalStore.
- * Only triggers re-render when the index actually changes.
- */
-export function usePlaybackLrcIndex(timeStore: PlaybackTimeStore, lrcLines: LrcLine[]): number {
-  const cachedRef = useRef(-1);
-  const lrcRef = useRef(lrcLines);
-  lrcRef.current = lrcLines;
-
-  return useSyncExternalStore(
-    timeStore.subscribe,
-    () => {
-      const idx = findCurrentLrcIndex(lrcRef.current, timeStore.getCurrentTime());
-      if (idx !== cachedRef.current) {
-        cachedRef.current = idx;
-      }
-      return cachedRef.current;
-    },
-    () => -1,
-  );
 }
 
 /**

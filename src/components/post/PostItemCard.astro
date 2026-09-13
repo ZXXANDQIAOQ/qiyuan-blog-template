@@ -4,15 +4,13 @@ import { Badge } from '@components/ui/badge';
 import { Button } from '@components/ui/button';
 import { ScrollableRow } from '@components/ui/ScrollableRow';
 import { Routes } from '@constants/router';
-import { createArticleStatsConfig, defaultCoverList, kvArticlePageViews } from '@constants/site-config';
+import { defaultCoverList } from '@constants/site-config';
 import { buildCategoryPath, buildTagPath, getCategoryArr, translateCategoryName } from '@lib/content';
 import { displayDate } from '@lib/date';
 import { getLqipProps } from '@lib/lqip';
 import { routeBuilder } from '@lib/route';
 import { cn } from '@lib/utils';
 import { Icon } from 'astro-icon/components';
-import KvPVSpan from '@/components/kv/KvPVSpan';
-import UmamiPVSpan from '@/components/umami/UmamiPVSpan';
 import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t } from '@/i18n';
 import type { PostCardData } from '@/types/blog';
 
@@ -72,7 +70,6 @@ function getStaggerPadding(rowIndex: number): string {
   return staggerAmounts[rowIndex];
 }
 
-const pageStatsConfig = createArticleStatsConfig(href);
 ---
 
 <div
@@ -95,7 +92,7 @@ const pageStatsConfig = createArticleStatsConfig(href);
         )}
       >
         <img
-          src={typeof finalCover === 'object' && 'src' in finalCover ? finalCover.src : finalCover}
+          src={typeof finalCover === 'string' ? finalCover : (finalCover as { src: string }).src}
           loading="lazy"
           alt="post cover"
           class="h-full w-full cursor-pointer object-cover transition duration-500 group-hover:scale-110 group-hover:rotate-3"
@@ -149,22 +146,6 @@ const pageStatsConfig = createArticleStatsConfig(href);
           <Icon name="fa6-solid:clock" />
           {readingTime}
         </button>
-
-        {pageStatsConfig && (
-          <span class="flex-center gap-1 whitespace-nowrap">
-            <Icon name="ri:eye-line" class="h-4 w-4" />
-            <UmamiPVSpan client:visible statsConfig={pageStatsConfig} />
-            {t(locale, 'stats.pageviews')}
-          </span>
-        )}
-
-        {!pageStatsConfig && kvArticlePageViews && (
-          <span class="flex-center gap-1 whitespace-nowrap">
-            <Icon name="ri:eye-line" class="h-4 w-4" />
-            <KvPVSpan client:visible mode="page" path={href} />
-            {t(locale, 'stats.pageviews')}
-          </span>
-        )}
 
       </div>
     </ScrollableRow>
@@ -253,13 +234,4 @@ const pageStatsConfig = createArticleStatsConfig(href);
 </div>
 
 <style>
-  /* 圣诞特效开启时的卡片样式 */
-  :global(html.christmas) .post-item-card {
-    position: relative;
-    z-index: 5;
-  }
-
-  :global(html.christmas.dark) .post-item-card {
-    background-color: #1a1512;
-  }
 </style>

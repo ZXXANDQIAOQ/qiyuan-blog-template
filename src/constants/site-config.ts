@@ -1,23 +1,14 @@
 // Import YAML config directly - processed by @rollup/plugin-yaml
 
 import type {
-  AnalyticsConfig,
-  AnimeEffectsConfig,
-  BangumiConfig,
-  BgmAudioGroup,
-  CommentConfig,
   DevConfig,
   FeaturedCategory,
   FeaturedSeriesItem,
   I18nConfig,
-  ResourcesPageConfig,
   RouterItem,
   SiteBasicConfig,
-  TempMailConfig,
 } from '@lib/config/types';
 import { DEFAULT_TIMEZONE, isValidTimezone } from '@lib/timezone';
-import { createUmamiStatsConfig } from '@lib/umami-stats';
-import type { UmamiStatsConfig } from '@/types/umami-stats';
 import yamlConfig from '../../config/site.yaml';
 import { routers as baseRouters, isReservedSlug, RESERVED_ROUTES } from './router';
 
@@ -228,32 +219,7 @@ export const defaultCoverList = yamlConfig?.defaultCoverList?.length ? yamlConfi
 
 // Analytics config — reuses AnalyticsConfig from config/types.ts
 
-// Christmas config types
-type ChristmasConfig = {
-  enabled: boolean;
-  features: {
-    snowfall: boolean;
-    christmasColorScheme: boolean;
-    christmasCoverDecoration: boolean;
-    christmasHat: boolean;
-    readingTimeSnow: boolean;
-  };
-  snowfall: {
-    speed: number;
-    intensity: number;
-    mobileIntensity: number;
-    maxLayers: number;
-    maxIterations: number;
-    mobileMaxLayers: number;
-    mobileMaxIterations: number;
-  };
-};
 
-// Map YAML comment config
-export const commentConfig: CommentConfig = yamlConfig.comment || {};
-
-// Map YAML temp mail config
-export const tempMailConfig: TempMailConfig = yamlConfig.tempMail || {};
 
 // Content config types
 type ContentConfig = {
@@ -275,108 +241,7 @@ type ContentConfig = {
 // Map YAML content config
 export const contentConfig: ContentConfig = yamlConfig.content || {};
 
-// Map YAML analytics config
-export const analyticsConfig: AnalyticsConfig = yamlConfig.analytics || {};
-
-const _umami = analyticsConfig?.umami;
-
-/** Pre-computed site-wide pageview stats config. null when disabled or token missing. */
-export const umamiSiteStatsConfig: UmamiStatsConfig | null =
-  _umami?.enabled && _umami.statistics_display?.token && _umami.statistics_display?.footer_site_stats
-    ? createUmamiStatsConfig(_umami)
-    : null;
-
-/** Create per-page article stats config. Returns null when disabled or token missing. */
-export function createArticleStatsConfig(href: string): UmamiStatsConfig | null {
-  return _umami?.enabled && _umami.statistics_display?.token && _umami.statistics_display?.article_page_views
-    ? createUmamiStatsConfig(_umami, href)
-    : null;
-}
-
-const _pageviews = analyticsConfig?.pageviews;
-
-/** Whether the KV-based per-article view counter is enabled. */
-export const kvArticlePageViews: boolean = !!(_pageviews?.enabled && _pageviews.article_page_views);
-
-/** Whether the KV-based site-wide total views should be shown in the footer. */
-export const kvFooterSiteStats: boolean = !!(_pageviews?.enabled && _pageviews.footer_site_stats);
-
-// Map YAML christmas config with defaults
-export const christmasConfig: ChristmasConfig = yamlConfig.christmas || {
-  enabled: false,
-  features: {
-    snowfall: true,
-    christmasColorScheme: true,
-    christmasCoverDecoration: true,
-    christmasHat: true,
-    readingTimeSnow: true,
-  },
-  snowfall: {
-    speed: 0.5,
-    intensity: 0.7,
-    mobileIntensity: 0.4,
-    maxLayers: 6,
-    maxIterations: 8,
-    mobileMaxLayers: 4,
-    mobileMaxIterations: 6,
-  },
-};
-
-// Map YAML anime effects config with defaults (二次元动漫特效)
-const _anime = yamlConfig.anime;
-
-export const animeConfig: AnimeEffectsConfig = {
-  enabled: _anime?.enabled ?? false,
-  features: {
-    sakuraFall: _anime?.features?.sakuraFall ?? true,
-    clickBurst: _anime?.features?.clickBurst ?? true,
-    cursorTrail: _anime?.features?.cursorTrail ?? false,
-  },
-  sakura: {
-    intensity: _anime?.sakura?.intensity ?? 24,
-    mobileIntensity: _anime?.sakura?.mobileIntensity ?? 12,
-    speed: _anime?.sakura?.speed ?? 1,
-  },
-};
-
-// Map YAML bgm config
-export const bgmConfig: { enabled: boolean; metingApi?: string; audio: BgmAudioGroup[] } = {
-  enabled: yamlConfig.bgm?.enabled ?? (yamlConfig.bgm?.audio?.length ?? 0) > 0,
-  metingApi: yamlConfig.bgm?.metingApi,
-  audio: yamlConfig.bgm?.audio ?? [],
-};
-
-// Bangumi media tracking config — null when disabled (section commented out in YAML)
-export const bangumiConfig: BangumiConfig | null = yamlConfig.bangumi ?? null;
-
-// Resources hub — null when disabled
-export const resourcesPageConfig: ResourcesPageConfig | null =
-  yamlConfig.resources?.enabled === false ? null : (yamlConfig.resources ?? { enabled: true });
-
-const optionalNavItems: RouterItem[] = [
-  ...(bangumiConfig
-    ? [
-        {
-          name: bangumiConfig.label,
-          nameKey: bangumiConfig.label ? undefined : 'nav.bangumi',
-          path: '/bangumi',
-          icon: bangumiConfig.icon ?? 'ri:bilibili-fill',
-        },
-      ]
-    : []),
-  ...(resourcesPageConfig
-    ? [
-        {
-          name: resourcesPageConfig.label,
-          nameKey: 'nav.resources',
-          path: '/resources',
-          icon: resourcesPageConfig.icon ?? 'ri:folder-download-line',
-        },
-      ]
-    : []),
-];
-
-export const routers: RouterItem[] = [...baseRouters, ...optionalNavItems];
+export const routers: RouterItem[] = [...baseRouters];
 
 // Map YAML dev tools config with defaults (dev only)
 export const devConfig: DevConfig = {

@@ -13,10 +13,6 @@ interface Props {
 }
 
 import { ClientRouter } from 'astro:transitions';
-import AnimeEffects from '@components/anime/AnimeEffects.astro';
-import AnnouncementProvider from '@components/announcement/AnnouncementProvider.astro';
-import GlobalBGMPlayer from '@components/bgm/GlobalBGMPlayer';
-import ChristmasEffects from '@components/christmas/ChristmasEffects.astro';
 import FloatingGroup from '@components/layout/FloatingGroup';
 import Header from '@components/layout/Header.astro';
 import MobileDrawer from '@components/layout/MobileDrawer.astro';
@@ -26,9 +22,7 @@ import CodeBlockFullscreen from '@components/markdown/CodeBlockFullscreen';
 import DiagramFullscreen from '@components/markdown/DiagramFullscreen';
 import ImageLightbox from '@components/markdown/ImageLightbox';
 import { Toaster } from '@components/ui/sonner';
-import ChatBot from '@components/chat/ChatBot';
-import StyleEditor from '@components/dev/StyleEditor';
-import { bgmConfig, christmasConfig, seoConfig, siteConfig } from '@constants/site-config';
+import { seoConfig, siteConfig } from '@constants/site-config';
 import { getOgImageUrl } from '@lib/seo/og-image';
 import { getContentSiteField } from '@/i18n/content';
 import LoadingIndicator from 'astro-loading-indicator/component';
@@ -181,20 +175,6 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
         });
       })();
     </script>
-    <script is:inline define:vars={{ christmasFeatureEnabled: christmasConfig.enabled }}>
-      // 立即执行圣诞状态检查 否则彩灯等会闪烁
-      (function () {
-        // 如果构建时配置关闭，则始终不启用
-        if (!christmasFeatureEnabled) {
-          document.documentElement.classList.remove('christmas');
-          return;
-        }
-        // 否则使用用户偏好
-        var stored = localStorage.getItem('christmas-enabled');
-        var enabled = stored !== 'false'; // 默认启用
-        document.documentElement.classList.toggle('christmas', enabled);
-      })();
-    </script>
 
     <!-- 子页面可通过 slot="head" 注入额外的 head 内容（如 JSON-LD） -->
     <slot name="head" />
@@ -209,18 +189,11 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     </script>
   </head>
   <body>
-    <ChristmasEffects transition:persist="christmas-snowfall" />
-    <AnimeEffects transition:persist="anime-effects" />
     <div class="flex min-h-screen flex-col text-black dark:text-white">
       <Header isPostPage={isPostPage} tocNumbering={post?.data.tocNumbering ?? true} />
       <main class="relative flex grow flex-col gap-4">
         {(<slot />)}
       </main>
-      {bgmConfig.enabled && bgmConfig.audio.length > 0 && (
-        <div transition:persist="global-bgm">
-          <GlobalBGMPlayer client:only="react" audioGroups={bgmConfig.audio} metingApi={bgmConfig.metingApi} />
-        </div>
-      )}
       <FloatingGroup client:only="react" />
       <MobileDrawer type={siderType} post={post} />
       <SearchDialog client:idle />
@@ -229,10 +202,6 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
       <DiagramFullscreen client:idle />
       <ImageLightbox client:idle />
       <Toaster client:idle />
-      <AnnouncementProvider />
-      <ChatBot client:load />
-      {/* 开发环境专用：右键页面任意位置即可编辑样式 / 主题变量；生产构建自动剔除 */}
-      {import.meta.env.DEV && <StyleEditor client:only="react" />}
     </div>
   </body>
 </html>

@@ -1,9 +1,7 @@
 ---
 import CustomContent from '@components/common/CustomContent.astro';
 import HomeSider from '@components/layout/HomeSider.astro';
-import AudioPlayer from '@components/post/AudioPlayer';
 import SummaryPanel, { type SummarySource } from '@components/post/SummaryPanel';
-import audioManifest from '@assets/audio-manifest.json';
 import Cover from '@components/ui/cover/Cover.astro';
 import { defaultContentConfig } from '@constants/content-config';
 import { HomeSiderType } from '@constants/enum';
@@ -26,9 +24,7 @@ import { formatForSeo } from '@lib/date';
 import { encodeSlug } from '@lib/route';
 import { getOgImageUrl } from '@lib/seo/og-image';
 import { Icon } from 'astro-icon/components';
-import { Comment } from '@/components/comment';
 import EditButton from '@/components/EditButton';
-import AskArticleButton from '@components/chat/AskArticleButton';
 import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t } from '@/i18n';
 import { extractTextFromMarkdown } from '@/lib/sanitize';
 
@@ -130,16 +126,10 @@ const breadcrumbJsonLd = {
   itemListElement: breadcrumbListItems,
 };
 
-// 确定显示的摘要内容和来源类型
+// 文章的 slug（用于 AI 摘要、编辑按钮等）
 const postSlug = getPostSlug(post);
 
-// 文章朗读音频（构建时 Edge TTS 预生成，清单来自 src/assets/audio-manifest.json）
-const audioMap = audioManifest as Record<string, { url: string }>;
-const audioUrl =
-  post.data.audio && !post.data.password
-    ? (audioMap[postSlug] ?? audioMap[postSlug.toLowerCase()])?.url
-    : undefined;
-
+// 确定显示的摘要内容和来源类型
 let summaryText: string | null = null;
 let summarySource: SummarySource | null = null;
 
@@ -155,7 +145,7 @@ if (post.data.description) {
     summarySource = 'ai';
   } else {
     // 降级到自动提取
-    summaryText = extractTextFromMarkdown(post.body, 200);
+    summaryText = extractTextFromMarkdown(post.body ?? '', 200);
     summarySource = 'auto';
   }
 }
@@ -215,21 +205,6 @@ if (post.data.description) {
           <SummaryPanel client:visible summary={summaryText} source={summarySource} className="mt-2" />
         )
       }
-      {audioUrl && <AudioPlayer client:load src={audioUrl} className="mt-2" />}
-      {
-        !post.data.password && (
-          <div class="mb-4">
-            <AskArticleButton
-              client:load
-              id={postId}
-              slug={postSlug}
-              title={title}
-              label={t(locale, 'chat.askArticle')}
-            />
-          </div>
-        )
-      }
-      <Comment slug={postSlug} />
       <article class="prose md:prose-sm dark:prose-invert" data-pagefind-body>
         <CustomContent Content={Content} />
       </article>

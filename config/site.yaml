@@ -59,28 +59,6 @@ i18n:
       enabled: true
 
 # =============================================================================
-# RAG / AI 站内助手
-# 技术栈：硅基流动 BAAI/bge-m3 向量模型 + Neon(pgvector) 向量库 + Moonshot 生成
-# 凭证由 EdgeOne 环境变量注入（见 edge-functions/api/[[default]].js）：
-#   SILICONFLOW_API_KEY / NEON_SERVERLESS_URL / MOONSHOT_API_KEY
-# 索引脚本：npm run index:neon（读构建产物 JSON，调硅基流动生成向量写入 Neon）
-# 建表：database/rag_posts.sql（在 Neon 控制台 SQL 编辑器运行一次）
-# =============================================================================
-rag:
-  enabled: false
-  embedding:
-    provider: siliconflow
-    model: BAAI/bge-m3
-    dims: 1024
-  vectorDb:
-    provider: neon
-    table: rag_posts
-  generation:
-    provider: moonshot
-    model: moonshot-v1-128k
-  topK: 5
-
-# =============================================================================
 # Category Map
 # Maps Chinese category names to URL-friendly English slugs
 # Example: '随笔' category URL becomes /categories/life
@@ -118,10 +96,6 @@ featuredCategories:
     label: 笔记
     image: /img/cover/note.webp
     description: 技术笔记、学习笔记
-  - link: note/resources # 嵌套分类：笔记/资源
-    label: 资源
-    image: /img/cover/resources.webp
-    description: 网盘资源分享站，导航「资源站」可浏览全部
   - link: tools # 对应 categoryMap 中 工具: tools
     label: 工具
     image: /img/cover/tools.webp
@@ -227,40 +201,6 @@ social:
 
 
 # =============================================================================
-# Announcements
-# 公告系统 - 在页面顶部显示重要通知
-# =============================================================================
-# 字段说明：
-#   id: 唯一标识符，用于记录用户已读状态（localStorage）
-#   title: 公告标题
-#   content: 公告内容文字
-#   type: 类型，影响样式颜色 (info/success/warning/error)
-#   priority: 优先级数字，数值越大排序越靠前
-#   color: (可选) 自定义颜色，覆盖 type 默认色
-#   publishDate: 发布日期，格式 'YYYY-MM-DD'
-#   startDate: (可选) 开始显示时间，ISO 8601 格式
-#   endDate: (可选) 结束显示时间，过期后自动隐藏
-#   link: (可选) 相关链接
-#     url: 链接地址
-#     text: 链接文字
-#     external: 是否在新窗口打开 (true/false)
-# -----------------------------------------------------------------------------
-# 取消下方注释即可启用公告示例：
-# -----------------------------------------------------------------------------
-# announcements:   # 取消注释启用公告（默认不显示）
-#   - id: welcome
-#     title:
-#       zh: 欢迎
-#       en: Welcome
-#     content:
-#       zh: "这是一条示例公告。"
-#       en: "This is a sample announcement."
-#     type: info
-#     priority: 10
-#     publishDate: '2026-07-12'
-
-
-# =============================================================================
 # Default Cover List
 # 默认封面列表 - 文章没有指定封面时将随机从列表中选择一张作为封面
 # 不设置则使用内置的 21 张默认封面 (/img/cover/1~21.webp)
@@ -335,10 +275,6 @@ navigation:
     icon: ri:home-heart-fill # 图标
   # - name: 书摘
   #   path: /reading
-  - name: 周刊
-    nameKey: nav.weekly
-    path: /weekly
-    icon: ri:newspaper-line
   - name: 文章 # 有子菜单时，path 可省略
     nameKey: nav.posts
     icon: ri:quill-pen-ai-fill
@@ -360,228 +296,6 @@ navigation:
     nameKey: nav.about
     path: /about
     icon: fa6-regular:circle-user
-  - name: 歌单
-    nameKey: nav.music
-    path: /music
-    icon: ri:music-2-fill
-  - name: 临时邮箱
-    nameKey: nav.tempmail
-    path: /temp-mail
-    icon: ri:mail-send-line
-    enabled: false # 可选功能：默认关闭（需在 Cloudflare 托管免费域名 + Email Routing 后开启）
-  - name: 网盘
-    nameKey: nav.drive
-    path: /drive
-    icon: ri:hard-drive-3-line
-    enabled: false # 可选功能：默认关闭（需部署边缘函数 /api/drive/* + 配置 R2/S3 凭据）
-  - name: 短链
-    nameKey: nav.shorten
-    path: /shorten
-    icon: ri:link
-    enabled: false # 可选功能：默认关闭（需部署边缘函数 /api/shorten/*）
-
-# =============================================================================
-# Resources Hub (网盘资源分享站)
-# 后端：edge-functions/api/[[default]].js（EdgeOne 部署，环境变量见 docs/resources-deployment.md）
-# 本地开发：/api 代理到 resources.qiyuan.icu（示例资源站域名），上线后同源访问 /api
-# =============================================================================
-resources:
-  enabled: false
-  label: 资源站
-  icon: ri:folder-download-line
-  ownerUserId: 1
-
-# =============================================================================
-# Christmas/Seasonal Features
-# 圣诞/季节性装饰功能 - 节日期间的特殊视觉效果 后续考虑新增 theme.yaml 来管理
-# =============================================================================
-# enabled: 总开关，设为 false 关闭所有节日效果
-# features: 各功能独立开关
-#   snowfall: 飘雪动画效果
-#   christmasColorScheme: 圣诞主题配色
-#   christmasCoverDecoration: 封面圣诞装饰
-#   christmasHat: 头像添加圣诞帽
-#   readingTimeSnow: 阅读时间旁显示雪花图标
-# snowfall: 飘雪效果参数（影响性能，移动端建议降低）
-#   speed: 下落速度 (0-1)，越大越快
-#   intensity: 雪花密度 (0-1)，越大越密
-#   mobileIntensity: 移动端密度，建议低于桌面端
-#   maxLayers: 最大层数，影响立体感
-#   maxIterations: 最大迭代次数，影响雪花数量
-#   mobileMaxLayers: 移动端最大层数
-#   mobileMaxIterations: 移动端最大迭代次数
-
-
-# =============================================================================
-# Temp Mail (临时邮箱)
-# 免费临时邮箱：白嫖域名 NS 托管到 Cloudflare → Email Routing catch-all → 收信 Worker 写 D1
-# 前端 /temp-mail 页面：生成随机地址、轮询收件。后端见 cloudflare/ 目录（Worker + schema + wrangler.toml）
-# domain: 白嫖免费域名（必填，NS 需托管到 Cloudflare）
-# turnstileSiteKey: Cloudflare Turnstile 站点密钥（必填，Cloudflare 控制台获取；密钥公开安全）
-# =============================================================================
-tempMail:
-  enabled: false # 模板默认关闭；需自行在 Cloudflare 托管免费域名 + Email Routing 后开启
-  domains:                                                # 可选题域名列表（用户自行选择）
-    - qiyuanmail.example.com
-    - qiyuanmail.example.fr
-    - qiyuanmail.example.ci
-  domain: qiyuanmail.example.com                            # 兼容字段（取 domains 首个），保留无害
-  retentionHours: 24
-  label: 临时邮箱
-  description: 免费临时邮箱，用于注册验证码等一次性场景，24 小时后自动销毁。
-
-# =============================================================================
-# Comment System
-# =============================================================================
-# provider: 评论系统提供商 ('remark42' | 'giscus' | 'waline' | 'twikoo' | 'custom' | 'none')
-#           设为 'none' 或不设置时禁用评论系统
-# 各提供商配置：
-# -----------------------------------------------------------------------------
-#   remark42: 自托管轻量级评论系统 (https://remark42.com/docs/getting-started/installation/)
-#     host: https://comment.example.com/ # Remark42 服务器地址
-#     siteId: your-site-id # 站点 ID
-#   giscus: 基于 GitHub Discussions 的评论系统 (https://giscus.app)（介绍文章 https://zhuanlan.zhihu.com/p/693434928）
-#     repo: GitHub 仓库名 (owner/repo 格式)
-#     repoId: 仓库 ID (从 giscus.app 获取)
-#     category: Discussion 分类名称
-#     categoryId: 分类 ID (从 giscus.app 获取)
-#     mapping: 映射方式 ('pathname' | 'url' | 'title' | 'og:title'……)
-#     reactionsEnabled: 启用 reactions (默认: '1') # 仅支持 '0' | '1'
-#     emitMetadata: 发送元数据 (默认: '0') # 仅支持 '0' | '1'
-#     inputPosition: 输入框位置 ('top' | 'bottom', 默认: 'top')
-#     lang: 语言 (默认: 'zh-CN')
-#     host: 自定义 giscus 主机 (可选) 'https://giscus.app' | '...'
-#     theme: 主题 (可选) 'light' | 'dark' | '...'
-#     loading: 加载方式 (可选) 'lazy' | 'eager';
-#   waline: 简洁安全的评论系统 (https://waline.js.org)
-#     serverURL: Waline 服务端地址 (必填)
-#     lang: 语言 (默认: 'zh-CN')
-#     dark: 暗黑模式支持 (默认: 'html.dark')
-#           - 字符串: CSS 选择器，当该选择器生效时启用暗黑模式
-#           - true: 根据设备自适应
-#           - false: 禁用暗黑模式
-#     meta: 评论者信息字段 (默认: ['nick', 'mail', 'link'])
-#     requiredMeta: 必填字段 (默认: [])
-#     login: 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
-#     wordLimit: 评论字数限制
-#           - 单个数字: 最大字数限制
-#           - 数组 [min, max]: 最小和最大字数限制
-#           - 0: 无限制 (默认: 0)
-#     pageSize: 每页评论数 (默认: 10)
-#     imageUploader: 图片上传功能 (默认: false)
-#     highlighter: 代码高亮 (默认: true)
-#     texRenderer: LaTeX 渲染 (默认: false)
-#     search: 搜索功能 (默认: false)
-#     reaction: 文章反应功能
-#           - false: 禁用 (默认)
-#           - true: 启用默认反应
-#           - 数组: 自定义反应图标 URL 列表
-#     emoji: 表情包配置
-#           - false: 禁用表情包
-#           - true: 使用默认表情包
-#           - 数组: 自定义表情包列表 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
-#     commentSorting: 评论排序方式 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
-#     noCopyright: 隐藏页脚版权信息 (默认: false)
-#     comment: 评论数统计 (默认: true)
-#     pageview: 页面访问量统计 (默认: true)
-#     recaptchaV3Key: reCAPTCHA v3 Key (可选)
-#     turnstileKey: Cloudflare Turnstile Key (可选)
-#     locale: 自定义语言显示 (可选)
-  # twikoo:
-    # envId: # Twikoo 环境 ID (腾讯云) 或 Vercel 环境地址 (必填)
-    # region: # 环境地域，默认为 ap-shanghai
-    # path: # 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
-    # lang: # 语言 (默认: 'zh-CN')
-comment:
-  provider: none  # 模板默认关闭。可选：'custom'(需 Cloudflare KV+R2) / 'giscus' / 'waline' / 'twikoo'。设为 'none' 关闭评论。
-  # remark42:
-  #   host: https://comment.example.com/
-  #   siteId: your-site-id
-  # giscus:
-  #   repo: username/repo              # GitHub 仓库名 (owner/repo 格式)
-  #   repoId: R_kgDOxxxxxx             # 仓库 ID (从 giscus.app 获取)
-  #   category: Announcements          # Discussion 分类名称
-  #   categoryId: DIC_kwDOxxxxxx       # 分类 ID (从 giscus.app 获取)
-  #   mapping: pathname                # 映射方式
-  #   reactionsEnabled: '1'            # 启用 reactions ('0' | '1')
-  #   emitMetadata: '0'                # 发送元数据 ('0' | '1')
-  #   inputPosition: top               # 输入框位置 ('top' | 'bottom')
-  #   lang: zh-CN                      # 语言
-
-  # waline:
-  #   serverURL: https://your-waline.vercel.app  # Waline 服务端地址 (必填)
-  #   lang: zh-CN                      # 语言 (默认: 'zh-CN')
-  #   dark: html.dark                  # 暗黑模式 (默认: 'html.dark')
-  #                                    # 可选: true (自适应) | false (禁用) | CSS选择器字符串
-  #   meta:                            # 评论者信息字段 (默认: ['nick', 'mail', 'link'])
-  #     - nick
-  #     - mail
-  #     - link
-  #   requiredMeta:                    # 必填字段 (默认: [])
-  #     - nick
-  #   login: enable                    # 登录模式 ('enable' | 'disable' | 'force', 默认: 'enable')
-  #   wordLimit: 0                     # 评论字数限制 (0 = 无限制, 默认: 0)
-  #                                    # 可选: 单个数字 | [min, max] 数组
-  #   pageSize: 10                     # 每页评论数 (默认: 10)
-  #   imageUploader: false             # 图片上传功能 (默认: false)
-  #   highlighter: true                # 代码高亮 (默认: true)
-  #   texRenderer: false               # LaTeX 渲染 (默认: false)
-  #   search: false                    # 搜索功能 (默认: false)
-  #   reaction: false                  # 文章反应功能 (默认: false)
-  #                                    # 可选: true | false | 字符串数组 (自定义反应图标)
-  #   emoji: true                      # 表情包配置 (默认: ['//unpkg.com/@waline/emojis@1.2.0/weibo'])
-  #                                    # 可选: true | false | 字符串/对象数组
-  #                                    # 预设表情包: '//unpkg.com/@waline/emojis@1.2.0/weibo'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/alus'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/bilibili'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/qq'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tieba'
-  #                                    #           '//unpkg.com/@waline/emojis@1.2.0/tw-emoji'
-  #   commentSorting: latest           # 评论排序 ('latest' | 'oldest' | 'hottest', 默认: 'latest')
-  #   noCopyright: false               # 隐藏页脚版权信息 (默认: false)
-  #   comment: true                    # 评论数统计 (默认: true)
-  #   pageview: true                   # 页面访问量统计 (默认: true)
-  #   # recaptchaV3Key: ''             # reCAPTCHA v3 Key (可选)
-  #   # turnstileKey: ''               # Cloudflare Turnstile Key (可选)
-  #   # locale:                        # 自定义语言显示 (可选)
-  #   #   placeholder: '请留言...'      # 自定义输入框占位文本
-  twikoo:
-    envId: https://your-twikoo.vercel.app  # Twikoo 环境 ID (腾讯云) 或 Vercel 环境地址 (必填)
-    # region: ap-shanghai              # 环境地域，默认为 ap-shanghai
-    # path: location.pathname          # 用于区分不同文章的自定义 js 路径
-    # lang: zh-CN                     # 语言 (默认: 'zh-CN')
-
-# =============================================================================
-# Analytics (Umami)
-# =============================================================================
-# id: Umami 网站 ID
-# endpoint: Umami 服务器地址
-# enabled: 是否启用统计
-# statistics_display: 统计信息显示配置
-#   token: Umami 分享链接令牌（只读，可安全暴露到客户端）
-#   article_page_views: 在文章详情页显示访问量
-#   footer_site_stats: 在页脚 Site Stats 中显示全站访问量
-#
-# pageviews: 基于 EdgeOne Pages KV 的自建访问量计数器（无需 Umami）
-#   通过 /api/views 边缘函数把每篇文章及全站访问量存到 KV 命名空间
-#   需在 EdgeOne 控制台创建 KV 命名空间并绑定到本项目，变量名: qiyuan_kv
-#   enabled: 总开关
-#   article_page_views: 在文章页/文章卡片显示该文访问量（首次访问 +1）
-#   footer_site_stats: 在页脚 Site Stats 中显示全站总访问量
-# -----------------------------------------------------------------------------
-analytics:
-  umami:
-    enabled: false
-    id: your-umami-id
-    endpoint: https://stats.example.com
-    # statistics_display:
-    #   token: your-umami-share-token
-    #   article_page_views: true
-    #   footer_site_stats: true
-  pageviews:
-    enabled: true
-    article_page_views: true
-    footer_site_stats: true
 
 # =============================================================================
 # SEO Configuration
@@ -608,74 +322,6 @@ seo:
     #     disallow:
     #       - '/api/'
     # host: true                       # 可选：添加 Host 指令（Yandex）
-
-# =============================================================================
-# Christmas/Seasonal Features
-# =============================================================================
-bgm:
-  enabled: true  # (有 audio 时自动启用，显式 false 可禁用)
-  metingApi: https://api.i-meto.com/meting/api
-  audio:
-    - title: 我的歌单
-      list:
-        - https://music.example.com/your-playlist
-
-christmas:
-  enabled: false # 总开关
-  # features: # 各功能独立开关
-  #   snowfall: true # 飘雪效果
-  #   christmasColorScheme: true # 圣诞配色
-  #   christmasCoverDecoration: true # 封面装饰
-  #   christmasHat: true # 头像圣诞帽
-  #   readingTimeSnow: true # 阅读时间雪花图标
-  # snowfall: # 飘雪参数配置
-  #   speed: 0.5 # 下落速度 (0-1)
-  #   intensity: 0.7 # 雪花密度 (0-1)
-  #   mobileIntensity: 0.4 # 移动端密度（建议较低）
-  #   maxLayers: 6 # 最大层数
-  #   maxIterations: 8 # 最大迭代次数
-  #   mobileMaxLayers: 4 # 移动端最大层数
-  #   mobileMaxIterations: 6 # 移动端最大迭代次数
-
-# =============================================================================
-# Anime Effects (二次元动漫特效)
-# 樱花飘落 / 点击爱心星星爆裂 / 鼠标星光拖尾（纯 Canvas 2D，轻量无额外依赖）
-# =============================================================================
-# enabled: 总开关
-# features: 各特效独立开关
-#   sakuraFall: 樱花花瓣全屏飘落
-#   clickBurst: 点击页面时爆出爱心/星星粒子
-#   cursorTrail: 鼠标移动星光拖尾（仅桌面端生效，移动端自动禁用）
-# sakura: 樱花参数
-#   intensity: 桌面端花瓣数量
-#   mobileIntensity: 移动端花瓣数量（建议较低）
-#   speed: 下落速度倍率
-# 所有特效均遵循系统"减少动态效果"(prefers-reduced-motion) 设置
-# -----------------------------------------------------------------------------
-anime:
-  enabled: true # 总开关
-  features:
-    sakuraFall: true # 樱花飘落
-    clickBurst: true # 点击爱心/星星爆裂
-    cursorTrail: false # 鼠标星光拖尾（喜欢可改 true）
-  sakura:
-    intensity: 24 # 桌面端花瓣数量
-    mobileIntensity: 12 # 移动端花瓣数量
-    speed: 1 # 下落速度倍率
-
-# =============================================================================
-# Bangumi (Media Tracking)
-# 追番页面 - 注释掉整个 bangumi 段即可关闭（页面 + 导航自动隐藏）
-# =============================================================================
-# 字段说明：
-#   userId: Bangumi 用户名或数字 ID（必填）
-#   label: 导航显示名称（可选，默认：追番）
-#   icon: 导航图标，Iconify 格式（可选，默认：ri:bilibili-fill）
-# -----------------------------------------------------------------------------
-# bangumi:
-#   userId: cosine
-  # label: 追番
-  # icon: ri:bilibili-fill
 
 # =============================================================================
 # Development Tools (Dev Only)

@@ -47,7 +47,7 @@ async function initMermaidDiagrams(): Promise<void> {
 
   mermaidModule.initialize({
     startOnLoad: false,
-    theme: getCurrentTheme(),
+    theme: getCurrentTheme() as 'dark' | 'default',
     gitGraph: {
       mainBranchName: 'main',
       showCommitLabel: true,

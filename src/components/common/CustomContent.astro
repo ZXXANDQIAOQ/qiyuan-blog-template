@@ -4,7 +4,6 @@ import ContentEnhancer from '@components/markdown/ContentEnhancer';
 import type { ContentConfig } from '@constants/content-config';
 import { defaultContentConfig } from '@constants/content-config';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
-import { christmasConfig } from '@/constants/site-config';
 
 interface Props {
   Content?: AstroComponentFactory;
@@ -16,7 +15,7 @@ const finalConfig = { ...defaultContentConfig, ...config };
 ---
 
 <div
-  class:list={['custom-content', { 'relative z-5': christmasConfig.enabled && christmasConfig.features.snowfall }]}
+  class:list={['custom-content']}
   data-config={JSON.stringify(finalConfig)}
 >
   {Content ? <Content /> : <slot />}

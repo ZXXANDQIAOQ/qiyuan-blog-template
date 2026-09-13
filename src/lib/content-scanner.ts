@@ -16,7 +16,6 @@ export interface ToolbarEntry {
     | 'infographic'
     | 'quiz'
     | 'friend-links'
-    | 'audio'
     | 'video'
     | 'note'
     | 'encrypted'
@@ -120,22 +119,6 @@ export function scanFriendLinks(container: Element): ToolbarEntry[] {
 }
 
 /** Scan audio player elements */
-export function scanAudioPlayers(container: Element): ToolbarEntry[] {
-  const entries: ToolbarEntry[] = [];
-  const audioPlayers = container.querySelectorAll<HTMLElement>('[data-audio-player]');
-
-  audioPlayers.forEach((el, aIndex) => {
-    if (el.dataset.reactEnhanced === 'true') return;
-    const mount = document.createElement('div');
-    mount.className = 'audio-player-mount';
-    el.appendChild(mount);
-    el.dataset.reactEnhanced = 'true';
-    entries.push({ id: `audio-${aIndex}`, type: 'audio', mountPoint: mount, preElement: el });
-  });
-
-  return entries;
-}
-
 /** Scan video player elements */
 export function scanVideoPlayers(container: Element): ToolbarEntry[] {
   const entries: ToolbarEntry[] = [];
