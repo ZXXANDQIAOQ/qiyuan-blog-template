@@ -1,0 +1,114 @@
+---
+/**
+ * Studio 后台 —— 登录页
+ *
+ * 只负责收集账号密码并调用 /api/studio/login。
+ * 登录态由 httpOnly Cookie 维持，前端拿不到也无需拿到 token。
+ * 已登录时直接跳转到文章列表。
+ */
+import StudioLayout from '@layouts/StudioLayout.astro';
+---
+
+<StudioLayout title="登录 · 内容后台">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div class="studio-card w-full max-w-[380px] p-8">
+      <h1 class="m-0 text-[15px] font-medium">内容后台</h1>
+      <p class="mt-2 mb-6 text-[13px] opacity-60">请输入管理员账号以继续</p>
+
+      <form id="login-form" class="flex flex-col gap-3" autocomplete="on">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-[13px] opacity-70">账号</span>
+          <input
+            class="studio-input"
+            type="text"
+            name="username"
+            autocomplete="username"
+            required
+            autofocus
+          />
+        </label>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-[13px] opacity-70">密码</span>
+          <input
+            class="studio-input"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+
+        <p
+          id="login-error"
+          class="m-0 hidden text-[13px]"
+          style="color: var(--color-text-danger, #a32d2d)"
+          role="alert"
+        >
+        </p>
+
+        <button id="login-submit" class="studio-btn studio-btn-primary mt-2" type="submit">
+          登录
+        </button>
+      </form>
+    </div>
+  </div>
+</StudioLayout>
+
+<script>
+  const form = document.getElementById('login-form') as HTMLFormElement | null;
+  const errorEl = document.getElementById('login-error');
+  const submitBtn = document.getElementById('login-submit') as HTMLButtonElement | null;
+
+  function showError(message: string) {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+  }
+
+  // 已登录则不必再登一次
+  fetch('/api/studio/session', { credentials: 'same-origin' })
+    .then((res) => {
+      if (res.ok) {
+        window.location.replace('/studio/posts');
+      }
+    })
+    .catch(() => {
+      // 未登录或接口不可用，停留在登录页即可
+    });
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!submitBtn) return;
+
+    const data = new FormData(form);
+    submitBtn.disabled = true;
+    submitBtn.textContent = '登录中…';
+    if (errorEl) errorEl.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/studio/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: String(data.get('username') ?? ''),
+          password: String(data.get('password') ?? ''),
+        }),
+      });
+
+      if (res.ok) {
+        window.location.replace('/studio/posts');
+        return;
+      }
+
+      const body = await res.json().catch(() => ({}));
+      showError(body?.error || `登录失败（${res.status}）`);
+    } catch {
+      showError('网络错误，请重试');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '登录';
+    }
+  });
+</script>

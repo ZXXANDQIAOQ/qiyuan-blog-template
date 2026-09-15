@@ -34,3 +34,11 @@ ship-safe-report.html
 # generated AI corpus (run: npm run export:corpus)
 scripts/output/
 astro-dev.log
+
+# studio 测试运行时自动生成的 ESM loader / 内存替身
+scripts/studio-test-loader.mjs
+scripts/studio-test-mock-blob.mjs
+
+# Cloudflare / Wrangler 本地状态
+.wrangler/
+.dev.vars

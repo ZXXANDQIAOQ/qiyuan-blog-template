@@ -1,0 +1,441 @@
+---
+/**
+ * Studio 后台 —— 文章编辑器
+ *
+ * 同一个页面承担「新建」与「编辑」：
+ *   /studio/posts/new      → 新建
+ *   /studio/posts/<slug>   → 编辑
+ *
+ * 采用 slug 由 frontmatter 里独立填写的做法：文章标题可以随意改，
+ * URL 不会跟着变，避免已发布的链接失效。
+ *
+ * 为什么要有 getStaticPaths（且返回空数组）
+ * ------------------------------------------
+ * 这是动态路由（[slug]）。在 output:'static' 下，Astro 要求动态路由必须
+ * 导出 getStaticPaths()，否则整个构建报 GetStaticPathsRequired 错误而失败。
+ *
+ * 但后台的 slug 只有运行时才知道（用户在编辑器里输入），构建期无从枚举。
+ * 两种解法都试过：
+ *   1. prerender = false  → 报 NoAdapterInstalled，因为本站刻意不装 SSR
+ *      适配器（装了会改变 dist 形态，影响静态部署）
+ *   2. getStaticPaths 返回空数组 → 构建期不为本路由产出任何页面，
+ *      Astro 跳过它，构建照常成功
+ *
+ * 这里采用方案 2：后台是纯客户端渲染界面（数据全靠 fetch /api/studio/*），
+ * 页面本身由边缘函数按前端路由兜底返回，不需要参与静态生成。
+ */
+export function getStaticPaths() {
+  // 空数组 = 构建期不预渲染任何 /studio/posts/xxx 页面。
+  // 访问这些地址时由边缘函数处理（见 edge-functions/api/studio.js）。
+  return [];
+}
+
+import StudioLayout from '@layouts/StudioLayout.astro';
+---
+
+<StudioLayout title="编辑文章 · 内容后台">
+  <div class="flex min-h-screen flex-col">
+    <header
+      class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6"
+      style="border-color: var(--color-border-tertiary, rgba(0, 0, 0, 0.12))"
+    >
+      <div class="flex items-center gap-3">
+        <a class="studio-btn no-underline" href="/studio/posts">返回</a>
+        <h1 id="page-title" class="m-0 text-[15px] font-medium">写新文章</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="save-state" class="text-[12px] opacity-55"></span>
+        <button id="save-btn" class="studio-btn studio-btn-primary" type="button">保存</button>
+      </div>
+    </header>
+
+    <p
+      id="banner"
+      class="mx-4 mt-3 hidden rounded-lg p-3 text-[13px] sm:mx-6"
+      role="alert"
+      style="background: var(--color-background-danger, rgba(163, 45, 45, 0.08)); color: var(--color-text-danger, #a32d2d)"
+    >
+    </p>
+
+    <div class="grid grow grid-cols-1 gap-0 lg:grid-cols-2">
+      <div class="flex flex-col gap-3 p-4 sm:p-6">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[13px] opacity-70">标题</span>
+            <input id="f-title" class="studio-input" type="text" placeholder="文章标题" />
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[13px] opacity-70">URL 短名（slug）</span>
+            <input
+              id="f-slug"
+              class="studio-input"
+              type="text"
+              placeholder="仅字母、数字、短横线"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-[13px] opacity-70">摘要（可选）</span>
+          <textarea id="f-description" class="studio-input" rows="2" placeholder="一两句话概括"></textarea>
+        </label>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[13px] opacity-70">发布日期</span>
+            <input id="f-date" class="studio-input" type="date" />
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[13px] opacity-70">分类（逗号分隔）</span>
+            <input id="f-categories" class="studio-input" type="text" placeholder="笔记, 工具" />
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-[13px] opacity-70">标签（逗号分隔）</span>
+          <input id="f-tags" class="studio-input" type="text" placeholder="Astro, 前端" />
+        </label>
+
+        <div class="flex flex-col gap-1.5">
+          <span class="text-[13px] opacity-70">封面图（可选）</span>
+          <div class="flex items-center gap-2">
+            <input id="f-cover" class="studio-input" type="text" placeholder="/img/cover/1.webp 或上传" />
+            <label class="studio-btn shrink-0 cursor-pointer">
+              上传
+              <input id="f-cover-file" class="hidden" type="file" accept="image/*" />
+            </label>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-5 pt-1">
+          <label class="flex items-center gap-2 text-[13px]">
+            <input id="f-draft" type="checkbox" />
+            <span>存为草稿（不在网站上显示）</span>
+          </label>
+          <label class="flex items-center gap-2 text-[13px]">
+            <input id="f-sticky" type="checkbox" />
+            <span>置顶</span>
+          </label>
+        </div>
+
+        <label class="flex grow flex-col gap-1.5">
+          <span class="text-[13px] opacity-70">正文（Markdown）</span>
+          <textarea
+            id="f-body"
+            class="studio-input grow resize-none font-mono"
+            style="min-height: 46vh; line-height: 1.7"
+            placeholder="在这里写 Markdown…"
+          ></textarea>
+        </label>
+      </div>
+
+      <div
+        class="border-t p-4 sm:p-6 lg:border-t-0 lg:border-l"
+        style="border-color: var(--color-border-tertiary, rgba(0, 0, 0, 0.12))"
+      >
+        <p class="mt-0 mb-3 text-[13px] opacity-70">预览</p>
+        <article
+          id="preview"
+          class="prose prose-sm max-w-none"
+          style="overflow-wrap: break-word"
+        >
+        </article>
+      </div>
+    </div>
+  </div>
+</StudioLayout>
+
+<script>
+  import { marked } from 'marked';
+  import sanitizeHtml from 'sanitize-html';
+
+  interface PostData {
+    slug?: string;
+    title?: string;
+    description?: string;
+    date?: string;
+    tags?: string[];
+    categories?: string[];
+    cover?: string;
+    draft?: boolean;
+    sticky?: boolean;
+    body?: string;
+  }
+
+  const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+  const titleEl = el<HTMLInputElement>('f-title');
+  const slugEl = el<HTMLInputElement>('f-slug');
+  const descEl = el<HTMLTextAreaElement>('f-description');
+  const dateEl = el<HTMLInputElement>('f-date');
+  const catEl = el<HTMLInputElement>('f-categories');
+  const tagEl = el<HTMLInputElement>('f-tags');
+  const coverEl = el<HTMLInputElement>('f-cover');
+  const coverFileEl = el<HTMLInputElement>('f-cover-file');
+  const draftEl = el<HTMLInputElement>('f-draft');
+  const stickyEl = el<HTMLInputElement>('f-sticky');
+  const bodyEl = el<HTMLTextAreaElement>('f-body');
+  const previewEl = el<HTMLElement>('preview');
+  const bannerEl = el<HTMLElement>('banner');
+  const saveBtn = el<HTMLButtonElement>('save-btn');
+  const saveState = el<HTMLElement>('save-state');
+  const pageTitle = el<HTMLElement>('page-title');
+
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const editingSlug = pathParts.length >= 4 ? decodeURIComponent(pathParts[3]) : null;
+  const isNew = !editingSlug || editingSlug === 'new';
+
+  let dirty = false;
+  let saving = false;
+  let loaded = false;
+
+  function showError(message: string) {
+    if (!bannerEl) return;
+    bannerEl.textContent = message;
+    bannerEl.classList.remove('hidden');
+    window.setTimeout(() => bannerEl.classList.add('hidden'), 7000);
+  }
+
+  function markDirty() {
+    dirty = true;
+    if (loaded && saveState) saveState.textContent = '未保存';
+  }
+
+  function slugify(input: string) {
+    return input
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80);
+  }
+
+  function renderPreview() {
+    if (!previewEl || !bodyEl) return;
+    const raw = bodyEl.value;
+    const html = marked.parse(raw, { async: false }) as string;
+    previewEl.innerHTML = sanitizeHtml(html, {
+      allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+        'img',
+        'h1',
+        'h2',
+        'del',
+        'input',
+        'details',
+        'summary',
+      ]),
+      allowedAttributes: {
+        ...sanitizeHtml.defaults.allowedAttributes,
+        img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
+        a: ['href', 'title', 'target', 'rel'],
+        input: ['type', 'checked', 'disabled'],
+      },
+      allowedSchemes: ['http', 'https', 'mailto', 'data'],
+    });
+  }
+
+  function fillForm(post: PostData) {
+    if (titleEl) titleEl.value = post.title ?? '';
+    if (slugEl) slugEl.value = post.slug ?? '';
+    if (descEl) descEl.value = post.description ?? '';
+    if (dateEl) dateEl.value = (post.date ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
+    if (catEl) catEl.value = (post.categories ?? []).join(', ');
+    if (tagEl) tagEl.value = (post.tags ?? []).join(', ');
+    if (coverEl) coverEl.value = post.cover ?? '';
+    if (draftEl) draftEl.checked = post.draft === true;
+    if (stickyEl) stickyEl.checked = post.sticky === true;
+    if (bodyEl) bodyEl.value = post.body ?? '';
+    renderPreview();
+  }
+
+  function collect(): PostData {
+    const splitList = (value: string) =>
+      value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    return {
+      slug: slugEl?.value.trim() ?? '',
+      title: titleEl?.value.trim() ?? '',
+      description: descEl?.value.trim() ?? '',
+      date: dateEl?.value ?? new Date().toISOString().slice(0, 10),
+      categories: splitList(catEl?.value ?? ''),
+      tags: splitList(tagEl?.value ?? ''),
+      cover: coverEl?.value.trim() ?? '',
+      draft: draftEl?.checked === true,
+      sticky: stickyEl?.checked === true,
+      body: bodyEl?.value ?? '',
+    };
+  }
+
+  async function save() {
+    if (saving) return;
+
+    const data = collect();
+
+    if (!data.title) {
+      showError('标题不能为空');
+      titleEl?.focus();
+      return;
+    }
+
+    const slug = slugEl?.value.trim() || slugify(data.title);
+    if (!/^[a-z0-9][a-z0-9-_]*$/i.test(slug)) {
+      showError('URL 短名只能包含字母、数字、短横线和下划线');
+      slugEl?.focus();
+      return;
+    }
+    if (slugEl) slugEl.value = slug;
+
+    saving = true;
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = '保存中…';
+    }
+
+    try {
+      const res = await fetch(`/api/studio/posts?slug=${encodeURIComponent(slug)}`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.status === 401) {
+        window.location.replace('/studio');
+        return;
+      }
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(body?.error || `保存失败（${res.status}）`);
+        return;
+      }
+
+      dirty = false;
+      if (saveState) saveState.textContent = '已保存';
+
+      // 新建成功后换成编辑态的 URL，避免刷新又变成新建
+      if (isNew) {
+        window.history.replaceState(null, '', `/studio/posts/${encodeURIComponent(slug)}`);
+        if (pageTitle) pageTitle.textContent = '编辑文章';
+      }
+    } catch {
+      showError('网络错误，请重试');
+    } finally {
+      saving = false;
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存';
+      }
+    }
+  }
+
+  async function load() {
+    if (isNew) {
+      loaded = true;
+      return;
+    }
+    try {
+      const res = await fetch(`/api/studio/posts/${encodeURIComponent(editingSlug as string)}`, {
+        credentials: 'same-origin',
+      });
+      if (res.status === 401) {
+        window.location.replace('/studio');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(body?.error || `加载失败（${res.status}）`);
+        return;
+      }
+      fillForm(body.post ?? {});
+      if (pageTitle) pageTitle.textContent = '编辑文章';
+    } catch {
+      showError('网络错误，无法加载文章');
+    } finally {
+      loaded = true;
+    }
+  }
+
+  // --- 事件绑定 ---
+
+  for (const node of [titleEl, descEl, dateEl, catEl, tagEl, coverEl]) {
+    node?.addEventListener('input', () => {
+      markDirty();
+      if (node === titleEl && isNew && slugEl && !slugEl.dataset.touched) {
+        slugEl.value = slugify(titleEl.value);
+      }
+    });
+  }
+
+  slugEl?.addEventListener('input', () => {
+    slugEl.dataset.touched = '1';
+    markDirty();
+  });
+
+  for (const node of [draftEl, stickyEl]) {
+    node?.addEventListener('change', markDirty);
+  }
+
+  bodyEl?.addEventListener('input', () => {
+    markDirty();
+    renderPreview();
+  });
+
+  saveBtn?.addEventListener('click', save);
+
+  coverFileEl?.addEventListener('change', async () => {
+    const file = coverFileEl.files?.[0];
+    if (!file) return;
+
+    const form = new FormData();
+    form.append('file', file);
+
+    if (saveState) saveState.textContent = '上传中…';
+    try {
+      const res = await fetch('/api/studio/upload', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: form,
+      });
+      if (res.status === 401) {
+        window.location.replace('/studio');
+        return;
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(body?.error || '上传失败');
+        return;
+      }
+      if (coverEl && body.url) {
+        coverEl.value = body.url;
+        markDirty();
+      }
+    } catch {
+      showError('上传失败，网络错误');
+    } finally {
+      if (saveState) saveState.textContent = dirty ? '未保存' : '已保存';
+      coverFileEl.value = '';
+    }
+  });
+
+  // 快捷键：Ctrl/Cmd + S 保存
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      save();
+    }
+  });
+
+  // 有未保存改动时离开给出提示
+  window.addEventListener('beforeunload', (event) => {
+    if (!dirty) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+
+  load();
+</script>

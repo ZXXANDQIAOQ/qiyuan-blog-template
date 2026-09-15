@@ -1,0 +1,122 @@
+---
+/**
+ * Studio 后台的独立布局
+ *
+ * 刻意不复用站点主 Layout：后台不需要导航栏、页脚、搜索、浮动按钮这些
+ * 面向访客的东西，而且要避免被 Pagefind 索引。这里只带最基础的
+ * 主题变量与字体，保持与站点观感一致即可。
+ */
+interface Props {
+  title?: string;
+}
+
+const { title = '内容后台' } = Astro.props;
+
+import '@styles/index.css';
+---
+
+<!doctype html>
+<html lang="zh-CN" class="vertical-scrollbar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <title>{title}</title>
+    <script is:inline>
+      (function () {
+        function getTheme() {
+          if (localStorage.theme === 'light') return 'light';
+          if (localStorage.theme === 'dark') return 'dark';
+          return 'dark';
+        }
+        var root = document.documentElement;
+        var theme = getTheme();
+        root.classList.toggle('dark', theme === 'dark');
+        root.dataset.theme = theme;
+      })();
+    </script>
+    <style is:global>
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--gradient-bg-start, #f5f5f5);
+        color: var(--color-text-primary, #1a1a1a);
+        font-family: var(--font-sans, system-ui, -apple-system, 'Segoe UI', sans-serif);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      html.dark body {
+        color-scheme: dark;
+      }
+
+      .studio-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
+        background: var(--color-background-primary, #fff);
+        color: inherit;
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .studio-input:focus {
+        border-color: var(--color-border-info, #378add);
+      }
+
+      .studio-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
+        background: var(--color-background-primary, #fff);
+        color: inherit;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+      }
+
+      .studio-btn:hover:not(:disabled) {
+        opacity: 0.75;
+      }
+
+      .studio-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .studio-btn-primary {
+        background: var(--color-text-primary, #1a1a1a);
+        color: var(--color-background-primary, #fff);
+        border-color: transparent;
+      }
+
+      .studio-btn-danger {
+        color: var(--color-text-danger, #a32d2d);
+        border-color: var(--color-border-danger, rgba(163, 45, 45, 0.4));
+      }
+
+      .studio-card {
+        background: var(--color-background-primary, #fff);
+        border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+        border-radius: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

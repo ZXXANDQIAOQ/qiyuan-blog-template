@@ -260,6 +260,20 @@ export const i18nConfig: I18nConfig = yamlConfig.i18n ?? {
 };
 
 // =============================================================================
+// Studio Admin (内容后台)
+// =============================================================================
+
+/**
+ * 后台配置。账号口令等敏感值不在 YAML 里，由 EdgeOne 环境变量注入，
+ * 因此这里只暴露路径之类可以公开的元信息。
+ */
+export const adminConfig: { enabled: boolean; path: string; label: string } = {
+  enabled: yamlConfig.admin?.enabled !== false,
+  path: yamlConfig.admin?.path ?? '/studio',
+  label: yamlConfig.admin?.label ?? '内容后台',
+};
+
+// =============================================================================
 // Site Timezone
 // =============================================================================
 

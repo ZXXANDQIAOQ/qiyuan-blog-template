@@ -9,6 +9,68 @@
 
 基于 [Astro](https://astro.build) 深度定制的个人博客与技术资源站模板（衍生自 [Koharu](https://github.com/koharu-org/koharu) 主题），在线示例：[https://www.qiyuan.icu](https://www.qiyuan.icu)。
 
+---
+
+## ⚠️ 关于本仓库的当前形态（务必先读）
+
+**本仓库是一个「精简分支」**：上游模板的运行时后端已被整体移除，现在是一个**纯静态 Astro 站点**，不需要任何环境变量即可 `npm run dev` 与 `npm run build`。
+
+**本文档中以下内容描述的是上游完整模板，在本仓库中并不存在**（代码已删除）：
+
+| 文档中提到的 | 本仓库实际状态 |
+| --- | --- |
+| 站内 AI 助手（RAG 问答） | 已移除，`edge-functions/` 不存在 |
+| 临时邮箱 | 已移除 |
+| 评论 / 网盘 / 短链 | 已移除 |
+| 资源站（`resource-site/`） | 已移除，该目录不存在 |
+| 文章朗读（Edge TTS） | 已移除 |
+| 右键样式编辑器 | 已移除 |
+| 「永久免费说明」整节 | 依赖的服务已不再使用 |
+
+**判断某个功能是否存在，一律以代码为准，不要相信本文档的对应章节。**
+
+**本仓库目前提供的功能**：
+
+- Astro 5 静态博客：Markdown/MDX 文章、封面、目录、Pagefind 站内搜索
+- 中文 / English / 日本語 三语支持（`[lang]/` 镜像路由）
+- 丰富的 Markdown 能力：Shoka 语法（提醒块、折叠块、标签卡）、数学公式、代码高亮与全屏、Mermaid 图表、链接卡片、加密内容块、练习题
+- **Studio 内容后台**：管理员登录 + 浏览器内在线编辑文章，无需每次改文件推 GitHub —— 见 [`docs/studio.md`](./docs/studio.md)
+
+---
+
+## 🚀 部署平台
+
+本仓库支持两个部署平台，请按需选择：
+
+| 平台 | 部署文档 | 站点 | `/studio` 后台 |
+| --- | --- | --- | --- |
+| **Cloudflare Pages** | [`docs/deploy-cloudflare.md`](./docs/deploy-cloudflare.md) | ✅ 正常 | ❌ 不可用（该平台不识别 `edge-functions/`） |
+| **EdgeOne Makers** | [`docs/studio.md`](./docs/studio.md) | ✅ 正常 | ✅ 可用 |
+
+两个平台的文件互不干扰，可以同时部署：EdgeOne 那份用来写文章，Cloudflare 那份用来提供访问。
+
+> 无论部署到哪个平台，**构建都不会因内容后台而失败**：内容同步脚本在缺少凭据时自动跳过，同步失败时也会降级为「使用仓库内文章构建」，网站照常发布。
+
+---
+
+## 📝 Studio 内容后台（仅 EdgeOne）
+
+在浏览器里登录管理员账号即可写文章，不用再维护 Git 仓库。
+
+```
+你的域名/studio
+```
+
+保存文章后点「发布到网站」触发一次重新构建，网站即更新为最新内容。
+
+详细部署步骤（生成口令、配置环境变量、创建 Blob 存储与部署钩子）见 **[`docs/studio.md`](./docs/studio.md)**。
+
+> 技术说明：本站是纯静态站点，文章在构建时被烘焙成 HTML。保存文章只是写入存储，**必须重新构建**网站才会显示新内容——这是静态站架构的固有特性。
+
+改完后端 API 后可用 `npm run studio:test` 跑一遍内置的端到端测试（39 个用例，覆盖登录、鉴权、增删改查、图片上传与发布）。
+
+---
+
 ## 功能页面截图
 
 ![祈愿博客首页截图](https://cdn.jsdelivr.net/gh/violet27chen/qiyuan-blog-template@main/screenshots/home.jpg)

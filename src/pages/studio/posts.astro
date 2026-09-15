@@ -1,0 +1,214 @@
+---
+/**
+ * Studio 后台 —— 文章列表
+ *
+ * 展示全部文章（含草稿），支持新建、编辑、删除、发布。
+ * 数据全部来自 /api/studio/posts，页面本身不含任何业务数据。
+ */
+import StudioLayout from '@layouts/StudioLayout.astro';
+---
+
+<StudioLayout title="文章 · 内容后台">
+  <div class="mx-auto max-w-[880px] p-4 pb-16 sm:p-6">
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="m-0 text-[15px] font-medium">文章</h1>
+        <p id="account" class="mt-1 mb-0 text-[13px] opacity-60"></p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="publish-btn" class="studio-btn" type="button" title="触发一次网站重新构建">
+          发布到网站
+        </button>
+        <a class="studio-btn studio-btn-primary no-underline" href="/studio/posts/new">写新文章</a>
+        <button id="logout-btn" class="studio-btn" type="button">退出</button>
+      </div>
+    </header>
+
+    <p
+      id="banner"
+      class="studio-card mb-4 hidden p-3 text-[13px]"
+      role="status"
+      style="border-color: var(--color-border-info, rgba(55, 138, 221, 0.4))"
+    >
+    </p>
+
+    <div id="list-state" class="studio-card p-6 text-center text-[13px] opacity-60">加载中…</div>
+    <ul id="post-list" class="m-0 flex list-none flex-col gap-2 p-0"></ul>
+  </div>
+</StudioLayout>
+
+<script>
+  interface PostSummary {
+    slug: string;
+    title: string;
+    date: string;
+    updated?: string;
+    draft?: boolean;
+    sticky?: boolean;
+    categories?: string[];
+    tags?: string[];
+  }
+
+  const listEl = document.getElementById('post-list');
+  const stateEl = document.getElementById('list-state');
+  const accountEl = document.getElementById('account');
+  const bannerEl = document.getElementById('banner');
+
+  function showBanner(message: string) {
+    if (!bannerEl) return;
+    bannerEl.textContent = message;
+    bannerEl.classList.remove('hidden');
+    window.setTimeout(() => bannerEl.classList.add('hidden'), 6000);
+  }
+
+  function requireLogin(response: Response) {
+    if (response.status === 401) {
+      window.location.replace('/studio');
+      return true;
+    }
+    return false;
+  }
+
+  function renderPosts(posts: PostSummary[]) {
+    if (!listEl || !stateEl) return;
+
+    if (posts.length === 0) {
+      stateEl.textContent = '还没有文章，点右上角「写新文章」开始吧。';
+      stateEl.classList.remove('hidden');
+      return;
+    }
+
+    stateEl.classList.add('hidden');
+    listEl.innerHTML = '';
+
+    for (const post of posts) {
+      const li = document.createElement('li');
+      li.className = 'studio-card flex items-center gap-3 p-3.5';
+
+      const meta = document.createElement('div');
+      meta.className = 'min-w-0 grow';
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'flex items-center gap-2';
+
+      const title = document.createElement('a');
+      title.className = 'truncate text-[14px] font-medium no-underline';
+      title.style.color = 'inherit';
+      title.href = `/studio/posts/${encodeURIComponent(post.slug)}`;
+      title.textContent = post.title || '(无标题)';
+      titleRow.appendChild(title);
+
+      if (post.draft) {
+        const badge = document.createElement('span');
+        badge.className = 'shrink-0 rounded px-1.5 py-0.5 text-[12px] opacity-70';
+        badge.style.border = '0.5px solid currentColor';
+        badge.textContent = '草稿';
+        titleRow.appendChild(badge);
+      }
+
+      const sub = document.createElement('div');
+      sub.className = 'mt-0.5 truncate text-[12px] opacity-55';
+      const parts = [post.date];
+      if (post.categories?.length) parts.push(post.categories.join(' / '));
+      if (post.tags?.length) parts.push(post.tags.map((t) => `#${t}`).join(' '));
+      sub.textContent = parts.filter(Boolean).join('　·　');
+
+      meta.append(titleRow, sub);
+      li.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'flex shrink-0 items-center gap-2';
+
+      const edit = document.createElement('a');
+      edit.className = 'studio-btn no-underline';
+      edit.href = `/studio/posts/${encodeURIComponent(post.slug)}`;
+      edit.textContent = '编辑';
+      actions.appendChild(edit);
+
+      const del = document.createElement('button');
+      del.className = 'studio-btn studio-btn-danger';
+      del.type = 'button';
+      del.textContent = '删除';
+      del.addEventListener('click', async () => {
+        if (!window.confirm(`确定删除《${post.title || post.slug}》？此操作不可撤销。`)) return;
+        del.disabled = true;
+        try {
+          const res = await fetch(`/api/studio/posts/${encodeURIComponent(post.slug)}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+          });
+          if (requireLogin(res)) return;
+          if (res.ok) {
+            li.remove();
+            showBanner('已删除');
+            if (!listEl.children.length) {
+              stateEl.textContent = '还没有文章，点右上角「写新文章」开始吧。';
+              stateEl.classList.remove('hidden');
+            }
+          } else {
+            const body = await res.json().catch(() => ({}));
+            showBanner(body?.error || '删除失败');
+            del.disabled = false;
+          }
+        } catch {
+          showBanner('网络错误，请重试');
+          del.disabled = false;
+        }
+      });
+      actions.appendChild(del);
+
+      li.appendChild(actions);
+      listEl.appendChild(li);
+    }
+  }
+
+  async function loadPosts() {
+    try {
+      const res = await fetch('/api/studio/posts', { credentials: 'same-origin' });
+      if (requireLogin(res)) return;
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (stateEl) stateEl.textContent = body?.error || `加载失败（${res.status}）`;
+        return;
+      }
+
+      const body = await res.json();
+      renderPosts(Array.isArray(body.posts) ? body.posts : []);
+    } catch {
+      if (stateEl) stateEl.textContent = '网络错误，无法加载文章列表';
+    }
+  }
+
+  // 顶栏账号信息
+  fetch('/api/studio/session', { credentials: 'same-origin' })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((body) => {
+      if (body?.username && accountEl) accountEl.textContent = `已登录：${body.username}`;
+    })
+    .catch(() => {});
+
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    await fetch('/api/studio/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    window.location.replace('/studio');
+  });
+
+  document.getElementById('publish-btn')?.addEventListener('click', async (event) => {
+    const btn = event.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = '触发中…';
+    try {
+      const res = await fetch('/api/studio/publish', { method: 'POST', credentials: 'same-origin' });
+      if (requireLogin(res)) return;
+      const body = await res.json().catch(() => ({}));
+      showBanner(body?.message || body?.error || (res.ok ? '已触发构建' : `失败（${res.status}）`));
+    } catch {
+      showBanner('网络错误，请重试');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '发布到网站';
+    }
+  });
+
+  loadPosts();
+</script>

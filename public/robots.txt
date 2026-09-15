@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /studio
+Disallow: /studio/
 
 Sitemap: https://www.qiyuan.icu/sitemap-index.xml
