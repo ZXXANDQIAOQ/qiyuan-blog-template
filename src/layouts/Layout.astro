@@ -37,6 +37,7 @@ import {
   localeList,
   localizedPath,
   stripLocaleFromPath,
+  withBase,
 } from '@/i18n';
 
 import '@styles/index.css';
@@ -82,20 +83,20 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href={withBase('/favicon.ico')} sizes="48x48" />
     <meta name="generator" content={Astro.generator} />
     <!-- 预加载头图海报：确保 header 背景与其他组件同步渲染 -->
-    <link rel="preload" as="image" href="/img/top-poster.webp" fetchpriority="high" />
+    <link rel="preload" as="image" href={withBase('/img/top-poster.webp')} fetchpriority="high" />
     {/* Async load rounded fonts — Japanese pages use Gen Jyuu Gothic P, others use ChillRoundF (fix #113) */}
     {locale === 'ja' ? (
       <>
-        <link rel="stylesheet" href="/fonts/GenJyuuGothic-P-Regular/result.css" media="print" onload="this.setAttribute('media','all')" />
-        <link rel="stylesheet" href="/fonts/GenJyuuGothic-P-Bold/result.css" media="print" onload="this.setAttribute('media','all')" />
+        <link rel="stylesheet" href={withBase('/fonts/GenJyuuGothic-P-Regular/result.css')} media="print" onload="this.setAttribute('media','all')" />
+        <link rel="stylesheet" href={withBase('/fonts/GenJyuuGothic-P-Bold/result.css')} media="print" onload="this.setAttribute('media','all')" />
       </>
     ) : (
       <>
-        <link rel="stylesheet" href="/fonts/ChillRoundFRegular/result.css" media="print" onload="this.setAttribute('media','all')" />
-        <link rel="stylesheet" href="/fonts/ChillRoundFBold/result.css" media="print" onload="this.setAttribute('media','all')" />
+        <link rel="stylesheet" href={withBase('/fonts/ChillRoundFRegular/result.css')} media="print" onload="this.setAttribute('media','all')" />
+        <link rel="stylesheet" href={withBase('/fonts/ChillRoundFBold/result.css')} media="print" onload="this.setAttribute('media','all')" />
       </>
     )}
 

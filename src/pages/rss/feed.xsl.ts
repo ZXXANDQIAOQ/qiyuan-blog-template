@@ -1,6 +1,7 @@
 import { siteConfig, socialConfig } from '@constants/site-config';
 import type { APIContext } from 'astro';
 import { capitalize } from 'es-toolkit';
+import { withBase } from '@/i18n';
 
 // Convert icon format: ri:github-fill -> ri-github-fill (Remix Icon CDN uses dash)
 const toRemixIconClass = (icon: string) => icon.replace(':', '-');
@@ -26,7 +27,7 @@ export async function GET(_context: APIContext) {
                 <title><xsl:value-of select="/rss/channel/title" /> - RSS Feed</title>
                 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-                <link rel="stylesheet" type="text/css" href="/rss/feed.css" />
+                <link rel="stylesheet" type="text/css" href="${withBase('/rss/feed.css')}" />
             </head>
             <body style="background-color: #121214; color: #f0f0f0; margin: 0; padding: 0;">
                 <div class="background-decorations">

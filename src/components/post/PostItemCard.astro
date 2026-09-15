@@ -11,7 +11,7 @@ import { getLqipProps } from '@lib/lqip';
 import { routeBuilder } from '@lib/route';
 import { cn } from '@lib/utils';
 import { Icon } from 'astro-icon/components';
-import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t } from '@/i18n';
+import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t, withBase } from '@/i18n';
 import type { PostCardData } from '@/types/blog';
 
 export interface PostItemCardProps {
@@ -44,6 +44,16 @@ const finalCover = cover ?? randomCover ?? defaultCoverList[0];
 const href = localizedPath(routeBuilder(Routes.Post, { slug, link, title }), locale);
 const isDraft = import.meta.env.DEV && draft === true;
 const isFallback = postLocale != null && locale !== defaultLocale && postLocale !== locale;
+
+/**
+ * 封面渲染地址。
+ * - Astro ImageMetadata 对象：其 `src` 已由 Astro 处理过，保持原样。
+ * - 字符串路径（默认封面列表 / frontmatter 手写 / 外部 URL）：这些是数据层
+ *   的原始值，不含部署 base。外部 URL 必须跳过，否则会被错误改写。
+ *   补 base 后，GitHub Pages 子路径部署才不会丢图。
+ */
+const coverSrc =
+  typeof finalCover === 'string' ? (/^https?:\/\//.test(finalCover) ? finalCover : withBase(finalCover)) : (finalCover as { src: string }).src;
 
 const categoryArr = getCategoryArr(categories?.[0]);
 const categoryLink = localizedPath(buildCategoryPath(categoryArr), locale);
@@ -92,7 +102,7 @@ function getStaggerPadding(rowIndex: number): string {
         )}
       >
         <img
-          src={typeof finalCover === 'string' ? finalCover : (finalCover as { src: string }).src}
+          src={coverSrc}
           loading="lazy"
           alt="post cover"
           class="h-full w-full cursor-pointer object-cover transition duration-500 group-hover:scale-110 group-hover:rotate-3"

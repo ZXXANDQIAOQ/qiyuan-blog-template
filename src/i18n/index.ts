@@ -23,6 +23,8 @@ export {
   getLocaleFromUrl,
   localizedPath,
   resolveNavName,
+  stripBase,
   stripLocaleFromPath,
   t,
+  withBase,
 } from './utils';

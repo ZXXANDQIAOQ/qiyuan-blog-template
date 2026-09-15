@@ -102,10 +102,38 @@ function tryTranslate(locale: Locale, key: string, params?: TranslationParams): 
 }
 
 /**
+ * Strip the deployment `base` prefix from a pathname.
+ *
+ * When the site is served from a sub-path (GitHub Pages project site,
+ * base = '/<repo>/'), every incoming pathname starts with that prefix, which
+ * would otherwise be mistaken for a locale segment by `getLocaleFromUrl()` or
+ * break route matching. Applied before any route/locale inspection.
+ *
+ * @example
+ * ```ts
+ * // base = '/qiyuan-blog-template/'
+ * stripBase('/qiyuan-blog-template/en/post/a') // => '/en/post/a'
+ * stripBase('/qiyuan-blog-template/')          // => '/'
+ * ```
+ */
+export function stripBase(pathname: string): string {
+  const base = import.meta.env.BASE_URL || '/';
+  if (base === '/') return pathname;
+
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  if (pathname === normalizedBase) return '/';
+  if (pathname.startsWith(`${normalizedBase}/`)) {
+    return pathname.slice(normalizedBase.length);
+  }
+  return pathname;
+}
+
+/**
  * Extract locale from a URL pathname.
  *
- * Strategy: check if the first path segment is a supported locale code.
- * If not (or for default locale URLs without prefix), return defaultLocale.
+ * Strategy: strip the deployment base prefix, then check if the first path
+ * segment is a supported locale code. If not (or for default locale URLs
+ * without prefix), return defaultLocale.
  *
  * Note: URLs with the default locale prefix (e.g., '/zh/post/hello') are treated
  * as defaultLocale — the prefix is ignored. This works with Astro's
@@ -119,10 +147,12 @@ function tryTranslate(locale: Locale, key: string, params?: TranslationParams): 
  * getLocaleFromUrl('/en/')            // => 'en'
  * getLocaleFromUrl('/')               // => 'zh' (default)
  * getLocaleFromUrl('/zh/post/hello')  // => 'zh' (default — prefix ignored)
+ * // base = '/qiyuan-blog-template/'
+ * getLocaleFromUrl('/qiyuan-blog-template/en/post/hello') // => 'en'
  * ```
  */
 export function getLocaleFromUrl(pathname: string): Locale {
-  const segments = pathname.split('/').filter(Boolean);
+  const segments = stripBase(pathname).split('/').filter(Boolean);
   const firstSegment = segments[0];
 
   if (firstSegment && firstSegment !== defaultLocale && isLocaleSupported(firstSegment)) {
@@ -133,31 +163,69 @@ export function getLocaleFromUrl(pathname: string): Locale {
 }
 
 /**
- * Generate a locale-aware path.
+ * Prefix a root-absolute path with Astro's configured `base`.
  *
- * - Default locale: no prefix (e.g., '/post/hello')
- * - Other locales: prefixed (e.g., '/en/post/hello')
+ * Needed for two-platform deployment: the same source tree is published both at
+ * a domain root (Cloudflare Pages, base = '/') and under a sub-path
+ * (GitHub Pages project site, base = '/<repo>/'). Any hard-coded `/foo` asset
+ * or link would 404 in the sub-path case, so route them through here.
+ *
+ * `import.meta.env.BASE_URL` is always normalized by Astro: either '/' or
+ * '/something/'. Values already carrying the base prefix are returned as-is so
+ * the helper is safe to apply to URLs that Astro (or a component) already
+ * resolved — e.g. `Astro.url.pathname` in a base-prefixed build.
  *
  * @example
  * ```ts
+ * // base = '/'
+ * withBase('/img/a.png')            // => '/img/a.png'
+ * // base = '/qiyuan-blog-template/'
+ * withBase('/img/a.png')            // => '/qiyuan-blog-template/img/a.png'
+ * withBase('/qiyuan-blog-template/img/a.png') // already prefixed, unchanged
+ * ```
+ */
+export function withBase(path: string): string {
+  const base = import.meta.env.BASE_URL || '/';
+  if (base === '/') return path;
+
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  // Already carries the base prefix — do not double-prefix.
+  if (path === normalizedBase || path.startsWith(`${normalizedBase}/`)) {
+    return path;
+  }
+
+  return path.startsWith('/') ? `${normalizedBase}${path}` : `${normalizedBase}/${path}`;
+}
+
+/**
+ * Generate a locale-aware path, including the deployment base prefix.
+ *
+ * - Default locale: no locale prefix (e.g., '/post/hello')
+ * - Other locales: prefixed (e.g., '/en/post/hello')
+ * - Always additionally prefixed with `base` when the site is served from a sub-path
+ *
+ * @example
+ * ```ts
+ * // base = '/'
  * localizedPath('/post/hello', 'zh')  // => '/post/hello'
  * localizedPath('/post/hello', 'en')  // => '/en/post/hello'
- * localizedPath('/', 'en')            // => '/en'
+ * // base = '/qiyuan-blog-template/'
+ * localizedPath('/post/hello', 'zh')  // => '/qiyuan-blog-template/post/hello'
  * ```
  */
 export function localizedPath(path: string, locale: Locale = defaultLocale): string {
   // Ensure path starts with /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
-  if (locale === defaultLocale) {
-    return normalizedPath;
-  }
+  const localePath = locale === defaultLocale ? normalizedPath : `/${locale}${normalizedPath}`;
 
-  return `/${locale}${normalizedPath}`;
+  return withBase(localePath);
 }
 
 /**
  * Strip the locale prefix from a pathname, returning the locale-free path.
+ * The deployment base prefix is removed first so the result is a clean
+ * route path (and re-prefixed by `localizedPath` when regenerated).
  *
  * @example
  * ```ts
@@ -167,7 +235,7 @@ export function localizedPath(path: string, locale: Locale = defaultLocale): str
  * ```
  */
 export function stripLocaleFromPath(pathname: string): string {
-  const segments = pathname.split('/').filter(Boolean);
+  const segments = stripBase(pathname).split('/').filter(Boolean);
   const firstSegment = segments[0];
 
   if (firstSegment && firstSegment !== defaultLocale && isLocaleSupported(firstSegment)) {
@@ -175,12 +243,14 @@ export function stripLocaleFromPath(pathname: string): string {
     return rest ? `/${rest}` : '/';
   }
 
-  return pathname;
+  return stripBase(pathname);
 }
 
 /**
  * Get the alternate URL for switching to a different locale.
- * Strips the current locale prefix and applies the target locale prefix.
+ * Strips the current locale prefix (and the deployment base) and applies the
+ * target locale prefix, then re-applies the base — so the result is directly
+ * usable as an href on whichever platform the site is served from.
  *
  * @example
  * ```ts

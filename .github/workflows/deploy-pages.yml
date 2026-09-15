@@ -1,0 +1,89 @@
+# =============================================================================
+# 部署到 GitHub Pages
+# =============================================================================
+# 本仓库同时部署到两个平台，互不干扰：
+#   - Cloudflare Pages：在域名根路径提供站点，base = '/'。由 Cloudflare 侧
+#     的 Git 集成自动构建，不经过本工作流。
+#   - GitHub Pages：项目站点，必须部署在子路径 /<仓库名>/ 下，因此构建时
+#     注入 SITE_BASE 让 Astro 生成带前缀的资源路径。
+#
+# 为什么不能用默认的 Jekyll 构建器：
+#   GitHub Pages 若不提供自定义工作流，会回退到 legacy Jekyll 构建器，
+#   它会拿仓库根目录当 Jekyll 站点渲染 —— 而这是 Astro 项目，必然失败。
+#   本工作流用 Node 构建出 dist/，再以「静态产物」方式发布，绕开 Jekyll。
+#
+# 仓库设置里需把 Pages 的 Source 设为 "GitHub Actions"（本工作流会自动
+# 完成发布；若仍显示 Jekyll 报错，说明 Source 还停留在 "Deploy from a branch"）。
+# =============================================================================
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # 允许在 Actions 页面手动触发
+  workflow_dispatch:
+
+# 授予 GITHUB_TOKEN 发布 Pages 所需的最小权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只保留一个部署；不取消进行中的发布，避免留下半成品线上状态
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # 与 .nvmrc 保持一致；package.json 的 engines 要求 >=22.12.0
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        # 用 ci 保证锁文件一致；失败时明确报错而不是静默降级
+        run: npm ci
+
+      - name: Build site
+        # SITE_BASE 让 Astro 把资源路径与内部链接都加上 /<仓库名>/ 前缀。
+        # SITE_URL 让 canonical / sitemap / RSS 指向 GitHub Pages 域名。
+        # 注意：GitHub Pages 域名一律小写，而 github.repository_owner 保留原始
+        # 大小写（此处为 ZXXANDQIAOQ），直接用会导致 canonical 里出现大写域名。
+        # 故在 shell 里把 owner 转小写后再拼 URL。
+        env:
+          SITE_BASE: /${{ github.event.repository.name }}/
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO="${{ github.event.repository.name }}"
+          export SITE_URL="https://${OWNER}.github.io/${REPO}"
+          echo "SITE_BASE=${SITE_BASE}"
+          echo "SITE_URL=${SITE_URL}"
+          npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

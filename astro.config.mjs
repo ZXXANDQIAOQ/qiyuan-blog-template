@@ -40,6 +40,36 @@ function loadConfigForAstro() {
 
 const yamlConfig = loadConfigForAstro();
 
+// =============================================================================
+// 部署平台适配：base 路径与站点 URL
+// =============================================================================
+// 本站需同时部署到两个平台，它们的路径要求不同：
+//   - Cloudflare Pages：部署在域名根路径，base = '/'
+//   - GitHub Pages（项目站点）：部署在子路径 /<仓库名>/ 下，base 必须带前缀
+//
+// 通过环境变量 SITE_BASE 切换（构建脚本会注入），默认 '/' 以便本地开发与
+// Cloudflare 部署完全不受影响。
+//
+//   SITE_BASE=/qiyuan-blog-template/  → GitHub Pages
+//   不设置                             → Cloudflare Pages / 本地
+//
+// 注意：Astro 的 base 必须以 '/' 开头、不以 '/' 结尾（根路径除外），
+// 这里做了规范化，避免手写环境变量时出错。
+// =============================================================================
+const normalizeBase = (raw) => {
+  if (!raw || raw === '/') return '/';
+  const withLeading = raw.startsWith('/') ? raw : `/${raw}`;
+  return withLeading.replace(/\/+$/, '') + '/';
+};
+const siteBase = normalizeBase(process.env.SITE_BASE);
+// 站点 URL 也需同步：GitHub Pages 下 canonical / sitemap / RSS 都应指向 Pages 域名。
+// 未显式提供 SITE_URL 时，若 base 带前缀则按 GitHub Pages 约定推导。
+const siteUrl =
+  process.env.SITE_URL ||
+  (siteBase !== '/'
+    ? `https://${(process.env.GITHUB_REPOSITORY_OWNER || 'zxxandqiaoq').toLowerCase()}.github.io${siteBase.replace(/\/$/, '')}`
+    : yamlConfig.site?.url);
+
 // Bundle analysis mode: ANALYZE=true pnpm build
 // Use loadEnv to read .env file (astro.config.mjs runs before Vite loads .env)
 const { ANALYZE } = loadEnv(process.env.NODE_ENV || 'production', process.cwd(), '');
@@ -48,7 +78,12 @@ const isAnalyze = ANALYZE === 'true';
 // to absolute https URLs — astro-robots-txt requires sitemap values to be full URLs,
 // so we keep YAML readable (filenames only) and build the real URLs here.
 const robotsConfigRaw = yamlConfig.seo?.robots ?? {};
-const siteBaseUrl = String(yamlConfig.site?.url ?? '').replace(/\/+$/, '');
+// 用解析后的 siteUrl（而非 YAML 原值），子路径部署时 sitemap 才能指向正确域名。
+//
+// 注意：siteUrl 在 GitHub Pages 场景下**已经包含** base 路径
+// （如 https://zxxandqiaoq.github.io/qiyuan-blog-template），所以这里
+// 绝对不能再补一次 base，否则会拼成 .../qiyuan-blog-template/qiyuan-blog-template/sitemap-index.xml。
+const siteBaseUrl = String(siteUrl ?? '').replace(/\/+$/, '');
 const resolveSitemap = (val) => {
   if (Array.isArray(val)) return val.map((f) => `${siteBaseUrl}/${String(f).replace(/^\/+/, '')}`);
   if (typeof val === 'string') return `${siteBaseUrl}/${val.replace(/^\/+/, '')}`;
@@ -145,7 +180,8 @@ if (contentConfig.enableCodeMeta !== false) shikiTransformers.push(shokaMetaTran
 
 // https://astro.build/config
 export default defineConfig({
-  site: yamlConfig.site.url,
+  site: siteUrl,
+  base: siteBase,
   compressHTML: true,
   redirects: {
     '/blog/[...slug]': '/post/[...slug]',

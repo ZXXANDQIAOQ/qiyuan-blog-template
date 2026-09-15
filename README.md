@@ -40,16 +40,20 @@
 
 ## 🚀 部署平台
 
-本仓库支持两个部署平台，请按需选择：
+本仓库支持三个部署平台，请按需选择：
 
-| 平台 | 部署文档 | 站点 | `/studio` 后台 |
+| 平台 | 部署文档 | 站点地址 | `/studio` 后台 |
 | --- | --- | --- | --- |
-| **Cloudflare Pages** | [`docs/deploy-cloudflare.md`](./docs/deploy-cloudflare.md) | ✅ 正常 | ❌ 不可用（该平台不识别 `edge-functions/`） |
-| **EdgeOne Makers** | [`docs/studio.md`](./docs/studio.md) | ✅ 正常 | ✅ 可用 |
+| **Cloudflare Pages** | [`docs/deploy-cloudflare.md`](./docs/deploy-cloudflare.md) | 域名根路径 | ❌ 不可用（该平台不识别 `edge-functions/`） |
+| **GitHub Pages** | [`docs/deploy-github-pages.md`](./docs/deploy-github-pages.md) | 子路径 `/<仓库名>/` | ❌ 不可用（同上） |
+| **EdgeOne Makers** | [`docs/studio.md`](./docs/studio.md) | 域名根路径 | ✅ 可用 |
 
-两个平台的文件互不干扰，可以同时部署：EdgeOne 那份用来写文章，Cloudflare 那份用来提供访问。
+三个平台的文件互不干扰，可以同时部署：EdgeOne 那份用来写文章，Cloudflare 与 GitHub Pages 用来提供访问。
 
 > 无论部署到哪个平台，**构建都不会因内容后台而失败**：内容同步脚本在缺少凭据时自动跳过，同步失败时也会降级为「使用仓库内文章构建」，网站照常发布。
+
+> GitHub Pages 走自定义 Actions 工作流（`.github/workflows/deploy-pages.yml`），绕开默认的 Jekyll 构建器；
+> 子路径部署所需的 `base` 由工作流自动注入 `SITE_BASE`，源码只维护一份，Cloudflare / EdgeOne 无需任何改动。
 
 ---
 

@@ -12,6 +12,7 @@ interface Props {
 
 const { title = '内容后台' } = Astro.props;
 
+import { withBase } from '@/i18n/utils';
 import '@styles/index.css';
 ---
 
@@ -21,7 +22,7 @@ import '@styles/index.css';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
-    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href={withBase('/favicon.ico')} sizes="48x48" />
     <title>{title}</title>
     <script is:inline>
       (function () {

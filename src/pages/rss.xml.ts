@@ -6,7 +6,7 @@ import { encodeSlug } from '@lib/route';
 import { buildRssItemFields } from '@lib/rss-utils';
 import type { APIContext } from 'astro';
 import type { BlogPost } from 'types/blog';
-import { defaultLocale } from '@/i18n';
+import { defaultLocale, withBase } from '@/i18n';
 
 export async function GET(context: APIContext) {
   const posts = await getSortedPosts(defaultLocale);
@@ -21,7 +21,7 @@ export async function GET(context: APIContext) {
     description: siteConfig.subtitle || 'No description',
     site,
     trailingSlash: false,
-    stylesheet: '/rss/feed.xsl', // https://docs.astro.build/en/recipes/rss/#adding-a-stylesheet
+    stylesheet: withBase('/rss/feed.xsl'), // https://docs.astro.build/en/recipes/rss/#adding-a-stylesheet
     items: posts.slice(0, 20).map((post: BlogPost) => {
       // 获取分类数组
       const categoryArr = getCategoryArr(post.data.categories?.[0]);
@@ -35,7 +35,9 @@ export async function GET(context: APIContext) {
       ];
 
       const postSlug = getPostSlug(post);
-      const postLink = `/post/${encodeSlug(postSlug)}`;
+      // withBase 让链接带上部署 base 前缀。@astrojs/rss 内部用
+      // `new URL(link, site)` 解析，根相对路径会丢失子路径前缀，故必须显式补全。
+      const postLink = withBase(`/post/${encodeSlug(postSlug)}`);
       const { title, description, content } = buildRssItemFields(post, defaultLocale);
 
       return {

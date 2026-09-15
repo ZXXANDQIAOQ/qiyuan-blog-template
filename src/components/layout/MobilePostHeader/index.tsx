@@ -26,6 +26,12 @@ interface MobilePostHeaderProps {
   logoSrc?: string;
   /** Whether to enable CSS counter numbering in TOC (default: true) */
   enableNumbering?: boolean;
+  /**
+   * Resolved home link, including the locale prefix and the deployment base.
+   * Passed from the Astro side because `base` is known there at build time;
+   * a hard-coded '/' would break sub-path deployments (GitHub Pages).
+   */
+  homeHref?: string;
 }
 
 // Scroll offset for detecting active heading
@@ -37,6 +43,7 @@ export function MobilePostHeader({
   logoText,
   logoSrc,
   enableNumbering = true,
+  homeHref = '/',
 }: MobilePostHeaderProps) {
   const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
@@ -68,7 +75,7 @@ export function MobilePostHeader({
 
   // Logo component
   const Logo = () => (
-    <a href="/" className="flex items-center gap-1">
+    <a href={homeHref} className="flex items-center gap-1">
       {logoElement === 'svg' && logoSrc ? (
         <img src={logoSrc} alt={siteConfig?.alternate ?? siteConfig?.name} className="h-8" height={32} />
       ) : (

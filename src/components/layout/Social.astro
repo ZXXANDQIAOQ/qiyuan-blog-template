@@ -1,8 +1,16 @@
 ---
 import { socialConfig } from '@constants/site-config';
 import { cn } from '@lib/utils';
+import { withBase } from '@/i18n/utils';
 import { Icon } from 'astro-icon/components';
 import { capitalize } from 'es-toolkit';
+
+/**
+ * 配置里的社交链接大多指向外部站点（http/https/mailto），少数是站内路径
+ * （如 RSS 的 /rss.xml）。站内路径要补部署 base，否则子路径部署会 404；
+ * 外部链接必须原样保留。
+ */
+const resolveSocialUrl = (url: string): string => (url.startsWith('/') ? withBase(url) : url);
 ---
 
 <!-- TODO: use CSS squircle corner-shape replace the rounded-xl border-radius with a squircle corner-shape (https://www.squircle.style/) -->
@@ -18,7 +26,7 @@ import { capitalize } from 'es-toolkit';
             )}
             style={color ? `--link-color: ${color}` : ''}
             data-platform={key}
-            href={url}
+            href={resolveSocialUrl(url)}
             title={capitalize(key)}
             data-tooltip-interactive="false"
             data-tooltip-placement="top"

@@ -16,7 +16,7 @@ import { getLqipStyle } from '@lib/lqip';
 import { routeBuilder } from '@lib/route';
 import { cn } from '@lib/utils';
 import { Icon } from 'astro-icon/components';
-import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+import { getLocaleFromUrl, localizedPath, t, withBase } from '@/i18n';
 import type { PostRef } from '@/types/blog';
 import FlippedCard from './FlippedCard.astro';
 
@@ -65,7 +65,7 @@ const categoryPosts: CategoryWithPosts[] = await Promise.all(
           <div slot="front" class="flex-center relative h-full rounded-md px-2 py-4">
             <img
               style={getLqipStyle(category.image)}
-              src={category.image}
+              src={withBase(category.image)}
               alt={category.label}
               loading="lazy"
               decoding="async"

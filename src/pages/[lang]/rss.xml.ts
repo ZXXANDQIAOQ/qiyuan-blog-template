@@ -5,7 +5,7 @@ import { encodeSlug } from '@lib/route';
 import { buildRssItemFields } from '@lib/rss-utils';
 import type { APIContext } from 'astro';
 import type { BlogPost } from 'types/blog';
-import { defaultLocale, getHtmlLang, localeList, localizedPath } from '@/i18n';
+import { defaultLocale, getHtmlLang, localeList, localizedPath, withBase } from '@/i18n';
 
 export function getStaticPaths() {
   return localeList.filter((l) => l !== defaultLocale).map((lang) => ({ params: { lang } }));
@@ -26,7 +26,7 @@ export async function GET(context: APIContext) {
     site,
     trailingSlash: false,
     customData: `<language>${getHtmlLang(lang)}</language>`,
-    stylesheet: '/rss/feed.xsl',
+    stylesheet: withBase('/rss/feed.xsl'),
     items: posts.slice(0, 20).map((post: BlogPost) => {
       const categoryArr = getCategoryArr(post.data.categories?.[0]);
       const categories = [

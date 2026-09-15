@@ -7,7 +7,7 @@ import { getAllTags, getCategoryList, getPostCount, getSortedPosts } from '@lib/
 import { getLqipStyle } from '@lib/lqip';
 import { cn, filterNavItems } from '@lib/utils';
 import { Icon } from 'astro-icon/components';
-import { getLocaleFromUrl, localizedPath, resolveNavName, stripLocaleFromPath, t } from '@/i18n';
+import { getLocaleFromUrl, localizedPath, resolveNavName, stripLocaleFromPath, t, withBase } from '@/i18n';
 import { getContentSiteField } from '@/i18n/content';
 import type { BlogSchema } from '@/types/blog';
 import Social from './Social.astro';
@@ -42,6 +42,10 @@ const normalizePath = (p: string | undefined): string => {
   const s = p.replace(/\/+$/, '');
   return s === '' ? '/' : s;
 };
+
+// 头像路径来自配置（数据层，不含部署前缀），渲染时统一补 base，
+// 否则 GitHub Pages 子路径部署下头像会 404。
+const avatarSrc = withBase(siteConfig.avatar ?? '/img/avatar.jpg');
 ---
 
 <div class={cn('flex flex-col items-center md:py-2', className)} data-home-info-container={uniqueId}>
@@ -49,7 +53,7 @@ const normalizePath = (p: string | undefined): string => {
     <img
       transition:persist="page-home-info-avatar"
       class="shadow-card-darker hover:animate-shake h-full w-full rounded-full transition"
-      src={siteConfig.avatar ?? '/img/avatar.jpg'}
+      src={avatarSrc}
       alt={`${siteConfig.name ?? ''} avatar`}
       loading="eager"
       fetchpriority="high"

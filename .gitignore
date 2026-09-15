@@ -42,3 +42,7 @@ scripts/studio-test-mock-blob.mjs
 # Cloudflare / Wrangler 本地状态
 .wrangler/
 .dev.vars
+
+# 本地构建诊断日志（部署验证时临时产出）
+_build*.log
+_biome.txt

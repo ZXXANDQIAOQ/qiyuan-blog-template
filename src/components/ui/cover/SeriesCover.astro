@@ -6,7 +6,7 @@ import { getSanitizeHtml } from '@lib/sanitize';
 import { Icon } from 'astro-icon/components';
 import { marked } from 'marked';
 import { MAX_WIDTH } from '@/constants/layout';
-import { getLocaleFromUrl, t } from '@/i18n';
+import { getLocaleFromUrl, t, withBase } from '@/i18n';
 import WaveSvg from './wave';
 
 interface Props {
@@ -24,16 +24,22 @@ const seriesTitle = seriesFullName || seriesLabel || series.categoryName;
 // Convert Markdown description to HTML and sanitize for XSS protection
 const rawHtml = series.description ? await marked.parse(series.description) : '';
 const descriptionHtml = getSanitizeHtml(rawHtml);
+
+// 配置里的站内路径（封面、RSS）需补上部署 base；外部链接保持原样
+const isInternal = (url: string | undefined): boolean => typeof url === 'string' && url.startsWith('/');
+const coverSrc = isInternal(series.cover) && series.cover ? withBase(series.cover) : series.cover;
+const rssHref =
+  isInternal(series.links?.rss) && series.links?.rss ? withBase(series.links.rss) : series.links?.rss;
 ---
 
 <div class="relative flex z-0 max-h-200 min-h-[70dvh] items-center justify-center overflow-hidden pb-6">
   <div class="absolute inset-0 h-full bg-black/40"></div>
   <!-- Series cover image -->
   {
-    series.cover && (
+    coverSrc && (
       <div class="absolute inset-0 -z-10 h-full w-full" style={getLqipStyle(series.cover)}>
         <img
-          src={series.cover}
+          src={coverSrc}
           alt={seriesTitle}
           class="h-full w-full object-cover"
           loading="eager"
@@ -67,7 +73,7 @@ const descriptionHtml = getSanitizeHtml(rawHtml);
           )}
           {series.links.rss && (
             <a
-              href={series.links.rss}
+              href={rssHref}
               target="_blank"
               data-astro-reload
               class="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20"
