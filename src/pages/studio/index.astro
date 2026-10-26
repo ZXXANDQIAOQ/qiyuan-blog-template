@@ -5,15 +5,18 @@
  * 只负责收集账号密码并调用 /api/studio/login。
  * 登录态由 httpOnly Cookie 维持，前端拿不到也无需拿到 token。
  * 已登录时直接跳转到文章列表。
+ *
+ * fetch 路径已与 Cloudflare Pages Functions 后端冻结契约对齐
+ * （site-spec.md §8：/api/studio/session、/api/studio/login 均零改动）。
  */
 import StudioLayout from '@layouts/StudioLayout.astro';
 ---
 
-<StudioLayout title="登录 · 内容后台">
+<StudioLayout title="登录 · 内容后台" description="烁烁内容后台登录页，仅站长使用。">
   <div class="flex min-h-screen items-center justify-center p-4">
-    <div class="studio-card w-full max-w-[380px] p-8">
+    <div class="studio-card-login w-full">
       <h1 class="m-0 text-[15px] font-medium">内容后台</h1>
-      <p class="mt-2 mb-6 text-[13px] opacity-60">请输入管理员账号以继续</p>
+      <p class="mt-2 mb-6 text-[13px] opacity-65">登录后就能写文章、改文章。</p>
 
       <form id="login-form" class="flex flex-col gap-3" autocomplete="on">
         <label class="flex flex-col gap-1.5">
@@ -22,6 +25,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
             class="studio-input"
             type="text"
             name="username"
+            placeholder="管理员账号"
             autocomplete="username"
             required
             autofocus
@@ -34,6 +38,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
             class="studio-input"
             type="password"
             name="password"
+            placeholder="登录口令"
             autocomplete="current-password"
             required
           />
@@ -48,9 +53,11 @@ import StudioLayout from '@layouts/StudioLayout.astro';
         </p>
 
         <button id="login-submit" class="studio-btn studio-btn-primary mt-2" type="submit">
-          登录
+          进入后台
         </button>
       </form>
+
+      <p class="mt-6 mb-0 text-center text-[12px] opacity-65">仅站长可见，请勿外传地址。</p>
     </div>
   </div>
 </StudioLayout>
@@ -66,7 +73,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
     errorEl.classList.remove('hidden');
   }
 
-  // 已登录则不必再登一次
+  // 已登录则不必再登一次（GET /api/studio/session，site-spec.md §8 零改动）
   fetch('/api/studio/session', { credentials: 'same-origin' })
     .then((res) => {
       if (res.ok) {
@@ -83,10 +90,11 @@ import StudioLayout from '@layouts/StudioLayout.astro';
 
     const data = new FormData(form);
     submitBtn.disabled = true;
-    submitBtn.textContent = '登录中…';
+    submitBtn.textContent = '正在进入…';
     if (errorEl) errorEl.classList.add('hidden');
 
     try {
+      // POST /api/studio/login（site-spec.md §8 零改动）
       const res = await fetch('/api/studio/login', {
         method: 'POST',
         credentials: 'same-origin',
@@ -103,12 +111,19 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       }
 
       const body = await res.json().catch(() => ({}));
-      showError(body?.error || `登录失败（${res.status}）`);
+      // 错误文案三段式：结果 + 下一步动作（content-plan.md §一）
+      if (res.status === 401) {
+        showError('账号或密码不对，再试一次。');
+      } else if (res.status === 429) {
+        showError('试得太多次了，过 15 分钟再来。');
+      } else {
+        showError(body?.error || `登录没成功（${res.status}），稍后再试。`);
+      }
     } catch {
-      showError('网络错误，请重试');
+      showError('网络断了，检查网络后重试。');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = '登录';
+      submitBtn.textContent = '进入后台';
     }
   });
 </script>

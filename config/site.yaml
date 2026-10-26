@@ -316,11 +316,14 @@ seo:
     #   sitemap-index.xml 为主站点地图（由 @astrojs/sitemap 生成）。
     sitemap:
       - sitemap-index.xml
-    # policy:                          # 爬虫策略（可选，取消注释并配置）
-    #   - userAgent: '*'
-    #     allow: '/'
-    #     disallow:
-    #       - '/api/'
+    # policy: 爬虫策略 —— 屏蔽内容后台与其接口，避免被搜索引擎收录
+    policy:
+      - userAgent: '*'
+        allow: '/'
+        disallow:
+          - '/api/'
+          - '/studio'
+          - '/api/studio/'
     # host: true                       # 可选：添加 Host 指令（Yandex）
 
 # =============================================================================

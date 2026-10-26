@@ -5,12 +5,16 @@
  * 刻意不复用站点主 Layout：后台不需要导航栏、页脚、搜索、浮动按钮这些
  * 面向访客的东西，而且要避免被 Pagefind 索引。这里只带最基础的
  * 主题变量与字体，保持与站点观感一致即可。
+ *
+ * meta description 由页面 prop 传入（content-plan.md §一），
+ * 三页通用；后台不输出 og/twitter meta（content-plan.md §二.5）。
  */
 interface Props {
   title?: string;
+  description?: string;
 }
 
-const { title = '内容后台' } = Astro.props;
+const { title = '内容后台', description = '烁烁内容后台登录页，仅站长使用。' } = Astro.props;
 
 import { withBase } from '@/i18n/utils';
 import '@styles/index.css';
@@ -22,6 +26,7 @@ import '@styles/index.css';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="description" content={description} />
     <link rel="icon" href={withBase('/favicon.ico')} sizes="48x48" />
     <title>{title}</title>
     <script is:inline>
@@ -56,29 +61,17 @@ import '@styles/index.css';
         color-scheme: dark;
       }
 
-      .studio-input {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
-        background: var(--color-background-primary, #fff);
-        color: inherit;
-        font-family: inherit;
-        font-size: 14px;
-        outline: none;
-      }
+      /* ---- 组件样式（design-spec.md §6）---- */
 
-      .studio-input:focus {
-        border-color: var(--color-border-info, #378add);
-      }
-
+      /* 基础按钮（次要） */
       .studio-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
         padding: 8px 14px;
+        /* 触控目标 ≥44px（design-spec.md §7.2） */
+        min-height: 44px;
         border-radius: 8px;
         border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
         background: var(--color-background-primary, #fff);
@@ -99,21 +92,174 @@ import '@styles/index.css';
         cursor: not-allowed;
       }
 
+      /* 主要按钮（登录、保存、写新文章） */
       .studio-btn-primary {
         background: var(--color-text-primary, #1a1a1a);
         color: var(--color-background-primary, #fff);
         border-color: transparent;
       }
 
+      /* 危险按钮（删除） */
       .studio-btn-danger {
         color: var(--color-text-danger, #a32d2d);
         border-color: var(--color-border-danger, rgba(163, 45, 45, 0.4));
       }
 
-      .studio-card {
+      /* 文本输入、textarea 通用 */
+      .studio-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 12px;
+        /* 触控目标 ≥44px（design-spec.md §7.2） */
+        min-height: 44px;
+        border-radius: 8px;
+        border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
+        background: var(--color-background-primary, #fff);
+        color: inherit;
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s ease;
+      }
+
+      .studio-input:focus {
+        border-color: var(--color-border-info, #378add);
+      }
+
+      /* Markdown 编辑区（等宽、可拉伸） */
+      .studio-input-mono {
+        font-family: var(--font-mono, 'SF Mono', Consolas, monospace);
+        font-size: 13px;
+        line-height: 1.7;
+        resize: vertical;
+        min-height: 46vh;
+      }
+
+      /* 复选框 / 开关（草稿、置顶） */
+      .studio-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .studio-checkbox input[type='checkbox'] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-border-info, #378add);
+      }
+
+      /* 文件上传按钮（包裹隐藏 input） */
+      .studio-upload-btn {
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+
+      /* 状态徽章 */
+      .studio-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        line-height: 1.5;
+        border: 0.5px solid currentColor;
+        opacity: 0.7;
+      }
+
+      .studio-badge-draft {
+        color: var(--color-text-warning, #b8860b);
+      }
+
+      .studio-badge-saving {
+        color: var(--color-border-info, #378add);
+      }
+
+      .studio-badge-saved {
+        color: var(--color-text-success, #2d7a3c);
+      }
+
+      .studio-badge-error {
+        color: var(--color-text-danger, #a32d2d);
+      }
+
+      .studio-badge-uploading {
+        color: var(--color-border-info, #378add);
+      }
+
+      /* 登录卡 */
+      .studio-card-login {
         background: var(--color-background-primary, #fff);
         border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
         border-radius: 12px;
+        padding: 32px;
+        box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+        max-width: 380px;
+      }
+
+      /* 文章列表行 / 通用卡片 */
+      .studio-card {
+        background: var(--color-background-primary, #fff);
+        border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+        border-radius: 8px;
+        padding: 14px;
+        transition: background 0.15s ease;
+      }
+
+      .studio-card:hover {
+        background: rgba(55, 138, 221, 0.04);
+      }
+
+      /* 编辑器面板 */
+      .studio-panel {
+        background: var(--color-background-primary, #fff);
+        border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+        border-radius: 12px;
+      }
+
+      /* 错误横幅 */
+      .studio-banner-error {
+        background: var(--color-background-danger, rgba(163, 45, 45, 0.08));
+        color: var(--color-text-danger, #a32d2d);
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 13px;
+        margin: 12px 16px 0;
+      }
+
+      /* 信息横幅 */
+      .studio-banner-info {
+        background: var(--color-background-primary, #fff);
+        border: 0.5px solid var(--color-border-info, rgba(55, 138, 221, 0.4));
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 13px;
+      }
+
+      /* 顶部栏（编辑器） */
+      .studio-topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+        padding: 12px 16px;
+      }
+
+      @media (min-width: 640px) {
+        .studio-topbar {
+          padding: 12px 24px;
+        }
+      }
+
+      /* ---- 无障碍：焦点环（design-spec.md §8.1）---- */
+      .studio-btn:focus-visible,
+      .studio-input:focus-visible,
+      .studio-checkbox input:focus-visible {
+        outline: 2px solid var(--color-border-info, #378add);
+        outline-offset: 2px;
       }
     </style>
   </head>

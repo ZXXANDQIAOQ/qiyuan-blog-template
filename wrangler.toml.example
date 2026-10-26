@@ -1,0 +1,24 @@
+# Cloudflare Pages Functions 配置示例（仅本地调试用）
+#
+# 使用方法：
+#   1. 复制本文件为 wrangler.toml：cp wrangler.toml.example wrangler.toml
+#   2. 创建 KV Namespace：npx wrangler kv namespace create STUDIO_KV
+#   3. 把返回的 id 填进下面的 [[kv_namespaces]] 段
+#   4. 本地调试：npx wrangler pages dev dist --kv STUDIO_KV
+#
+# 注意：
+#   - Cloudflare Pages 通过 Git 部署时**不读取**本文件，KV 绑定请在控制台配置
+#     （Settings → Functions → KV namespace bindings，变量名 STUDIO_KV）
+#   - wrangler.toml 已在 .gitignore 中忽略，不会被提交
+
+name = "qiyuan-blog-studio"
+compatibility_date = "2024-01-01"
+
+[pages]
+build_output_dir = "dist"
+
+# KV Namespace 绑定（把 id 换成你自己的）
+[[kv_namespaces]]
+binding = "STUDIO_KV"
+id = "请替换为你的 KV Namespace ID"
+# preview_id = "预览环境的 KV Namespace ID（可选）"

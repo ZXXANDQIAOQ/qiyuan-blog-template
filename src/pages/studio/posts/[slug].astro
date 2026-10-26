@@ -23,39 +23,41 @@
  *
  * 这里采用方案 2：后台是纯客户端渲染界面（数据全靠 fetch /api/studio/*），
  * 页面本身由边缘函数按前端路由兜底返回，不需要参与静态生成。
+ *
+ * fetch 路径已与 Cloudflare Pages Functions 后端冻结契约对齐
+ * （site-spec.md §8：/api/studio/posts?slug=、/api/studio/posts/:slug、
+ *   /api/studio/upload 均零改动）。
  */
 export function getStaticPaths() {
   // 空数组 = 构建期不预渲染任何 /studio/posts/xxx 页面。
-  // 访问这些地址时由边缘函数处理（见 edge-functions/api/studio.js）。
+  // 访问这些地址时由边缘函数处理（见 functions/api/studio/[[path]].js）。
   return [];
 }
 
 import StudioLayout from '@layouts/StudioLayout.astro';
 ---
 
-<StudioLayout title="编辑文章 · 内容后台">
+<StudioLayout title="写新文章 · 内容后台" description="烁烁内容后台编辑器，仅站长使用。">
   <div class="flex min-h-screen flex-col">
-    <header
-      class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6"
-      style="border-color: var(--color-border-tertiary, rgba(0, 0, 0, 0.12))"
-    >
+    <header class="studio-topbar">
       <div class="flex items-center gap-3">
         <a class="studio-btn no-underline" href="/studio/posts">返回</a>
         <h1 id="page-title" class="m-0 text-[15px] font-medium">写新文章</h1>
       </div>
       <div class="flex items-center gap-2">
-        <span id="save-state" class="text-[12px] opacity-55"></span>
-        <button id="save-btn" class="studio-btn studio-btn-primary" type="button">保存</button>
+        <span id="save-state" class="text-[12px] opacity-65" aria-live="polite"></span>
+        <button
+          id="save-btn"
+          class="studio-btn studio-btn-primary"
+          type="button"
+          aria-keyshortcuts="Control+S Meta+S"
+        >
+          保存
+        </button>
       </div>
     </header>
 
-    <p
-      id="banner"
-      class="mx-4 mt-3 hidden rounded-lg p-3 text-[13px] sm:mx-6"
-      role="alert"
-      style="background: var(--color-background-danger, rgba(163, 45, 45, 0.08)); color: var(--color-text-danger, #a32d2d)"
-    >
-    </p>
+    <p id="banner" class="studio-banner-error mx-4 mt-3 hidden sm:mx-6" role="alert"></p>
 
     <div class="grid grow grid-cols-1 gap-0 lg:grid-cols-2">
       <div class="flex flex-col gap-3 p-4 sm:p-6">
@@ -78,7 +80,11 @@ import StudioLayout from '@layouts/StudioLayout.astro';
 
         <label class="flex flex-col gap-1.5">
           <span class="text-[13px] opacity-70">摘要（可选）</span>
-          <textarea id="f-description" class="studio-input" rows="2" placeholder="一两句话概括"></textarea>
+          <textarea
+            id="f-description"
+            class="studio-input"
+            rows="2"
+            placeholder="一两句话概括这篇文章"></textarea>
         </label>
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -100,8 +106,13 @@ import StudioLayout from '@layouts/StudioLayout.astro';
         <div class="flex flex-col gap-1.5">
           <span class="text-[13px] opacity-70">封面图（可选）</span>
           <div class="flex items-center gap-2">
-            <input id="f-cover" class="studio-input" type="text" placeholder="/img/cover/1.webp 或上传" />
-            <label class="studio-btn shrink-0 cursor-pointer">
+            <input
+              id="f-cover"
+              class="studio-input"
+              type="text"
+              placeholder="/img/cover/1.webp 或点「上传」"
+            />
+            <label class="studio-btn studio-upload-btn">
               上传
               <input id="f-cover-file" class="hidden" type="file" accept="image/*" />
             </label>
@@ -109,25 +120,29 @@ import StudioLayout from '@layouts/StudioLayout.astro';
         </div>
 
         <div class="flex flex-wrap items-center gap-5 pt-1">
-          <label class="flex items-center gap-2 text-[13px]">
+          <label class="studio-checkbox">
             <input id="f-draft" type="checkbox" />
             <span>存为草稿（不在网站上显示）</span>
           </label>
-          <label class="flex items-center gap-2 text-[13px]">
+          <label class="studio-checkbox">
             <input id="f-sticky" type="checkbox" />
             <span>置顶</span>
           </label>
         </div>
 
+        <p class="m-0 text-[12px] opacity-65">草稿只存在后台，发布时会被跳过，网站上看不到。</p>
+
         <label class="flex grow flex-col gap-1.5">
           <span class="text-[13px] opacity-70">正文（Markdown）</span>
           <textarea
             id="f-body"
-            class="studio-input grow resize-none font-mono"
-            style="min-height: 46vh; line-height: 1.7"
-            placeholder="在这里写 Markdown…"
-          ></textarea>
+            class="studio-input studio-input-mono grow"
+            placeholder="在这里写 Markdown。支持 GFM、代码块、数学公式，右侧边写边预览。"></textarea>
         </label>
+
+        <p class="m-0 text-[12px] opacity-65">
+          点「保存」只是存好；回到文章列表点「发布到网站」，改动才会显示到网站上。
+        </p>
       </div>
 
       <div
@@ -135,11 +150,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
         style="border-color: var(--color-border-tertiary, rgba(0, 0, 0, 0.12))"
       >
         <p class="mt-0 mb-3 text-[13px] opacity-70">预览</p>
-        <article
-          id="preview"
-          class="prose prose-sm max-w-none"
-          style="overflow-wrap: break-word"
-        >
+        <article id="preview" class="prose prose-sm max-w-none" style="overflow-wrap: break-word">
         </article>
       </div>
     </div>
@@ -150,6 +161,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
   import { marked } from 'marked';
   import sanitizeHtml from 'sanitize-html';
 
+  // PostData 字段与 site-spec.md §5.0 冻结一致
   interface PostData {
     slug?: string;
     title?: string;
@@ -249,6 +261,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
     renderPreview();
   }
 
+  // collect() 不发送 updated/createdAt，服务端自行补全（site-spec.md §5.0）
   function collect(): PostData {
     const splitList = (value: string) =>
       value
@@ -276,14 +289,14 @@ import StudioLayout from '@layouts/StudioLayout.astro';
     const data = collect();
 
     if (!data.title) {
-      showError('标题不能为空');
+      showError('先给文章起个标题。');
       titleEl?.focus();
       return;
     }
 
     const slug = slugEl?.value.trim() || slugify(data.title);
     if (!/^[a-z0-9][a-z0-9-_]*$/i.test(slug)) {
-      showError('URL 短名只能包含字母、数字、短横线和下划线');
+      showError('URL 短名只能用字母、数字、短横线和下划线。');
       slugEl?.focus();
       return;
     }
@@ -294,8 +307,10 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       saveBtn.disabled = true;
       saveBtn.textContent = '保存中…';
     }
+    if (saveState) saveState.textContent = '保存中…';
 
     try {
+      // POST /api/studio/posts?slug=...（site-spec.md §8 零改动，注意是 POST + query）
       const res = await fetch(`/api/studio/posts?slug=${encodeURIComponent(slug)}`, {
         method: 'POST',
         credentials: 'same-origin',
@@ -311,6 +326,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         showError(body?.error || `保存失败（${res.status}）`);
+        if (saveState) saveState.textContent = '保存失败';
         return;
       }
 
@@ -323,7 +339,8 @@ import StudioLayout from '@layouts/StudioLayout.astro';
         if (pageTitle) pageTitle.textContent = '编辑文章';
       }
     } catch {
-      showError('网络错误，请重试');
+      showError('网络断了，检查网络后重试。');
+      if (saveState) saveState.textContent = '保存失败';
     } finally {
       saving = false;
       if (saveBtn) {
@@ -339,6 +356,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       return;
     }
     try {
+      // GET /api/studio/posts/:slug（site-spec.md §8 零改动）
       const res = await fetch(`/api/studio/posts/${encodeURIComponent(editingSlug as string)}`, {
         credentials: 'same-origin',
       });
@@ -348,13 +366,13 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       }
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        showError(body?.error || `加载失败（${res.status}）`);
+        showError(body?.error ? `文章没读出来（${body.error}），返回列表看看它还在不在。` : `文章没读出来（${res.status}），返回列表看看它还在不在。`);
         return;
       }
       fillForm(body.post ?? {});
       if (pageTitle) pageTitle.textContent = '编辑文章';
     } catch {
-      showError('网络错误，无法加载文章');
+      showError('网络断了，文章加载不出来。');
     } finally {
       loaded = true;
     }
@@ -396,6 +414,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
 
     if (saveState) saveState.textContent = '上传中…';
     try {
+      // POST /api/studio/upload（site-spec.md §8 零改动）
       const res = await fetch('/api/studio/upload', {
         method: 'POST',
         credentials: 'same-origin',
@@ -407,7 +426,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       }
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        showError(body?.error || '上传失败');
+        showError(body?.error ? `图片没传上去，${body.error}。` : '图片没传上去，换个文件或稍后再试。');
         return;
       }
       if (coverEl && body.url) {
@@ -415,7 +434,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
         markDirty();
       }
     } catch {
-      showError('上传失败，网络错误');
+      showError('图片没传上去，网络断了。');
     } finally {
       if (saveState) saveState.textContent = dirty ? '未保存' : '已保存';
       coverFileEl.value = '';

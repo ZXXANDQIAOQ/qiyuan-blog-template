@@ -205,7 +205,11 @@ export default defineConfig({
   },
   integrations: [
     react(),
-    sitemap(),
+    // 站点地图排除内容后台：/studio 与 /studio/posts 不参与收录。
+    // 后台页面本身已带 noindex，这里再加一道，避免 sitemap 主动暴露后台路径。
+    sitemap({
+      filter: (page) => !page.includes('/studio'),
+    }),
     icon({
       include: {
         gg: ['*'],
