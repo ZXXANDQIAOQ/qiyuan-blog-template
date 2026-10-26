@@ -77,7 +77,8 @@ function errorResponse(message, status = 400) {
  * 未配置 STUDIO_USERNAME 或 STUDIO_PASSWORD_HASH 时，所有接口返回 404
  */
 function isConfigured(env) {
-  return env.STUDIO_USERNAME && env.STUDIO_PASSWORD_HASH;
+  if (!env) return false;
+  return Boolean(env.STUDIO_USERNAME && env.STUDIO_PASSWORD_HASH);
 }
 
 /**
@@ -119,9 +120,15 @@ export async function onRequest(context) {
   const { request, env, params } = context;
   const url = new URL(request.url);
   const method = request.method;
-  const pathSegments = (params.path || '').split('/').filter(Boolean);
+  // Cloudflare Pages Functions 的 [[path]] 捕获组传进来的是**数组**（如 ['posts','abc']），
+  // 不是字符串。之前直接对其调用 .split() 会抛 TypeError，导致所有接口 500。
+  // 这里同时兼容数组与字符串两种形态。
+  const rawPath = params?.path;
+  const pathString = Array.isArray(rawPath) ? rawPath.join('/') : String(rawPath ?? '');
+  const pathSegments = pathString.split('/').filter(Boolean);
 
-  // 未配置环境变量时，所有接口返回 404
+  // 未配置环境变量时，所有接口返回 404（放在路径解析之后、业务之前，
+  // 保证即使路径异常也不会暴露「后台存在」的信息）
   if (!isConfigured(env)) {
     return errorResponse('Not Found', 404);
   }

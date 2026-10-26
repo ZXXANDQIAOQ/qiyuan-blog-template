@@ -1,0 +1,18 @@
+# Cloudflare Pages 路由重写规则
+# 文档：https://developers.cloudflare.com/pages/configuration/redirects/
+#
+# 用途：让 /studio/posts/<slug> 与 /studio/posts/new 都能打开编辑器页面。
+#
+# 背景：编辑器的 slug 只有运行时才知道（用户在后台输入），无法在构建期枚举，
+# 所以编辑器被构建成一个固定静态页面 /studio/editor/。下面的 200 rewrite
+# 把具体文章路径指过去 —— 注意是 rewrite（状态码 200）而不是 301/302，
+# 浏览器地址栏保持 /studio/posts/<slug> 不变，前端照旧从 pathname 解析 slug。
+#
+# 为什么用 :slug 而不是 *：
+#   :slug 只匹配「恰好一段」，所以不会误伤列表页 /studio/posts/。
+#   （* 会把 /studio/posts/ 也吞掉，列表页就变成编辑器了）
+
+/studio/posts/new      /studio/editor/    200
+/studio/posts/new/     /studio/editor/    200
+/studio/posts/:slug    /studio/editor/    200
+/studio/posts/:slug/   /studio/editor/    200

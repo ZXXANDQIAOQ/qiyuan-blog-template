@@ -6,33 +6,22 @@
  *   /studio/posts/new      → 新建
  *   /studio/posts/<slug>   → 编辑
  *
- * 采用 slug 由 frontmatter 里独立填写的做法：文章标题可以随意改，
- * URL 不会跟着变，避免已发布的链接失效。
+ * 为什么它是静态路由 /studio/editor 而不是动态路由 [slug]
+ * -------------------------------------------------------
+ * 后台的 slug 只有运行时才知道（用户在编辑器里输入），构建期无从枚举，
+ * 所以不能用 [slug] 动态路由预渲染。此前的做法是让 getStaticPaths() 返回
+ * 空数组，再靠边缘函数兜底返回页面 —— 但 Cloudflare Pages 的 Functions
+ * 只处理 /api/studio/*，没有页面兜底能力，导致 /studio/posts/<slug> 直接 404。
  *
- * 为什么要有 getStaticPaths（且返回空数组）
- * ------------------------------------------
- * 这是动态路由（[slug]）。在 output:'static' 下，Astro 要求动态路由必须
- * 导出 getStaticPaths()，否则整个构建报 GetStaticPathsRequired 错误而失败。
- *
- * 但后台的 slug 只有运行时才知道（用户在编辑器里输入），构建期无从枚举。
- * 两种解法都试过：
- *   1. prerender = false  → 报 NoAdapterInstalled，因为本站刻意不装 SSR
- *      适配器（装了会改变 dist 形态，影响静态部署）
- *   2. getStaticPaths 返回空数组 → 构建期不为本路由产出任何页面，
- *      Astro 跳过它，构建照常成功
- *
- * 这里采用方案 2：后台是纯客户端渲染界面（数据全靠 fetch /api/studio/*），
- * 页面本身由边缘函数按前端路由兜底返回，不需要参与静态生成。
+ * 现在的做法：
+ *   1. 编辑器固定构建成一个静态页面 /studio/editor/
+ *   2. public/_redirects 用 200 rewrite 把 /studio/posts/:slug 指向它
+ *      （rewrite 不改变浏览器地址栏，所以 location.pathname 仍是原路径，
+ *        前端照旧从 pathname 解析 slug，逻辑无需改动）
  *
  * fetch 路径已与 Cloudflare Pages Functions 后端冻结契约对齐
- * （site-spec.md §8：/api/studio/posts?slug=、/api/studio/posts/:slug、
- *   /api/studio/upload 均零改动）。
+ * （/api/studio/posts?slug=、/api/studio/posts/:slug、/api/studio/upload）。
  */
-export function getStaticPaths() {
-  // 空数组 = 构建期不预渲染任何 /studio/posts/xxx 页面。
-  // 访问这些地址时由边缘函数处理（见 functions/api/studio/[[path]].js）。
-  return [];
-}
 
 import StudioLayout from '@layouts/StudioLayout.astro';
 ---
@@ -194,8 +183,13 @@ import StudioLayout from '@layouts/StudioLayout.astro';
   const saveState = el<HTMLElement>('save-state');
   const pageTitle = el<HTMLElement>('page-title');
 
+  // /studio/posts/<slug>  → ['studio','posts','<slug>']，slug 固定在第 3 段（索引 2）
+  // /studio/posts/new      → 新建
+  // 注意：原先用 pathParts[3] 是错的（标准路径只有 3 段），会把所有编辑请求
+  // 都误判为「新建」，导致编辑已有文章时表单空白。
   const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const editingSlug = pathParts.length >= 4 ? decodeURIComponent(pathParts[3]) : null;
+  const editingSlug =
+    pathParts.length >= 3 && pathParts[1] === 'posts' ? decodeURIComponent(pathParts[2]) : null;
   const isNew = !editingSlug || editingSlug === 'new';
 
   let dirty = false;
