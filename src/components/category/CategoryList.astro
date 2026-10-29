@@ -1,5 +1,26 @@
 ---
-import { CONTENT_PADDING } from '@constants/layout';
+/**
+ * 分类列表 —— design-spec §5.4「两列分组卡」
+ *
+ * 结构：CSS Grid 两列（≤768 单列），每个格子 = 「一级分类行 + 它的子分类列表」。
+ *
+ * 为什么是 Grid 而不是旧版的 flex column 树：
+ *   旧版把所有层级塞进一列，靠 62px 圆点竖条 + 虚线底边表达层级，
+ *   8 个分类就要竖向滚一整屏。两列分组让「一级分类」在横向成为并列的
+ *   视觉单位，一屏能扫完；层级改由 1px 真实竖线表达（见 SubCategory）。
+ *
+ * 为什么分组内不再包一层「卡」：
+ *   §2.1 规定页面主体永远是最暗一档、浮起来的才变亮。给分组加底色等于
+ *   凭空造出 N 个亮色块，与「整页只有一处冷光源」的方向相反。分组感
+ *   完全由 24px 粗体标题 + 底部 1px --border + 32px 列间距建立。
+ *
+ * 发光：零发光。hover 只有「一级行标题变青 / 二级行竖线变青」两处（§2.5）。
+ *
+ * 可访问性：区块用 aria-label 而不是 sr-only 标题。面包屑最后一项已经写着
+ * 「共 N 个分类」，再放一个同名可见/隐藏标题会让读屏连续念两遍同一句话；
+ * aria-label 只在用户主动跳进这个 region 时才播报，不占用正文朗读顺序。
+ * 也不用可见的 26px Divider 标题 —— Hero 的 h1 就是「所有分类」，重复。
+ */
 import { buildCategoryPath, type Category, translateCategoryName } from '@lib/content';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
 import CategoryTitle from './CategoryTitle.astro';
@@ -8,38 +29,44 @@ import SubCategory from './SubCategory.astro';
 interface Props {
   categories: Category[];
   countMap: Record<string, number>;
-  totalCount: number;
+  /** 分类总数（含各级子分类）。不传则按 categories 递归数一遍。 */
+  totalCount?: number;
 }
+
 const { categories, countMap, totalCount } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
+
+/** 递归数分类总数：父组件传值时直接用，省一次遍历 */
+function countAll(list: Category[]): number {
+  return list.reduce((sum, item) => sum + 1 + (item.children?.length ? countAll(item.children) : 0), 0);
+}
+
+const count = totalCount ?? countAll(categories);
 ---
 
-<div class={`shadow-box mx-0 flex w-full flex-col bg-gradient-start ${CONTENT_PADDING.standard}`}>
-  <h2 class="shoka-decoration-circle group relative px-6 py-5 text-2xl/9 font-bold md:text-xl/9">
-    <a href={localizedPath('/', locale)} class="dashed-border text-muted-foreground group-hover:border-blue group-hover:text-blue border-b"> {t(locale, 'nav.home')} </a>
-    <span class="text-muted-foreground text-xl md:text-base">/</span> {t(locale, 'category.totalCategories', { count: totalCount })}
-  </h2>
-
-  <div class="flex w-full flex-col">
+<section
+  class="cat-list"
+  aria-label={`${t(locale, 'category.allCategories')}，${t(locale, 'category.totalCategories', { count })}`}
+>
+  <ul class="cat-groups">
     {
       categories.map((category) => (
-        <>
+        <li class="cat-groups__item">
           <CategoryTitle
             title={translateCategoryName(category.name, locale)}
-            count={countMap[category.name]}
+            count={countMap[category.name] ?? 0}
             href={localizedPath(buildCategoryPath(category.name), locale)}
-            className={category?.children?.length ? 'has-children' : ''}
           />
-          {category?.children?.length && (
-            <div class="category-first-level-container flex flex-col">
-              {category?.children?.length &&
-                category.children.map((child) => (
-                  <SubCategory category={child} parentName={category.name} countMap={countMap} />
-                ))}
-            </div>
-          )}
-        </>
+
+          {category.children?.length ? (
+            <ul class="cat-subs">
+              {category.children.map((child) => (
+                <SubCategory category={child} parentNames={[category.name]} countMap={countMap} />
+              ))}
+            </ul>
+          ) : null}
+        </li>
       ))
     }
-  </div>
-</div>
+  </ul>
+</section>

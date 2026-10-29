@@ -1,5 +1,4 @@
 ---
-import { MAX_WIDTH } from '@constants/layout';
 import { cn } from '@lib/utils';
 import type { BlogPost } from 'types/blog';
 import Footer from '@/components/layout/Footer.astro';
@@ -13,14 +12,22 @@ interface Props {
 const { className, post } = Astro.props;
 ---
 
+<!--
+  站点骨架（design-spec §1 / §4.2）
+  · 通栏 Hero（slot=cover）→ 12 列栅格
+  · 主栏在左、侧栏在右 320px（sticky top 80），阅读轴线与 Hero 标题左对齐
+  · ≤992：.cyber-aside 隐藏，侧栏内容改由 MobileDrawer 承载
+-->
 <div class="flex flex-col">
   <slot name="cover" />
-  <div class={cn('mx-auto md:mx-0 flex w-full items-start justify-center md:w-full', MAX_WIDTH.content, className)}>
-    <slot name="sider" />
-    <div class="flex min-w-0 grow flex-col gap-8 md:w-full">
+  <div class={cn('cyber-layout', className)}>
+    <div class="cyber-main flex flex-col gap-8">
       <slot />
       <PostFooter post={post} />
       <Footer />
     </div>
+    <aside class="cyber-aside scrollbar-hidden">
+      <slot name="sider" />
+    </aside>
   </div>
 </div>

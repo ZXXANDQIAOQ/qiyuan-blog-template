@@ -3,6 +3,12 @@
  *
  * Navigation header with scroll-based visibility control.
  * Uses useScrollTrigger hook for optimized scroll handling.
+ *
+ * 视觉（design-spec §6.1）：
+ * - 菜单项 14px / 600 / 字距 0.06em，padding 8×12，圆角 6
+ * - hover：底色白 5%，无位移
+ * - 激活：文字青 + 青底 9% + 下缘 2px 青条（60% 宽）+ 12px 青光
+ * - 右侧图标组：3 个 32×32 圆角 8 的图标按钮
  */
 
 import ThemeToggle from '@components/theme/ThemeToggle';
@@ -10,10 +16,10 @@ import { RESERVED_ROUTES } from '@constants/router';
 import { configuredSeriesSlugs, enabledSeriesSlugs, routers } from '@constants/site-config';
 import { useIsTablet } from '@hooks/useMediaQuery';
 import { useScrollTrigger } from '@hooks/useScrollTrigger';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn, filterNavItems } from '@lib/utils';
 import { memo, useEffect, useRef } from 'react';
-import { defaultLocale, localizedPath, resolveNavName, stripLocaleFromPath } from '@/i18n';
+import { defaultLocale, isI18nEnabled, localeEntries, localizedPath, resolveNavName, stripLocaleFromPath } from '@/i18n';
 import DropdownNav from './DropdownNav';
 import LanguageSwitcher from './LanguageSwitcher';
 import { SearchTrigger } from './SearchDialog';
@@ -28,7 +34,7 @@ const filteredRouters = filterNavItems(routers, configuredSeriesSlugs, enabledSe
 
 // Icon component for navigation items - uses @iconify/react for dynamic icons
 function NavIcon({ name }: { name: string }) {
-  return <Icon icon={name} className="mr-1.5 h-4 w-4" />;
+  return <Icon icon={name} className="mr-1.5 h-4 w-4 shrink-0" />;
 }
 
 // 归一化路径用于激活态比较：忽略末尾斜杠（Astro trailingSlash:'ignore' 下
@@ -54,10 +60,17 @@ function ButtonLink({ url, label, isActive, children }: ButtonLinkProps) {
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'relative flex items-center px-3 py-2 text-base tracking-wider',
-        'after:absolute after:bottom-1 after:left-1/2 after:block after:h-0.5 after:w-0 after:-translate-x-1/2 after:bg-current after:transition-all after:duration-300',
-        'hover:after:w-9/12',
-        isActive && 'after:w-9/12',
+        'relative flex items-center rounded-md px-3 py-2 text-sm font-semibold tracking-[0.06em] whitespace-nowrap',
+        'transition-colors duration-200 ease-in-out',
+        'hover:bg-white/5 hover:text-foreground',
+        isActive ? 'bg-primary/[0.09] text-primary' : 'text-muted-foreground',
+        // 下缘 2px 条：hover 只出 30% 短条（「我在这里」），激活才是 60% + 光（「你现在在这」）
+        'after:absolute after:bottom-0.5 after:left-1/2 after:block after:h-0.5 after:w-0 after:-translate-x-1/2',
+        'after:rounded-full after:bg-primary after:transition-[width] after:duration-200',
+        'after:ease-[cubic-bezier(0.25,1,0.5,1)]',
+        'hover:after:w-[30%]',
+        // 光值走统一档位（12px / 0.18），不手写透明度
+        isActive && 'after:w-[60%] after:shadow-[var(--glow-cyan-sm)]',
       )}
     >
       {children}
@@ -132,9 +145,10 @@ const Navigator = memo(function Navigator({ currentPath, locale = defaultLocale 
   }, []);
 
   return (
-    <div className="flex grow tablet:grow-0 items-center">
+    // ≤992 时不要让导航容器抢宽度，否则中间的移动端 logo 会被推到左半边
+    <div className="flex grow items-center tablet:grow-0">
       {/* Desktop navigation */}
-      <div className="flex tablet:hidden grow items-center">
+      <div className="flex grow items-center gap-0.5 tablet:hidden">
         {filteredRouters.map((item) => {
           const displayName = resolveNavName(item.nameKey, item.name, locale);
           if (item.children?.length) {
@@ -143,7 +157,12 @@ const Navigator = memo(function Navigator({ currentPath, locale = defaultLocale 
           if (!item.path || !displayName) return null;
           const localizedUrl = localizedPath(item.path, locale);
           return (
-            <ButtonLink key={item.path} url={localizedUrl} label={displayName} isActive={normalizePath(item.path) === normalizePath(strippedPath)}>
+            <ButtonLink
+              key={item.path}
+              url={localizedUrl}
+              label={displayName}
+              isActive={normalizePath(item.path) === normalizePath(strippedPath)}
+            >
               {item.icon && <NavIcon name={item.icon} />}
               {displayName}
             </ButtonLink>
@@ -151,12 +170,19 @@ const Navigator = memo(function Navigator({ currentPath, locale = defaultLocale 
         })}
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        <SearchTrigger />
-        <div className="tablet:hidden flex-center">
-          <LanguageSwitcher locale={locale} />
+      {/* 右侧图标组：搜索 / 语言 / 主题，统一 32×32（§6.1） */}
+      <div className="ml-auto flex items-center gap-1">
+        <div className="cyber-iconbtn">
+          <SearchTrigger />
         </div>
-        <ThemeToggle />
+        {isI18nEnabled && localeEntries.length > 1 && (
+          <div className="cyber-iconbtn tablet:hidden">
+            <LanguageSwitcher locale={locale} />
+          </div>
+        )}
+        <div className="cyber-iconbtn">
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );

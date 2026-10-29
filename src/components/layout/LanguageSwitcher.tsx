@@ -10,7 +10,7 @@
  */
 
 import Popover from '@components/ui/popover';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 import { memo, useCallback, useSyncExternalStore } from 'react';
 import { getAlternateUrl, getLocaleFromUrl, localeEntries } from '@/i18n';

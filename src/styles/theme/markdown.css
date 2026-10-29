@@ -1,45 +1,164 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * .prose —— 文章正文排版
+ * 依据：design-spec §5.3（详情页）/ §3.2（字号阶梯）/ §3.3（中文排版）
+ *       §6.19（代码块）/ §6.20（表格）/ §6.21（提示条）/ §9.1（对比度）
+ *
+ * 三条贯穿全文件的规则，改之前先读：
+ *
+ *  1. 正文宽 68ch，但代码块与表格必须能突破到 100%。
+ *     68ch 只压在「文字类」元素上，不压 <article> 容器上。若把 max-width 加在
+ *     容器上，子元素的 100% 也只能到 68ch —— 长代码右侧会空出一大片，横向滚动
+ *     的收益也没了（828px 主栏里 68ch ≈ 636px，差 190px）。
+ *
+ *  2. 代码块背景必须比正文底更暗（§6.19 硬规则，不是审美偏好）。
+ *     赛博那篇正文有 3 段代码块，底色一旦比正文亮，几个大色块会连成一条视觉带，
+ *     把 H2 从中轴线上挤下去。Shiki 把 github-dark 的 #24292e 写进 <pre> 的
+ *     行内 style，行内样式优先于样式表，所以这里必须 !important 才能压住。
+ *
+ *  3. 正文区零发光（§2.5-3）。
+ *     本文件不出现任何 box-shadow / text-shadow 的发光值，链接与强调文字也不发光。
+ * ═══════════════════════════════════════════════════════════════════════════ */
 .prose {
-  /* override the max-width of the prose */
+  /* 阅读列宽（§3.3：68ch ≈ 34 个汉字，落在 30–40 字舒适区） */
+  --prose-measure: 68ch;
+
+  /* 容器本身不限宽 —— 见规则 1，限宽落在文字元素上 */
   max-width: none;
 
-  a {
-    @apply text-primary hover:text-blue no-underline transition-colors duration-300 hover:underline;
+  color: hsl(var(--foreground));
+  font-family: var(--font-body);
+  font-size: 17px; /* §3.2 Body / 文章正文 */
+  line-height: 1.85;
+  letter-spacing: 0.012em;
+
+  /* 标点挤压（§3.3）：只给正文，标题与表格会在各自规则里改回 left */
+  text-align: justify;
+  text-justify: inter-ideograph;
+
+  /* 长英文 slug / URL 在 390 下撑破容器的兜底；对正常中文断行无影响 */
+  overflow-wrap: break-word;
+}
+
+/* 文字类：限宽 68ch。段落间距 1.25em、段首不缩进（§3.3） */
+.prose :where(p, ul, ol, dl, blockquote, .note-block) {
+  max-width: var(--prose-measure);
+}
+
+.prose :where(p) {
+  margin: 1.25em 0;
+  text-indent: 0;
+}
+
+/* 块级「可突破」元素：代码块 / 表格 / 图片 / 图表一律吃满主栏 100% */
+.prose :where(
+  pre,
+  table,
+  figure,
+  .markdown-image-wrapper,
+  .markdown-image-row,
+  .code-block-wrapper,
+  .mermaid-wrapper,
+  .infographic-wrapper,
+  .tab-group
+) {
+  max-width: 100%;
+}
+
+/* ≤480 正文降到 16px（§8 xs 档）；再小就伤中文可读性，不跟着 clamps 缩 */
+@media (max-width: 480px) {
+  .prose {
+    font-size: 16px;
+  }
+}
+
+/* ===========================================================================
+ * 代码块底色：必须写在顶层，且必须比 theme-transition.css 更硬
+ *
+ * theme-transition.css 里有一条给 Shiki 双主题用的规则：
+ *   html.dark .astro-code { background-color: var(--shiki-dark-bg) !important }
+ * 它把 github-dark 的 #24292e 刷到 <pre> 上 —— 比正文底 #0b0e14 亮得多，
+ * 正是 §6.19 要禁的那件事。压住它需要同时满足两点：
+ *   1. 特异性高于 (0,2,1)：这里 (0,3,2)；
+ *   2. 也带 !important（两边都是 !important 时比特异性）。
+ * 另外这两条必须放在 .prose 嵌套块之外 —— 嵌套会把 html 写成 .prose 的后代，
+ * 选择器直接失效（第一版就踩了这个坑，实测底色仍是 #24292e）。
+ * =========================================================================== */
+html.dark .prose pre.astro-code,
+html.dark .prose pre.astro-code code {
+  background-color: hsl(222 34% 4%) !important;
+}
+
+/* 浅色模式不能给近黑底，退回 surface-3 */
+html:not(.dark) .prose pre.astro-code {
+  background-color: hsl(var(--surface-3)) !important;
+}
+
+.prose {
+  /* ========== 正文链接 ==========
+   * §5.3：青色 + 下划线 offset 3px / thickness 1px，hover 时下划线由 0→100%
+   * 宽度走一遍（200ms），不加发光。
+   *
+   * 为什么不用 text-decoration 画那条动态线：
+   * text-decoration 无法做「宽度从 0 长到 100%」的扫描动画，只能整体换色。
+   * 这里改用双层 background-image —— 底层常驻一条 40% 透明度的暗线（保证链接
+   * 静止时仍可识别，满足「不靠动效传达状态」），hover 时上层亮线从左侧扫满。
+   * 线上位置用 padding-bottom 抬到字形外侧，视觉上等价于 offset 3px。 */
+  a:not(.anchor-link) {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    padding-bottom: 2px;
+    background-image:
+      linear-gradient(hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.4)),
+      linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    background-repeat: no-repeat;
+    background-position:
+      0 100%,
+      0 100%;
+    background-size:
+      100% 1px,
+      0% 1px;
+    transition: background-size var(--dur-base) var(--ease-out-expo);
   }
 
-  /* ========== 行内代码样式 ========== */
-  /* 移除 Typography 默认的反引号 */
+  a:not(.anchor-link):hover,
+  a:not(.anchor-link):focus-visible {
+    background-size:
+      100% 1px,
+      100% 1px;
+  }
+
+  /* 正文里的小标题不参与 justify */
+  :where(h1, h2, h3, h4, h5, h6) {
+    text-align: left;
+  }
+
+  /* 移除 Typography 默认给行内 code 加的反引号 */
   :not(pre) > code::before,
   :not(pre) > code::after {
     content: none;
   }
 
+  /* ========== 行内代码（§6.19） ==========
+   * 13px / padding 2px 6px / 圆角 4 / 青字压 10% 青底。
+   * 明确「无阴影、无 hover 变化」—— 旧版这里有一段 hover 加深的过渡，
+   * 看起来像可点的链接，正文里出现 `code` 的地方会误导读者去点。 */
   :not(pre) > code {
-    /* 背景色和圆角 */
-    background: hsl(var(--primary) / 0.08);
-    border-radius: 0.375rem;
-    color: hsl(var(--primary) / 0.8);
-
-    /* 阴影 */
-    box-shadow: 0 1px 2px 0 hsl(var(--primary) / 0.05);
-
-    /* 内边距 */
-    padding: 0.15rem 0.375rem;
-
-    /* 字体 */
-    font-size: 0.9em;
-    font-weight: 500;
-
-    /* Hover 效果 */
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
+    background: hsl(186 100% 55% / 0.1);
+    color: hsl(var(--primary));
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 400;
+    /* 与正文 17px/1.85 的行高对齐，避免行内 code 把行撑高 */
+    line-height: 1.6;
+    box-shadow: none;
+    transition: none;
   }
 
   :not(pre) > code:hover {
-    background: hsl(var(--primary) / 0.12);
-    border-color: hsl(var(--primary) / 0.2);
-    box-shadow: 0 2px 4px 0 hsl(var(--primary) / 0.1);
+    background: hsl(186 100% 55% / 0.1);
+    box-shadow: none;
   }
 
   /* Anchor link styles for Astro's automatic heading links */
@@ -56,53 +175,97 @@
     }
   }
 
-  /* ========== 标题样式优化 ========== */
-
-  /* For headings with anchor links */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  /* ========== 标题（§5.3 / §3.2） ==========
+   * H2 26 / 1.35 / 700 / -0.020em  + 左侧 4×18 青竖条
+   * H3 20 / 1.45 / 600 / -0.015em  + 左侧 4×4 菱形（旋转 45°）
+   * H4 17 / 1.55 / 600 / -0.010em
+   *
+   * 旧版那套「H2 / H3」级别小标签删了：它挂在 left:-1.5em 上，≤480 时会顶出容器，
+   * 而且读屏会把 "H2" 念进标题文本里。新规范用竖条/菱形做锚点，不需要文字标记。
+   */
+  :where(h1, h2, h3, h4, h5, h6) {
     position: relative;
-    scroll-margin-top: 4rem;
+    /* 锚点跳转后不被固定导航压住 */
+    scroll-margin-top: calc(var(--nav-h, 60px) + 20px);
+    max-width: var(--prose-measure);
+    color: hsl(var(--foreground));
+  }
+
+  :where(h2) {
+    font-size: 26px;
+    line-height: 1.35;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 2em 0 0.7em;
+    padding-left: 16px;
+  }
+
+  /* 竖条用绝对定位的 ::before，而不是 border-left：
+   * border-left 的高度只能等于整行行盒（26px × 1.35 ≈ 35px），规范要的是 18px。
+   * 竖条左缘直接压在与正文相同的 x 上（不给负 margin 外挂）—— 否则 ≤480 时
+   * 16px 的页面内边距会被吃掉，竖条贴着视口左边缘出血。 */
+  :where(h2)::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.22em;
+    width: 4px;
+    height: 18px;
+    background: hsl(var(--primary));
+    border-radius: 1px;
+  }
+
+  :where(h3) {
+    font-size: 20px;
+    line-height: 1.45;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 1.7em 0 0.6em;
+    padding-left: 16px;
+  }
+
+  :where(h3)::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.58em;
+    width: 4px;
+    height: 4px;
+    background: hsl(var(--primary));
+    transform: rotate(45deg);
+  }
+
+  :where(h4) {
+    font-size: 17px;
+    line-height: 1.55;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 1.5em 0 0.5em;
+  }
+
+  :where(h5) {
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 600;
+    letter-spacing: 0;
+    margin: 1.4em 0 0.5em;
+  }
+
+  :where(h6) {
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin: 1.4em 0 0.5em;
+  }
+
+  /* 悬停时显示标题右侧的锚点图标 */
+  :where(h1, h2, h3, h4, h5, h6) {
     &:hover .anchor-link::before {
       opacity: 1;
     }
-  }
-
-  /* 级别标签 */
-  h1::before,
-  h2::before,
-  h3::before,
-  h4::before,
-  h5::before,
-  h6::before {
-    content: attr(data-level);
-    position: absolute;
-    left: -1.5em;
-    bottom: 0;
-
-    /* 样式 */
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: hsl(var(--muted-foreground));
-    opacity: 0.5;
-
-    /* 等宽字体 */
-    font-family: ui-monospace, SFMono-Regular, monospace;
-
-    transition: opacity 0.3s ease;
-  }
-
-  h1:hover::before,
-  h2:hover::before,
-  h3:hover::before,
-  h4:hover::before,
-  h5:hover::before,
-  h6:hover::before {
-    opacity: 0.8;
   }
 
   /* 调整锚点链接居中对齐 */
@@ -150,18 +313,14 @@
     padding-left: 0;
   }
 
+  /* 删掉旧版 li:hover 底色：列表项不是可点元素，hover 变色会让人以为能点，
+   * 与行内 code 去掉 hover 是同一条理由。 */
   ul > li {
     position: relative;
     padding-left: 1.75rem;
     margin-top: 0.5em;
     margin-bottom: 0.5em;
-    transition: background-color 0.2s ease;
-    transition-delay: 50ms; /* 避免快速移动闪烁 */
     border-radius: 0.375rem;
-  }
-
-  ul > li:hover:not(:has(li:hover)) {
-    background: hsl(var(--primary) / 0.05);
   }
 
   /* 隐藏默认 marker */
@@ -214,16 +373,10 @@
     /* padding-inline-start: 0; */
     margin-top: 0.5em;
     margin-bottom: 0.5em;
-    transition: background-color 0.2s ease;
-    transition-delay: 50ms; /* 避免快速移动闪烁 */
     border-radius: 0.375rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
     padding-right: 0.5rem;
-  }
-
-  ol > li:hover:not(:has(li:hover)) {
-    background: hsl(var(--primary) / 0.05);
   }
 
   /* 隐藏默认 marker */
@@ -248,12 +401,14 @@
     height: 1.5rem;
     padding: 0 0.25rem;
 
-    font-size: 0.875rem;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: hsl(var(--primary));
 
     background: hsl(var(--primary) / 0.1);
-    border-radius: 9999px;
+    border-radius: 4px;
   }
 
   /* 嵌套有序列表 - 第二层（字母样式） */
@@ -305,33 +460,44 @@
     margin: 0;
   }
 
-  /* ========== 代码块 Mac 窗口样式 ========== */
-
-  /* 代码块容器 - 覆盖 Typography 默认样式 */
+  /* ========== 代码块（§6.19） ==========
+   * 背景 hsl(222 34% 4%) 比正文底 hsl(222 28% 6%) 更暗，这是硬规则：
+   * 代码块靠「更暗 + 1px 细描边 + 顶栏」被框出来，不靠提亮。见文件头规则 2。
+   * Shiki 把 #24292e 写进 <pre> 行内 style，所以 !important 是必需的，
+   * 不是为了覆盖某个同事的写法。 */
   pre {
     position: relative;
-    border-radius: 0 0 0.75rem 0.75rem;
-    border: 1px solid hsl(var(--border));
-    /* 重置 Typography 默认 padding */
+    margin: 1.5em 0;
     padding: 0;
     padding-inline-end: 0;
-    overflow: hidden;
-    margin: 0;
-    /* 覆盖 Typography 背景色 */
-    background-color: hsl(var(--card));
-    /* 阴影 */
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    /* 只做横向滚动：长行在 390 下必须能滚，不能撑破主栏 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: hsl(222 34% 4%) !important;
+    box-shadow: none;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    /* 缩进统一按 2 空格渲染，避免作者用 tab 时排版跳位 */
+    tab-size: 2;
+    -moz-tab-size: 2;
   }
+
+  /* 浅色模式下不能给近黑底，退回 surface-3（§2.3 浅色是可选项，但不许崩）。
+   * 这条写在文件末尾的顶层，因为它要匹配 html 祖先 —— 写在这里会被 CSS 嵌套
+   * 编译成 `.prose html:not(.dark) pre`，永远匹配不到。 */
 
   pre code {
     display: block;
-    padding: 1rem 1.5rem;
-    overflow-x: auto;
-    font-size: 0.875rem;
+    padding: 16px 20px;
+    font-size: 13px;
     line-height: 1.7;
+    font-family: var(--font-mono);
     /* 覆盖 Typography 默认值 */
     background-color: transparent;
     color: inherit;
+    tab-size: 2;
   }
 
   /* 移除 pre code 的 Typography ::before/::after */
@@ -340,17 +506,173 @@
     content: none;
   }
 
+  /* ========== 表格（§6.20） ==========
+   * 用 display:block + overflow-x 的经典写法：表格本体变成横向滚动容器，
+   * 内部各行仍按表格布局排（浏览器会补一层匿名 table box），这样 390 下宽表
+   * 可以横滚而不会撑破主栏；边框与圆角挂在滚动容器上，四角因此是圆的。
+   * 表头 44 高 / 13px 600 字距 0.04em、单元格 12×16、行 hover 青 5%、
+   * 不用斑马纹 —— 深色底上条纹会和代码块抢注意力。 */
   table {
     display: block;
+    width: 100%;
+    margin: 1.5em 0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  thead {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  th {
+    height: 44px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: hsl(var(--foreground));
+    text-align: left;
+    border-bottom: 1px solid hsl(var(--border) / 0.7);
+  }
+
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: hsl(var(--foreground));
+    text-align: left;
+    border-bottom: 1px solid hsl(var(--border) / 0.7);
+    /* 数字对齐：CSS 判断不了「哪一列是数字列」，所以统一上等宽数字，
+     * 让「412 行 / 60 行」这类数字在列内天然对齐。不强制右对齐 —— 单元格里是
+     * 「数字 + 单位 + 补充说明」，右对齐会把补充说明顶到左边，反而更难读。
+     * 真正的数字列右对齐需要内容侧给出列标记，见交付报告的遗留问题。 */
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  tbody tr:hover {
+    background: hsl(186 100% 55% / 0.05);
+  }
+
+  /* ========== 正文提示条（§6.21） ==========
+   * 正文里的 ::: 容器沿用页面上「fallback 提示条」的同一套规格：
+   * 2px 左色条 + 8% 同色底 + 14px/1.7 文字，四色映射到语义变量
+   * （info 青 / success / warning 琥珀 / danger）。
+   *
+   * 与规范的一处偏差要说清：icon 不是内联 flex 子元素，而是 React 水合后
+   * 插进来的绝对定位 .note-icon-mount（见 content-scanner.ts scanNoteBlocks）。
+   * 所以没法直接写「icon 16px + 12px 16px 内距」，改成左内距 40px 给图标留出
+   * 16px 图标 + 10px 间隙的位置。emoji 兜底 ::before 在这里一并关掉，
+   * 避免水合前闪一下 emoji。 */
+  .note-block {
+    --note-color: var(--primary);
+    position: relative;
+    margin: 1.5em 0;
+    padding: 12px 16px 12px 40px;
+    border-left: 2px solid hsl(var(--note-color));
+    border-radius: 8px;
+    background: hsl(var(--note-color) / 0.08);
+    font-size: 14px;
+    line-height: 1.7;
+    color: hsl(var(--foreground));
+  }
+
+  .note-block::before {
+    content: none;
+  }
+
+  .note-block .note-icon-mount {
+    left: 14px;
+    top: 14px;
+    font-size: 16px;
+    color: hsl(var(--note-color));
+  }
+
+  .note-block.note-info,
+  .note-block.note-primary,
+  .note-block.note-default {
+    --note-color: var(--primary);
+  }
+
+  .note-block.note-success {
+    --note-color: var(--success);
+  }
+
+  .note-block.note-warning {
+    --note-color: var(--neon-amber);
+  }
+
+  .note-block.note-danger {
+    --note-color: var(--destructive);
   }
 }
 
-/* ========== Code/Mermaid/Infographic wrapper layout ========== */
+/* ========== Code / Mermaid / Infographic wrapper layout ========== */
+
+/* ========== 代码块顶栏（Mac 窗口条） ==========
+ * 顶栏是 ContentEnhancer 水合后才出现的 React 组件（CodeBlockToolbar / MacToolbar），
+ * 它自带一套 Tailwind 类。这里不改组件源码，只在样式表层把它校到 §6.19 的数值：
+ * 高 32 / 底 rgba(255,255,255,.03) / 底边 1px --border / 10 圆角 / 圆点 8px。
+ * 顶栏是代码块里唯一允许比容器亮的部分 —— 靠它把「一张深色卡片」读成「一个窗口」。
+ *
+ * 选择器用 > 直接子级 + 元素名，特异性 (0,1,1) 压过 Tailwind 的单类 (0,1,0)，
+ * 不依赖样式表加载顺序。 */
+.code-block-wrapper-toolbar-mount > div {
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid hsl(var(--border));
+  border-radius: 10px 10px 0 0;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/* 顶栏行高 32：去掉组件自带的 py-2，垂直靠 flex 居中 */
+.code-block-wrapper-toolbar-mount > div > div {
+  height: 32px;
+  padding-block: 0;
+  align-items: center;
+}
+
+/* 三个 macOS 圆点：12px → 8px，降饱和到 0.5（§6.19，避免彩色圆点抢青色的注意力） */
+.code-block-wrapper-toolbar-mount .rounded-full {
+  width: 8px;
+  height: 8px;
+  opacity: 0.5;
+}
+
+/* 语言标签：11px mono / 字距 0.06em / --primary */
+.code-block-wrapper-toolbar-mount span.font-mono {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: hsl(var(--primary));
+}
+
+/* 顶栏按钮收到 32×32 / 圆角 6 */
+.code-block-wrapper-toolbar-mount button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+/* 顶栏在场时，pre 只保留下方圆角，且去掉重复的外边距 */
+.code-block-wrapper pre {
+  margin: 0;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+}
 
 .code-block-wrapper {
-  margin-bottom: 1.25rem;
+  margin: 1.5em 0;
 }
 
 /* 如果第一个子节点就是标题 */
@@ -532,22 +854,11 @@
   opacity: 0.7;
 }
 
-/* ========== 深色模式样式 ========== */
-
-/* 深色模式 - 行内代码 */
-.dark .prose :not(pre) > code {
-  background: hsl(var(--background) / 0.8);
-}
-
-.dark .prose :not(pre) > code:hover {
-  background: hsl(var(--background) / 0.4);
-}
-
-/* 深色模式 - 列表 hover */
-.dark .prose ul > li:hover:not(:has(li:hover)),
-.dark .prose ol > li:hover:not(:has(li:hover)) {
-  background: hsl(var(--primary) / 0.1);
-}
+/* ========== 深色模式 ==========
+ * 原来这里有一条「深色下把行内 code 背景换成 background/0.8」的覆盖，
+ * 会把 §6.19 的 10% 青底盖成一片近白不透明的灰底，行内 code 反而比正文更暗、
+ * 与正文分不开。深色既是主模式，行内 code 就按 §6.19 的原值走，不需要覆盖。
+ * 列表 hover 同理：已经删掉，不在这里补回来。 */
 
 /* ========== Mermaid layout styles ========== */
 
@@ -657,15 +968,18 @@
   text-decoration: underline;
 }
 
-/* Line highlighting (mark) */
+/* 行高亮（§6.19）：青 7% 底 + 左缘 2px 青条。
+ * 旧版是琥珀底 + 3px 琥珀条，琥珀在规范里只留给「提示/草稿/警告」，
+ * 正文高亮用它会被读成「这一行有错」。
+ * 左右内距与 <pre code> 的 20px 对齐，否则高亮条会比代码块左右各缩进几像素。 */
 .prose pre code .line-highlight {
-  background: hsl(var(--shoka-warning) / 0.12);
-  margin: 0 -1.5rem;
-  padding: 0 1.5rem;
+  background: hsl(186 100% 55% / 0.07);
+  margin: 0 -20px;
+  padding: 0 20px;
   display: inline-block;
-  width: calc(100% + 3rem);
-  border-left: 3px solid hsl(var(--shoka-warning));
-  padding-left: calc(1.5rem - 3px);
+  width: calc(100% + 40px);
+  border-left: 2px solid hsl(var(--primary));
+  padding-left: 18px;
 }
 
 /* Command prompt */

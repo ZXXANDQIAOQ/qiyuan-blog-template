@@ -1,12 +1,40 @@
 ---
+/**
+ * 单个分类下的文章 —— design-spec §5.4（/categories/[...slug]）
+ *
+ * 结构：Hero 220（title 模式）→ 面包屑 → 分类计数 + 描述 → 子分类导航（可选）
+ *       → 单列横向卡列表（复用 <PostList>）。
+ *
+ * Hero 的一句妥协：§5.4 写「Hero 240px 带分类名 + 计数」，但 Cover 只有
+ * 160/220/320 三档、且归卡片层所有，不在本次改动范围。这里用 220 的 title 模式，
+ * 计数改由主栏顶部一行 12px mono 承担（`.cat-detail__count`）——
+ * 标题下方紧跟一行等宽计数，与 Hero 里「标题 + meta」是同一个阅读顺序，
+ * 信息不丢，只是换了落点。不动 Cover。
+ *
+ * 分类描述的数据来源：`config/site.yaml` 的 featuredCategories[].description
+ * 只覆盖首页那 3 个分类，但 `config/i18n-content.yaml` 给 en/ja 补了更细的
+ * 条目（含 note/front-end 这类子分类）。所以先查 i18n 内容表、再落回 site.yaml，
+ * 两处都没有就不渲染这一段 —— 分类没有描述是正常状态，不需要占位。
+ */
 import CategoryPostList from '@components/category/CategoryPostList.astro';
 import HomeSider from '@components/layout/HomeSider.astro';
+import Breadcrumb from '@components/ui/Breadcrumb.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { seoConfig } from '@constants/site-config';
+import { seoConfig, siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
-import { getCategoryByLink, getCategoryLinks, getCategoryList, translateCategoryName } from '@lib/content';
-import { defaultLocale, getLocaleFromUrl, t } from '@/i18n';
+import {
+  buildCategoryPath,
+  getCategoryByLink,
+  getCategoryLinks,
+  getCategoryList,
+  getCategoryNameByLink,
+  getPostsByCategory,
+  translateCategoryName,
+} from '@lib/content';
+import { toPostCardDataList } from '@lib/content/transforms';
+import { getContentFeaturedCategoryField } from '@/i18n/content';
+import { defaultLocale, getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 export async function getStaticPaths() {
   const { categories } = await getCategoryList(defaultLocale);
@@ -24,20 +52,73 @@ const { category: propCategory } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const { categories: allCategories, countMap } = await getCategoryList(locale);
 
-// Re-derive category from locale-aware data to ensure consistency with countMap.
-// When rendered by [lang]/ mirrors, propCategory comes from a different getCategoryList call;
-// re-deriving from the same data source prevents subtle mismatches.
-const slug = Astro.params.slug;
+/**
+ * 重新用 locale 感知的数据推一次 category：被 [lang] 镜像渲染时，propCategory
+ * 来自另一份 getCategoryList 调用，与 countMap 不同源会算出错数。
+ */
+const slug = Astro.params.slug ?? '';
 const category = slug ? getCategoryByLink(allCategories, slug) : propCategory;
 
-// 如果是子分类，只展示当前分类的内容
-const displayCategories = category ? [category] : allCategories;
+const currentName = translateCategoryName(category?.name ?? '', locale);
+
+/** 文章列表交给 PostList，先转成轻量 PostCardData（Phase 1 定下的契约） */
+const posts = category ? await getPostsByCategory(category.name, locale) : [];
+const postCards = toPostCardDataList(posts, locale);
+
+/**
+ * 面包屑逐级回溯。真实内容目前只有一级分类，但模板支持
+ * categories: [[笔记, 后端, 数据结构]] 这种多级路径，所以按 URL 段逐级还原：
+ * 第 i 段之前的所有段就是它的祖先链，用 buildCategoryPath 拼链接即可。
+ */
+const segments = slug.split('/').filter(Boolean);
+const ancestorNames = segments.slice(0, -1).map((_, i) => getCategoryNameByLink(segments[i]));
+
+/** 面包屑项：与 Breadcrumb 的 Crumb 契约一致（最后一项省略 href） */
+const crumbs: { label: string; href?: string }[] = [
+  { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
+  ...ancestorNames.map((name, i) => ({
+    label: translateCategoryName(name, locale),
+    href: localizedPath(buildCategoryPath(ancestorNames.slice(0, i + 1)), locale),
+  })),
+  /** 最后一项是「你现在在哪」，Breadcrumb 会自动渲染成当前页样式且不带链接 */
+  { label: currentName },
+];
+
+/** 当前分类从根到自身的名称链，子分类导航要用它拼完整路径 */
+const categoryNames = [...ancestorNames, category?.name ?? ''].filter(Boolean);
+
+/** 先 i18n 内容表、再 site.yaml；两处都没有返回空串（此段不渲染） */
+const description =
+  getContentFeaturedCategoryField(locale, slug, 'description') ??
+  siteConfig.featuredCategories?.find((item) => item.link === slug)?.description ??
+  '';
 ---
 
-<Layout title={`${t(locale, 'category.postsInCategory', { name: translateCategoryName(category?.name ?? '', locale) })} | ${seoConfig.title}`}>
+<Layout title={`${t(locale, 'category.postsInCategory', { name: currentName })} | ${seoConfig.title}`} description={description || currentName}>
   <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'category.postsInCategory', { name: translateCategoryName(category?.name ?? '', locale) })} />
+    <Cover slot="cover" title={t(locale, 'category.postsInCategory', { name: currentName })} />
     <HomeSider slot="sider" />
-    <CategoryPostList rootCategory={category} categories={displayCategories} countMap={countMap} />
+
+    <div class="cyber-stack">
+      <Breadcrumb items={crumbs} />
+
+      <section class="cyber-section">
+        {
+          category && (
+            <div class="cat-detail">
+              <p class="cat-detail__count">{t(locale, 'category.postCount', { count: posts.length })}</p>
+              {description && <p class="cat-desc">{description}</p>}
+            </div>
+          )
+        }
+
+        <CategoryPostList
+          category={category}
+          categoryNames={categoryNames}
+          posts={postCards}
+          countMap={countMap}
+        />
+      </section>
+    </div>
   </TwoColumnLayout>
 </Layout>

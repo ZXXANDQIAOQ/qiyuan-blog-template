@@ -1,22 +1,62 @@
 ---
+/**
+ * 所有分类 —— design-spec §5.4（/categories）
+ *
+ * 结构：Hero 220（title 模式）→ 主栏 .cyber-stack 里「面包屑 + 两列分组卡」。
+ *
+ * 删掉的东西（旧版三件套）：
+ *   · `shadow-box` —— 一圈软阴影。深色底上 rgba(0,0,0,.45) 根本看不见，
+ *     只会让主栏看起来脏；
+ *   · `bg-gradient-start` —— 主栏一整块底色。§2.1 的分层原则是「页面主体永远
+ *     是最暗一档，浮起来的才变亮」，主栏铺底色等于把内容整体抬亮一级；
+ *   · `CONTENT_PADDING.standard` —— 40px 内距。它和 .cyber-layout 的
+ *     --page-pad-x 是同一份 gutter，叠起来主栏会白吃 80px（§4.2 明确禁止
+ *     页面层再包内边距）。
+ *
+ * 现在间距全部交给 .cyber-stack（区块 48/64px）与 .cyber-section（标题↔内容 20px），
+ * 页面层不写任何 padding / 背景 / gap。
+ *
+ * 面包屑最后一项带「共 N 个分类」而不是「所有分类」：Hero 标题已经是「所有分类」，
+ * 重复一次没有信息量；数量才是这一页真正想告诉用户的事，也是 §5.2 给 /posts
+ * 定下的写法（首页 / 共 N 篇文章）。
+ */
 import CategoryList from '@components/category/CategoryList.astro';
 import HomeSider from '@components/layout/HomeSider.astro';
+import Breadcrumb from '@components/ui/Breadcrumb.astro';
 import Cover from '@components/ui/cover/Cover.astro';
 import { seoConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { getCategoryLinks, getCategoryList } from '@lib/content';
-import { getLocaleFromUrl, t } from '@/i18n';
+import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const { categories, countMap } = await getCategoryList(locale);
-const links = getCategoryLinks(categories, '');
+
+/**
+ * 分类总数含各级子分类 —— 用户点进来要的正是「这里一共有多少个入口」，
+ * 只数一级分类会在有嵌套分类时少数。
+ */
+const totalCount = getCategoryLinks(categories, '').length;
 ---
 
-<Layout title={`${t(locale, 'category.allCategories')} | ${seoConfig.title}`}>
+<Layout
+  title={`${t(locale, 'category.allCategories')} | ${seoConfig.title}`}
+  description={t(locale, 'category.allCategories')}
+>
   <TwoColumnLayout>
     <Cover slot="cover" title={t(locale, 'category.allCategories')} />
     <HomeSider slot="sider" />
-    <CategoryList categories={categories} countMap={countMap} totalCount={links.length ?? 0} />
+
+    <div class="cyber-stack">
+      <Breadcrumb
+        items={[
+          { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
+          { label: t(locale, 'category.totalCategories', { count: totalCount }) },
+        ]}
+      />
+
+      <CategoryList categories={categories} countMap={countMap} totalCount={totalCount} />
+    </div>
   </TwoColumnLayout>
 </Layout>

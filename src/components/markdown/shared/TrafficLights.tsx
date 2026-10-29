@@ -1,10 +1,14 @@
 /**
  * Mac window traffic light dots (red, yellow, green).
  * When handlers are provided, dots become interactive buttons with hover icons.
+ *
+ * 图标从 mingcute 换成 ri：mingcute 集合没装在 node_modules/@iconify-json 里，
+ * 这两个图标只能走运行时 API，网络一慢就留白 + 刷 console error。
+ * ri 里的 close-line / fullscreen-line 视觉足够接近，而且已经随离线注册表打包。
  */
 
 import { useTranslation } from '@hooks/useTranslation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 
 interface TrafficLightsProps {
@@ -21,14 +25,14 @@ export function TrafficLights({ onClose, onFullscreen }: TrafficLightsProps) {
         color="bg-[#ff5f56]"
         onClick={onClose}
         aria-label={t('common.close')}
-        icon={onClose ? <Icon icon="mingcute:close-fill" className="text-black" /> : null}
+        icon={onClose ? <Icon icon="ri:close-line" className="text-black" /> : null}
       />
       <TrafficDot color="bg-[#ffbd2e]" icon={null} />
       <TrafficDot
         color="bg-[#27c93f]"
         onClick={onFullscreen}
         aria-label={t('code.fullscreen')}
-        icon={onFullscreen ? <Icon icon="mingcute:fullscreen-2-fill" className="text-black" /> : null}
+        icon={onFullscreen ? <Icon icon="ri:fullscreen-line" className="text-black" /> : null}
       />
     </div>
   );

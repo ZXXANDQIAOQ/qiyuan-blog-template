@@ -1,0 +1,112 @@
+---
+/**
+ * 面包屑 —— design-spec §6.16
+ *
+ * 高 40 / 13px / --muted-foreground；分隔符 `›`（--border 色）；
+ * 当前页（最后一项）13px 500 --foreground + hsl(var(--primary)/0.08) 底 + 圆角 4。
+ *
+ * 设计取舍：
+ *   · 最后一项不带链接（它就是当前位置），因此 items 里 href 可省；
+ *   · 荧光零发光 —— 面包屑是导航辅助，不是视觉锚点，页面发光配额要留给
+ *     Hero 标题和导航激活项；
+ *   · 分隔符用 ::before 画在 <li> 上，DOM 里不塞装饰性 <span>，读屏更干净。
+ *
+ * 全站 /posts、/categories、/tags、/archives、文章详情共用，改这一处全站生效。
+ */
+export interface Crumb {
+  label: string;
+  href?: string;
+}
+
+/**
+ * 注意：这里必须叫 `Props` 而不是 `BreadcrumbProps`。
+ * Astro 只按名字 `Props` 去推导 props 类型，换个名字 `Astro.props` 就是 any，
+ * `items.map((item, i) =>` 会连带变成隐式 any —— `astro check` 会直接报错。
+ */
+export interface Props {
+  items: Crumb[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props as Props;
+---
+
+{
+  items.length > 0 && (
+    <nav class:list={['cyber-crumbs', className]} aria-label="breadcrumb">
+      <ol>
+        {items.map((item, i) => {
+          const isLast = i === items.length - 1;
+          return (
+            <li>
+              {item.href && !isLast ? (
+                <a href={item.href} data-astro-prefetch="hover">
+                  {item.label}
+                </a>
+              ) : (
+                <span class="cyber-crumbs__current" aria-current={isLast ? 'page' : undefined}>
+                  {item.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  )
+}
+
+<style>
+  .cyber-crumbs {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding-inline: 4px;
+  }
+
+  .cyber-crumbs ol {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cyber-crumbs li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* 分隔符：挂在除首项之外的每一项前面 */
+  .cyber-crumbs li + li::before {
+    content: '›';
+    font-size: 14px;
+    line-height: 1;
+    color: hsl(var(--border));
+  }
+
+  .cyber-crumbs a {
+    color: hsl(var(--muted-foreground));
+    text-decoration: none;
+    transition: color var(--dur-base) var(--ease-out-expo);
+  }
+
+  .cyber-crumbs a:hover {
+    color: hsl(var(--primary));
+  }
+
+  .cyber-crumbs__current {
+    font-size: 13px;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+    background: hsl(var(--primary) / 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+</style>

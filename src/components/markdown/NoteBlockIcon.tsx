@@ -1,4 +1,4 @@
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 
 const NOTE_TYPES = ['default', 'primary', 'info', 'success', 'warning', 'danger'] as const;
 export type NoteType = (typeof NOTE_TYPES)[number];

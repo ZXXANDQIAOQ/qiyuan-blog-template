@@ -1,11 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="placeholder avatar">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="avatarTitle">
+  <title id="avatarTitle">站点作者头像</title>
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#6366f1"/>
-      <stop offset="100%" stop-color="#22d3ee"/>
+    <!-- 深空底：比页面底再深一档，让头像在玻璃卡上「沉」下去 -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#151c28"/>
+      <stop offset="55%" stop-color="#0d131c"/>
+      <stop offset="100%" stop-color="#080b11"/>
     </linearGradient>
+    <!-- 中心柔光：把字形从深底里「托」起来 -->
+    <radialGradient id="halo" cx="50%" cy="48%" r="52%">
+      <stop offset="0%" stop-color="#1ae8ff" stop-opacity="0.20"/>
+      <stop offset="65%" stop-color="#1ae8ff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#1ae8ff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#8cc8e6" stroke-opacity="0.09" stroke-width="1"/>
+    </pattern>
   </defs>
-  <rect width="200" height="200" fill="url(#g)"/>
-  <circle cx="100" cy="78" r="34" fill="#ffffff" opacity="0.92"/>
-  <path d="M40 176c0-33 27-54 60-54s60 21 60 54z" fill="#ffffff" opacity="0.92"/>
+
+  <!-- 深空底 + 32px 网格（与全站 Hero 同一套纹理，圆角由 CSS 提供） -->
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <rect width="256" height="256" fill="url(#grid)"/>
+  <rect width="256" height="256" fill="url(#halo)"/>
+
+  <!-- 站点首字「烁」 -->
+  <text
+    x="128"
+    y="130"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="'PingFang SC','HarmonyOS Sans SC','Noto Sans SC','Source Han Sans SC','Microsoft YaHei',sans-serif"
+    font-size="120"
+    font-weight="700"
+    letter-spacing="2"
+    fill="#1ae8ff"
+  >烁</text>
+
+  <!-- 四角刻度：赛博仪表盘感，不干扰字形 -->
+  <g stroke="#1ae8ff" stroke-opacity="0.42" stroke-width="3" stroke-linecap="round">
+    <path d="M34 20v-8h8"/>
+    <path d="M222 20v-8h-8"/>
+    <path d="M34 236v8h8"/>
+    <path d="M222 236v8h-8"/>
+  </g>
+
+  <!-- 底部状态灯：3 个小点中亮 1 个 -->
+  <g fill="#1ae8ff">
+    <circle cx="112" cy="226" r="3.5" fill-opacity="0.85"/>
+    <circle cx="128" cy="226" r="3.5" fill-opacity="0.28"/>
+    <circle cx="144" cy="226" r="3.5" fill-opacity="0.28"/>
+  </g>
 </svg>

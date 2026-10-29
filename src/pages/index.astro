@@ -1,8 +1,29 @@
 ---
+/**
+ * 首页 —— design-spec §5.1
+ *
+ * 结构：通栏 Hero → 12 列（主栏左 / 侧栏右 320）→ 主栏内三个区块
+ *   ① 置顶（唯一一张 feature 卡）
+ *   ② 文章列表（带 01/02 序号 + 分页器）
+ *   ③ 精选分类（配置为空则整段消失）
+ *
+ * 与旧版的三个区别（都是规范要求，不是风格选择）：
+ *   1. 删掉 `CONTENT_PADDING.standard` + `bg-gradient-start` + `shadow-box` 那个
+ *      「主栏一张大卡片 + 40px 内距」的 Shoka 外壳 —— §5.1 取消大卡片，区块之间
+ *      靠 `.cyber-stack` 的留白分节。外壳留着会把卡片二次缩窄 80px。
+ *   2. 置顶区**只允许一张 feature 卡**（§6.23-A「首页唯一一张」）：把第 2 篇及
+ *      以后的置顶文章并入下方列表头部，既不丢文章，也不会出现两张满宽封面打架。
+ *   3. 列表项序号由 `showSequence` 交给 PostList 生成（§6.6：序号是「位置」不是
+ *      「身份」），这里不再做封面左右交替 —— §5.1 已明确取消交替切角。
+ *
+ * 分页器是否出现**不做硬编码**：`page.lastPage` 由 `total / pageSize` 自然推导，
+ * 当前 5 篇 < 10 所以不渲染，文章变多自动生效（见 Paginator.astro 的 total > 1 判断）。
+ */
 import HomeSider from '@components/layout/HomeSider.astro';
+import CategoryCards from '@components/post/CategoryCards.astro';
 import PostList from '@components/post/PostList.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING, PAGINATION } from '@constants/layout';
+import { PAGINATION } from '@constants/layout';
 import { seoConfig, siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
@@ -10,66 +31,92 @@ import { getHomePagePosts } from '@lib/content';
 import { toPostCardDataList } from '@lib/content/transforms';
 import type { Page } from 'astro';
 import type { BlogPost } from 'types/blog';
-import CategoryCards from '@/components/post/CategoryCards.astro';
 import Divider from '@/components/ui/divider';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 
-// 使用优化的单次查询获取所有首页数据
+// 单次查询拿齐首页三份数据（高亮系列 / 置顶 / 普通）
 const { highlightedPosts, stickyPosts: normalStickyPosts, regularPosts } = await getHomePagePosts(locale);
 
-// 将高亮系列文章放在置顶列表开头（转换为卡片数据）
+// 高亮系列文章排在置顶列表前面，保证系列首篇拿到那张唯一的 feature 卡
 const stickyPosts = toPostCardDataList([...highlightedPosts, ...normalStickyPosts], locale);
 
-// 首页显示前N篇普通文章（不含系列文章）
+// §6.23-A：置顶区只渲染一篇；其余置顶并入下方列表头部，不能凭空消失
+const [featurePost, ...restSticky] = stickyPosts;
+
+// 首页显示前 N 篇普通文章（不含系列文章）
 const { pageSize } = PAGINATION;
 const regularPostsSlice = regularPosts.slice(0, pageSize);
 const posts = toPostCardDataList(regularPostsSlice, locale);
+
+// 合并后的列表：置顶的第 2 篇起在前，普通文章在后 —— 序号 01/02/03 按合并后的位置算
+const listPosts = [...restSticky, ...posts];
+
 const totalRegularPosts = regularPosts.length;
 
 const homeUrl = localizedPath('/', locale);
 const postsBaseUrl = localizedPath('/posts', locale);
 
+// 分页推导：不写死「当前 5 篇所以隐藏」，lastPage 只由 total / pageSize 决定
+const lastPage = Math.max(1, Math.ceil(totalRegularPosts / pageSize));
+
 const page: Page<BlogPost> = {
   data: regularPostsSlice,
   start: 0,
-  end: Math.min(pageSize - 1, regularPostsSlice.length - 1),
+  end: regularPostsSlice.length,
   size: pageSize,
   total: totalRegularPosts,
   currentPage: 1,
-  lastPage: Math.ceil(totalRegularPosts / pageSize),
+  lastPage,
   url: {
     current: homeUrl,
     prev: undefined,
-    next: totalRegularPosts > pageSize ? `${postsBaseUrl}/2` : undefined,
+    // 第 1 页的下一页是 /posts/2（不是 /posts），和 Paginator 的 getPageUrl 保持一致
+    next: lastPage > 1 ? `${postsBaseUrl}/2` : undefined,
     first: homeUrl,
-    last: `${postsBaseUrl}/${Math.ceil(totalRegularPosts / pageSize)}`,
+    last: `${postsBaseUrl}/${lastPage}`,
   },
 };
+
+const featuredCategories = siteConfig?.featuredCategories ?? [];
 ---
 
 <Layout title={seoConfig.title}>
   <TwoColumnLayout>
     <Cover slot="cover" />
     <HomeSider slot="sider" />
-    <div
-      class={`bg-gradient-start shadow-box tablet:shadow-none flex flex-col gap-4 overflow-hidden  ${CONTENT_PADDING.standard}`}
-    >
-      {stickyPosts.length > 0 && (
-        <>
-          <Divider>{t(locale, 'post.stickyPosts')}</Divider>
-          <PostList posts={stickyPosts} showPaginator={false} />
-        </>
-      )}
-      <Divider>{t(locale, 'post.postList')}</Divider>
-      <PostList posts={posts} page={page} showPaginator={true} baseUrl={postsBaseUrl} isHomePage={true} />
-      {!!siteConfig?.featuredCategories?.length && (
-        <>
-          <Divider className="mt-6">{t(locale, 'post.featuredCategories')}</Divider>
-          <CategoryCards />
-        </>
-      )}
+    <div class="cyber-stack">
+      {
+        featurePost && (
+          <section class="cyber-section">
+            <Divider>{t(locale, 'post.stickyPosts')}</Divider>
+            {/* 显式 variant="feature"：不依赖 PostList 的「1 篇 + 无分页器」推断，
+                否则以后置顶变 2 篇时形态会静默变化 */}
+            <PostList posts={[featurePost]} variant="feature" showPaginator={false} showSequence={false} />
+          </section>
+        )
+      }
+      <section class="cyber-section">
+        <Divider>{t(locale, 'post.postList')}</Divider>
+        <PostList
+          posts={listPosts}
+          page={page}
+          variant="list"
+          showPaginator={true}
+          baseUrl={postsBaseUrl}
+          isHomePage={true}
+          showSequence={true}
+        />
+      </section>
+      {
+        featuredCategories.length > 0 && (
+          <section class="cyber-section">
+            <Divider>{t(locale, 'post.featuredCategories')}</Divider>
+            <CategoryCards />
+          </section>
+        )
+      }
     </div>
   </TwoColumnLayout>
 </Layout>

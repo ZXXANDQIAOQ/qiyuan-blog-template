@@ -14,43 +14,50 @@ const { type = HomeSiderType.HOME, post } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 ---
 
-<!-- 遮罩层 -->
-<div id="drawer-overlay" class="fixed inset-0 z-40 hidden bg-black/50" role="presentation" aria-hidden="true"></div>
+<!-- 遮罩层（§6.11）：rgba(6,9,14,0.66) + blur(4px) -->
+<div
+  id="drawer-overlay"
+  class="fixed inset-0 z-40 hidden bg-[rgba(6,9,14,0.66)] backdrop-blur-[4px]"
+  role="presentation"
+  aria-hidden="true"
+>
+</div>
 
-<!-- 移动端抽屉导航 -->
+<!-- 移动端抽屉导航：宽 min(86vw, 320px)，深色玻璃 + 右缘 1px 高光 -->
 <div
   id="mobile-drawer"
-  class="bg-gradient-start fixed inset-y-0 left-0 z-50 flex hidden h-[100dvh] w-[70vw] min-w-64 max-w-xs -translate-x-full transform flex-col shadow-lg backdrop-blur-sm transition-transform duration-300 md:px-0"
+  class="fixed inset-y-0 left-0 z-50 flex hidden h-[100dvh] w-[min(86vw,320px)] -translate-x-full transform flex-col border-r border-white/[0.08] bg-[hsl(222_27%_8%/0.96)] shadow-[var(--shadow-pop)] backdrop-blur-[20px] transition-transform duration-[280ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
   role="dialog"
   aria-label={t(locale, 'drawer.navMenu')}
   aria-modal="true"
 >
-  <div class="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pt-3">
-    <div class="flex shrink-0 items-center">
-      <button id="close-drawer" aria-label={t(locale, 'drawer.close')} class="invisible">
-        <Icon name="ri:close-line" class="h-6 w-6" />
-      </button>
+  <div class="flex h-full min-h-0 w-full flex-col overflow-hidden px-4">
+    <!-- 顶部区（§6.11）：高 64，语言切换在左、关闭按钮在右
+         —— 关闭按钮不放左上角，避免与吸顶的汉堡按钮（z-52）叠在同一个位置 -->
+    <div class="flex h-16 shrink-0 items-center gap-2">
       {localeEntries.length > 1 && (
-        <details class="language-switcher group relative ml-auto mr-4">
+        <details class="language-switcher group relative">
           <summary
-            class="flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground [&::-webkit-details-marker]:hidden"
+            class="flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground [&::-webkit-details-marker]:hidden"
             aria-label={t(locale, 'common.language')}
           >
             <Icon name="ri:translate" class="size-4" />
             <span>{getLocaleLabel(locale)}</span>
             <Icon name="ri:arrow-down-s-line" class="size-4 transition-transform duration-200 group-open:rotate-180" />
           </summary>
-          <div class="absolute right-0 top-full z-10 mt-1 flex min-w-28 flex-col overflow-hidden rounded-lg bg-background/80 shadow-lg backdrop-blur-sm dark:bg-black/40">
+          <div
+            class="cyber-panel absolute top-full left-0 z-10 mt-1 flex min-w-32 flex-col overflow-hidden rounded-[10px] py-1"
+          >
             {localeEntries.map((entry) => {
               const isActive = entry.code === locale;
               return (
                 <a
                   href={getAlternateUrl(Astro.url.pathname, entry.code)}
                   class:list={[
-                    'px-4 py-2 text-sm transition-colors',
+                    'h-9 px-4 text-[13px] leading-9 transition-colors',
                     isActive
-                      ? 'bg-gradient-shoka-button font-medium text-white'
-                      : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground',
+                      ? 'bg-primary/[0.09] font-semibold text-primary'
+                      : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
                   ]}
                   aria-current={isActive ? 'true' : undefined}
                 >
@@ -61,13 +68,17 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
           </div>
         </details>
       )}
+      <button
+        id="close-drawer"
+        aria-label={t(locale, 'drawer.close')}
+        class="ml-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:text-primary"
+      >
+        <Icon name="ri:close-line" class="h-5 w-5" />
+      </button>
     </div>
-    <HomeSider
-      className="mt-2 flex w-full min-w-full flex-1 min-h-0 overflow-y-auto p-0 pb-8"
-      isDrawer
-      type={type}
-      post={post}
-    />
+    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-8">
+      <HomeSider className="w-full" isDrawer type={type} post={post} />
+    </div>
   </div>
 </div>
 

@@ -1,14 +1,12 @@
 ---
 import { siteConfig } from '@constants/site-config';
+import { getPostCount } from '@lib/content';
 import { getPostReadingTime } from '@lib/content/posts';
 import { displayDate } from '@lib/date';
-import { getLqipStyle } from '@lib/lqip';
 import { Icon } from 'astro-icon/components';
 import type { BlogPost } from 'types/blog';
-import { MAX_WIDTH } from '@/constants/layout';
 import { getLocaleFromUrl, t, withBase } from '@/i18n';
 import { getContentSiteField } from '@/i18n/content';
-import WaveSvg from './wave';
 
 export interface CoverProps {
   data?: BlogPost;
@@ -22,134 +20,249 @@ const { date, updated, title: dataTitle, draft } = data?.data ?? {};
 const readState = data ? getPostReadingTime(data) : null;
 const isDraft = import.meta.env.DEV && draft === true;
 
-// 获取横幅图片的 LQIP 样式
-const bannerLqipStyle = getLqipStyle('/img/site_header.png');
-
 const locale = getLocaleFromUrl(Astro.url.pathname);
 
 const siteSubtitle = getContentSiteField(locale, 'subtitle') ?? siteConfig?.subtitle;
+const postCount = await getPostCount(locale);
 
-
+/**
+ * 三种变体（design-spec §6.3 / §5.1 / §5.2 / §5.3）
+ * - post：文章详情页，160px，面包屑 + 40px 标题 + 元信息 + 复制链接
+ * - title：列表/归档/分类/标签页，220px，单标题
+ * - home：首页，320px，eyebrow + 44px 主标 + 副标 + meta
+ */
+const variant = data ? 'post' : title ? 'title' : 'home';
 ---
 
-<div class="relative flex h-[60dvh] z-0 max-h-200 overflow-hidden">
-  <div class="absolute inset-0 h-full bg-black/40"></div>
-  <div class="absolute inset-0 bottom-[8dvh] flex flex-col items-center justify-center px-5 text-white">
-    {
-      title ? (
-        <h1
-          class={`shadow-text word-break flex items-center gap-2 text-center text-5xl/[1.2] font-bold tracking-widest ${MAX_WIDTH.content}`}
-        >
-          {title}
-          <Icon
-            name="ri:link"
-            title={t(locale, "cover.copyLink")}
-            class="hover:text-primary cursor-pointer transition-colors duration-300"
-            onclick="navigator.clipboard.writeText(window.location.href)"
-          />
-        </h1>
-      ) : data ? (
-        <>
-          <h1
-            class={`shadow-text word-break text-4.5xl text-center font-bold md:text-2xl ${MAX_WIDTH.content} flex flex-wrap items-center justify-center gap-3`}
-          >
-            {dataTitle ?? title}
-            {isDraft && (
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-yellow-500 px-3 py-1.5 text-base font-semibold text-white shadow-lg backdrop-blur-sm text-shadow-none hover:bg-yellow-500 md:px-2.5 md:py-1 md:text-sm">
-                <Icon name="fa6-solid:file-pen" class="h-4 w-4 md:h-3.5 md:w-3.5" />
-                {t(locale, 'post.draft')}
-              </span>
-            )}
-          </h1>
-          {data && (
-            <p class="mt-3 flex flex-wrap items-center justify-center gap-4 md:text-xs">
-              <span class="flex items-center gap-1">
-                <Icon name="fa6-solid:calendar-days" />
-                {t(locale, "post.publishedAt", { date: date ? displayDate.datetime(date)! : '' })}
-              </span>
-              {updated && (
-                <span class="flex items-center gap-1">
-                  <Icon name="fa6-solid:calendar-days" />
-                  {t(locale, "post.updatedAt", { date: updated ? displayDate.datetime(updated)! : '' })}
-                </span>
-              )}
-              <span class="flex items-center gap-1">
-                <Icon name="fa6-solid:pen-nib" /> {t(locale, "post.wordCount", { count: readState?.words ?? 0 })}
-              </span>
-              <span class="flex items-center gap-1">
-                <Icon name="fa6-solid:clock" />
-                {readState?.text}
-              </span>
-            </p>
-          )}
-        </>
-      ) : (
-        <>
-          <h2 class="shadow-text font-chill-round text-5xl/[1.2]">{siteConfig?.alternate}</h2>
-          <h1 class="shadow-text font-chill-round mt-3 text-5xl/[1.2] font-bold tracking-widest">{siteConfig?.title}</h1>
-          <p class="shadow-text mt-5 text-sm">= {siteSubtitle} =</p>
-        </>
-      )
-    }
-  </div>
-  <div
-    class="relative -z-10 h-full min-h-60 w-full"
-    transition:persist="page-cover-banner"
-    id="banner-box"
-    style={bannerLqipStyle}
-  >
-    <!-- 海报图层：始终可见，WebP 压缩后仅 176KB（原 327KB），LQIP 背景色兜底 -->
+<!--
+  Hero Banner（design-spec §6.3）
+  五层背景：深空底 / 双色光晕 / 32px 网格 / 海报纹理（opacity .12 + 灰阶）/ 噪点
+  · /video/top.mp4 及 canplaythrough 逻辑已整体删除（性能优先，静音阅读场景不需要自动播放）
+  · 全站唯一允许「文字发光」的地方就是这里的 H1
+-->
+<header
+  class="cyber-hero relative z-0 flex w-full overflow-hidden"
+  data-variant={variant}
+  transition:name="page-cover-banner"
+>
+  <!-- 背景层 1：深空底 -->
+  <div class="absolute inset-0 bg-[hsl(222_30%_7%)]" aria-hidden="true"></div>
+
+  <!-- 背景层 2：双色光晕 -->
+  <div class="cyber-glow-field pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+  <!-- 背景层 3：32px 网格（上下淡出） -->
+  <div class="cyber-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+  <!-- 背景层 4：海报降级为纹理（opacity .12 + grayscale + luminosity），≤768 整层隐藏 -->
+  <div class="hero-poster pointer-events-none absolute inset-0" aria-hidden="true">
     <picture>
       <source srcset={withBase('/img/top-poster.webp')} type="image/webp" />
       <img
         src={withBase('/img/top-poster.jpg')}
         alt=""
-        class="absolute inset-0 h-full w-full object-cover"
-        fetchpriority="high"
+        class="h-full w-full object-cover opacity-[0.12] grayscale contrast-[1.15] mix-blend-luminosity"
+        fetchpriority="low"
         decoding="async"
+        loading="eager"
       />
     </picture>
-    <!-- 视频层：加载完成后淡入覆盖 -->
-    <video
-      src={withBase('/video/top.mp4')}
-      class="absolute inset-0 h-full w-full object-cover"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="metadata"
-    ></video>
   </div>
-  <style>
-    #banner-box video {
-      opacity: 0;
-    }
-    #banner-box video.ready {
-      opacity: 1;
-    }
-  </style>
-  <script>
-    (function () {
-      const video = document.querySelector('#banner-box video') as HTMLVideoElement | null;
-      if (!video) return;
 
-      // 弱网直接放弃视频
-      var conn = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-      if (conn && (conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g')) {
-        video.remove();
-        return;
+  <!-- 背景层 5：噪点 -->
+  <div class="cyber-noise absolute inset-0" aria-hidden="true"></div>
+
+  <!--
+    右侧装饰同心圆：允许循环发光/旋转的三处之一（rotate 90s，无闪烁）
+
+    ⚠️ 断点是**反的**，改之前先看这里：本项目 Tailwind v4 的 tablet/md/xs 是
+    max-width 语义（tablet = ≤992），不是常见的 min-width。原来写 `hidden
+    ... tablet:block` 的本意是「桌面才显示」，实际效果恰好相反——1440 下隐藏，
+    390 下反而挂一个 300px 的大圆在右边（实测右边缘越界到 395）。
+    改成 `block ... tablet:hidden`：>992 显示，≤992 收起。
+    它只是装饰，移动端本来也没有空间承载 300px 圆环。
+  -->
+  <div class="hero-orbit pointer-events-none absolute top-1/2 right-[6%] block size-[300px] -translate-y-1/2 tablet:hidden" aria-hidden="true">
+    <span class="orbit-ring" style="width:100%;height:100%"></span>
+    <span class="orbit-ring" style="width:75%;height:75%"></span>
+    <span class="orbit-ring" style="width:50%;height:50%"></span>
+    <span class="orbit-ring" style="width:25%;height:25%"></span>
+  </div>
+
+  <!-- 内容：左对齐，与主栏标题形成同一条阅读轴线（padding-top 让出吸顶导航的高度） -->
+  <div class="hero-inner relative z-10 flex w-full items-center">
+    <div class="cyber-shell flex w-full flex-col items-start">
+      {
+        variant === 'post' ? (
+          <>
+            <h1 class="text-glow-cyan word-break max-w-[min(100%,26ch)] text-[clamp(26px,3.4vw+12px,40px)] leading-[1.2] font-bold tracking-[-0.025em] text-foreground">
+              {dataTitle ?? title}
+            </h1>
+            <div class="mt-3 flex flex-wrap items-center gap-3 font-mono text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
+              {date && <span>{t(locale, 'post.publishedAt', { date: displayDate.datetime(date)! })}</span>}
+              {updated && (
+                <>
+                  <span aria-hidden="true" class="h-3 w-px bg-white/[0.12]" />
+                  <span>{t(locale, 'post.updatedAt', { date: displayDate.datetime(updated)! })}</span>
+                </>
+              )}
+              <span aria-hidden="true" class="h-3 w-px bg-white/[0.12]" />
+              <span>{t(locale, 'post.wordCount', { count: readState?.words ?? 0 })}</span>
+              <span aria-hidden="true" class="h-3 w-px bg-white/[0.12]" />
+              <span>{readState?.text}</span>
+              {isDraft && (
+                <span class="inline-flex items-center gap-1 rounded-md border border-[hsl(var(--neon-amber)/0.3)] bg-[hsl(var(--neon-amber)/0.12)] px-2 py-0.5 text-[11px] text-[hsl(var(--neon-amber))] normal-case">
+                  <Icon name="ri:file-edit-line" class="size-3" />
+                  {t(locale, 'post.draft')}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              class="copy-link-btn absolute right-[var(--page-pad-x)] bottom-6 hidden items-center gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-primary hover:[text-shadow:0_0_12px_hsl(var(--primary)/0.35)] tablet:flex"
+              aria-label={t(locale, 'cover.copyLink')}
+              title={t(locale, 'cover.copyLink')}
+              onclick="navigator.clipboard.writeText(window.location.href)"
+            >
+              <Icon name="ri:link" class="size-[18px]" />
+            </button>
+          </>
+        ) : variant === 'title' ? (
+          <h1 class="text-glow-cyan word-break max-w-[min(100%,30ch)] text-[clamp(24px,3.6vw+8px,36px)] leading-[1.2] font-bold tracking-[-0.025em] text-foreground">
+            {title}
+          </h1>
+        ) : (
+          <>
+            <p class="flex items-center gap-2 font-mono text-xs font-medium tracking-[0.18em] text-primary uppercase">
+              <span>{siteConfig?.alternate}</span>
+              <span aria-hidden="true" class="text-muted-foreground/50">│</span>
+              <span class="text-muted-foreground normal-case">
+                {postCount} {t(locale, 'footer.postUnit')}
+              </span>
+            </p>
+            <h1 class="text-glow-cyan mt-3 text-[clamp(26px,4vw+12px,44px)] leading-[1.15] font-bold tracking-[-0.03em] text-foreground">
+              {siteConfig?.title}
+            </h1>
+            {siteSubtitle && (
+              <p class="hero-subtitle mt-3 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground">{siteSubtitle}</p>
+            )}
+          </>
+        )
       }
+    </div>
+  </div>
 
-      var done = false;
-      function show() {
-        if (done) return;
-        done = true;
-        video?.classList.add('ready');
-      }
+  <!-- 底边 1px 渐变线（替代原来的波纹 SVG） -->
+  <div
+    class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+    style="background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.5), transparent);"
+    aria-hidden="true">
+  </div>
+</header>
 
-      video.addEventListener('canplaythrough', show, { once: true });
-      if (video.readyState >= 3) show();
-    })();
-  </script>
-  <WaveSvg />
-</div>
+<style>
+  /* 高度五档（§6.3 / §8） */
+  .cyber-hero {
+    height: 320px;
+  }
+
+  /* 吸顶导航是透明浮层，内容必须让出 --nav-h，否则移动端会与汉堡按钮打架 */
+  .hero-inner {
+    padding-top: var(--nav-h);
+  }
+
+  @media (max-width: 480px) {
+    /* 152px 的 Hero 里 56px 占掉 37%，标题会与 eyebrow 贴死，压到 44px */
+    .hero-inner {
+      padding-top: 44px;
+    }
+  }
+
+  /*
+   * 海报只当纹理：右侧压掉插画主体（人物轮廓/发丝/翼状结构一清晰就不像纹理了），
+   * 左侧保留可见的网格与噪点质感。数值（0.12 / grayscale / luminosity）不动，只调分布。
+   */
+  .hero-poster::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent 24%, rgba(11, 14, 20, 0.72) 100%);
+  }
+
+  @media (max-width: 1479px) {
+    .cyber-hero {
+      height: 280px;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .cyber-hero {
+      height: 220px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .cyber-hero {
+      height: 180px;
+    }
+
+    /* 移动端只保留底 + 光晕 + 网格（省流量） */
+    .hero-poster {
+      display: none;
+    }
+
+    /* 180px 装不下 eyebrow + 标题 + 副标，副标让位给标题 */
+    .hero-subtitle {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .cyber-hero {
+      height: 152px;
+    }
+  }
+
+  /* 文章页变体 160px */
+  .cyber-hero[data-variant='post'] {
+    height: 160px;
+  }
+
+  @media (max-width: 480px) {
+    .cyber-hero[data-variant='post'] {
+      height: 152px;
+    }
+  }
+
+  /* 装饰同心圆：整体缓慢旋转，无闪烁（§7.4 允许的循环动画之一） */
+  .hero-orbit {
+    border: 1px solid hsl(var(--primary) / 0.1);
+    border-radius: 9999px;
+    animation: hero-orbit-rotate 90s linear infinite;
+  }
+
+  .orbit-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid hsl(var(--primary) / 0.1);
+    border-radius: 9999px;
+  }
+
+  @keyframes hero-orbit-rotate {
+    from {
+      transform: translateY(-50%) rotate(0deg);
+    }
+    to {
+      transform: translateY(-50%) rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-orbit {
+      animation: none;
+    }
+  }
+</style>

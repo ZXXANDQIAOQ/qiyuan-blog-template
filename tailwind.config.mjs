@@ -33,19 +33,34 @@ export default {
         gray: {
           400: 'hsl(var(--grey-4))',
         },
-        logo: '#e91e63',
+        logo: 'hsl(var(--primary))',
+        /* 原粉色系（mandy）保留类名，色相整体换成青 —— 见 design-spec §2.4 */
         mandy: {
-          50: '#fef2f3',
-          100: '#fde6e8',
-          200: '#fbd0d4',
-          300: '#f7aab2',
-          400: '#f27a8a',
-          500: '#e91e63',
-          600: '#d42a4c',
-          700: '#b21e3f',
-          800: '#961b3b',
-          900: '#801b38',
-          950: '#470a1a',
+          50: '#eafdff',
+          100: '#c9f8ff',
+          200: '#9bf0ff',
+          300: '#5fe5ff',
+          400: '#2ed6f7',
+          500: '#1ae8ff',
+          600: '#0bb6d4',
+          700: '#0a8fa8',
+          800: '#0d6f83',
+          900: '#0f5b6c',
+          950: '#032f3a',
+        },
+        /* 赛博霓虹三色（供页面层直接使用 text-neon-cyan 等） */
+        neon: {
+          cyan: 'hsl(var(--neon-cyan))',
+          'cyan-soft': 'hsl(var(--neon-cyan-soft))',
+          violet: 'hsl(var(--neon-violet))',
+          'violet-soft': 'hsl(var(--neon-violet-soft))',
+          amber: 'hsl(var(--neon-amber))',
+        },
+        /* 底色三阶 */
+        surface: {
+          1: 'hsl(var(--surface-1))',
+          2: 'hsl(var(--surface-2))',
+          3: 'hsl(var(--surface-3))',
         },
         // shoka migrate
         pink: {
@@ -106,8 +121,10 @@ export default {
       transitionDuration: {
         fast: `${animationTokens.duration.fast}ms`,
         normal: `${animationTokens.duration.normal}ms`,
+        ui: `${animationTokens.duration.ui}ms`,
         slow: `${animationTokens.duration.slow}ms`,
         slower: `${animationTokens.duration.slower}ms`,
+        enter: `${animationTokens.duration.enter}ms`,
       },
       transitionTimingFunction: {
         ...animationTokens.easing,
@@ -124,8 +141,12 @@ export default {
         '5.5xl': '3.5rem',
       },
       fontFamily: {
-        sans: ['寒蝉全圆体', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-        'chill-round': ['寒蝉全圆体', 'sans-serif'],
+        /* §3.1：全部系统字体，不新增下载 */
+        sans: ['var(--font-body)'],
+        display: ['var(--font-display)'],
+        mono: ['var(--font-mono)'],
+        /* 兼容旧类名：原「寒蝉全圆体」，现映射到 display 栈 */
+        'chill-round': ['var(--font-display)'],
       },
       clipPath: {
         'post-img-left': 'polygon(0 0,92% 0%,100% 100%,0% 100%)',

@@ -53,10 +53,10 @@ i18n:
       label: 中文
     - code: en
       label: English
-      enabled: true
+      enabled: false
     - code: ja
       label: 日本語
-      enabled: true
+      enabled: false
 
 # =============================================================================
 # Category Map
@@ -90,15 +90,15 @@ categoryMap:
 featuredCategories:
   - link: life # 对应 categoryMap 中 随笔: life
     label: 随笔
-    image: /img/cover/life.webp
+    image: /img/cover/cyber/life.webp
     description: 生活记录、随想随笔
   - link: note # 对应 categoryMap 中 笔记: note
     label: 笔记
-    image: /img/cover/note.webp
+    image: /img/cover/cyber/note.webp
     description: 技术笔记、学习笔记
   - link: tools # 对应 categoryMap 中 工具: tools
     label: 工具
-    image: /img/cover/tools.webp
+    image: /img/cover/cyber/tools.webp
     description: 工具使用、效率提升
 
 # =============================================================================
@@ -159,25 +159,29 @@ featuredSeries:
 # -----------------------------------------------------------------------------
 social:
   github:
-    url: https://github.com/your-username
+    url: https://github.com/ZXXANDQIAOQ
     icon: ri:github-fill
     color: '#191717'
-  email:
-    url: mailto:your-email@example.com
-    icon: ri:mail-line
-    color: '#55acd5'
   rss:
     url: /rss.xml
     icon: ri:rss-line
     color: '#ff6600'
-  telegram:
-    url: https://t.me/your-handle
-    icon: ri:telegram-fill
-    color: '#229ED9'
-  twitter:
-    url: https://x.com/your-handle
-    icon: ri:twitter-fill
-    color: '#4b9ae4'
+  # -------------------------------------------------------------------------
+  # 以下渠道暂无真实账号，先注释掉 —— 上线不挂收不到信的假地址。
+  # 拿到真实账号后取消注释并替换 url 即可，页脚会自动多出图标。
+  # -------------------------------------------------------------------------
+  # email:
+  #   url: mailto:your-email@example.com
+  #   icon: ri:mail-line
+  #   color: '#55acd5'
+  # telegram:
+  #   url: https://t.me/your-handle
+  #   icon: ri:telegram-fill
+  #   color: '#229ED9'
+  # twitter:
+  #   url: https://x.com/your-handle
+  #   icon: ri:twitter-fill
+  #   color: '#4b9ae4'
   # -------------------------------------------------------------------------
   # 以下是更多可选的社交平台配置示例，取消注释并修改即可启用：
   # -------------------------------------------------------------------------
@@ -241,7 +245,7 @@ content:
   enableOGPreview: true # OG 预览卡片
   previewCacheTime: 30 # 预览缓存时间(天)
   lazyLoadEmbeds: true # 延迟加载嵌入
-  postCardImagePosition: alternating # 文章卡片封面图位置在首页的显示控制 alternating 默认交替显示 left 封面图始终在左侧 right 封面图始终在右侧
+  postCardImagePosition: left # 封面恒左置（赛博霓虹规范废弃交替布局，配合 mono 序号 01-04）
   # Shoka 兼容功能（默认全部启用，设为 false 可关闭）
   enableShokaContainers: true   # :::提醒块 ;;;标签卡 +++折叠块
   enableShokaAttrs: true        # [text]{.class} 属性语法

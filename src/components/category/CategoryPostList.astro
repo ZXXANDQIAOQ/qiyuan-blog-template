@@ -1,61 +1,66 @@
 ---
-import { CONTENT_PADDING } from '@constants/layout';
-import { type Category, getPostSlug, getPostsByCategory, translateCategoryName } from '@lib/content';
-import { displayDate } from '@lib/date';
-import { encodeSlug } from '@lib/route';
-import { cn } from '@lib/utils';
-import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+/**
+ * 分类详情页的内容块 —— design-spec §5.4
+ *
+ * 组成：可选的「子分类导航」+ <PostList>。就这两件，别的都上移到了页面或下移到了
+ * PostList。
+ *
+ * 瘦身说明（这次改版最重要的一处删减）：
+ *   旧版本在这里**手写了一遍文章列表** —— 一行一篇、`shoka-decoration-circle`
+ *   圆点 + 虚线标题、固定窄列日期。它和 <PostItemCard>（248×156 缩略图 + 20px
+ *   标题 + 2 行摘要 + 最多 3 个标签芯片）根本不是一套东西，用户在 /posts 与
+ *   /categories/note 之间跳转等于换了个网站。§5.4 的原话是「下面接单列横向卡
+ *   列表」，等价于「复用文章列表组件」，所以这里直接换成 <PostList>。
+ *
+ * 两个必须显式传的参数：
+ *   · variant="list"：PostList 的兜底推断是「只有 1 篇且无分页器 → 渲染成首页
+ *     置顶的 Feature 卡」。而只有一个分类下只有一篇文章是常态（本站「工具」就是
+ *     1 篇），不显式声明会让这些页面突然变成全宽 Feature 卡。
+ *   · showPaginator={false}：分类详情不分页。
+ *
+ * 子分类导航的取舍：只在「当前分类确实有子分类」时渲染。真实内容目前只有一级
+ * 分类，所以 /categories/note 这类页面不会出现空导航；一旦模板被填入
+ * categories: [[笔记, 后端]]，这里就会自动长出「N 个子分类 + 各行入口」。
+ * 叶子分类不渲染任何导航 —— 这是 §5.4 对详情页的描述（描述 → 文章列表），
+ * 也避免出现一个只有标题、点不动的空区块。
+ */
+import PostList from '@components/post/PostList.astro';
+import type { Category } from '@lib/content';
+import type { PostCardData } from 'types/blog';
+import { getLocaleFromUrl, t } from '@/i18n';
 import SubCategory from './SubCategory.astro';
 
 interface Props {
-  categories: Category[];
+  /** 当前分类；为空时只渲染文章列表 */
+  category: Category | null;
+  /** 当前分类从根到自身的分类名链，子分类要用它拼完整路径 */
+  categoryNames: string[];
+  /** 已由页面转成轻量 PostCardData 的文章列表 */
+  posts: PostCardData[];
   countMap: Record<string, number>;
-  rootCategory: Category | null;
 }
-const { categories, countMap, rootCategory } = Astro.props;
+
+const { category, categoryNames, posts, countMap } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
-const posts = await getPostsByCategory(rootCategory?.name ?? '', locale);
+
+const children = category?.children ?? [];
 ---
 
-<div class={`shadow-box mx-0 flex w-full flex-col bg-gradient-start ${CONTENT_PADDING.normal}`}>
-  <h2
-    class={cn('shoka-decoration-circle px-6 group relative py-5 text-2xl/9 font-bold', {
-      'has-children': posts?.length || rootCategory?.children?.length,
-    })}
-  >
-    <a href={localizedPath('/', locale)} class="dashed-border text-muted-foreground hover:text-blue border-b"> {t(locale, 'nav.home')} </a>
-    <span class="text-muted-foreground mx-2 text-xl">/</span>
-    <span class="text-muted-foreground">{rootCategory ? translateCategoryName(rootCategory.name, locale) : ''}</span>
-    <span class="text-muted-foreground mx-2 text-xl">{t(locale, 'category.categoryLabel')}</span>
-  </h2>
+{
+  children.length > 0 && (
+    <nav class="cat-nav" aria-labelledby="cat-subnav-label">
+      {/* 可见标签复用「N 个子分类」这句现成文案：既说明这一块是什么，
+          也顺手把数量交代掉，不需要再造一个新 key */}
+      <p class="cat-nav__label" id="cat-subnav-label">
+        {t(locale, 'category.subCategoryCount', { count: children.length })}
+      </p>
+      <ul class="cat-subs">
+        {children.map((child) => (
+          <SubCategory category={child} parentNames={categoryNames} countMap={countMap} />
+        ))}
+      </ul>
+    </nav>
+  )
+}
 
-  <div class="flex w-full flex-col">
-    {
-      categories.map(
-        (category) =>
-          category?.children?.length && (
-            <div class="category-first-level-container flex flex-col">
-              {category?.children?.length &&
-                category.children.map((child) => (
-                  <SubCategory category={child} parentName={category.name} countMap={countMap} />
-                ))}
-            </div>
-          ),
-      )
-    }
-    {
-      posts?.length && (
-        <div class="category-second-level-container flex flex-col">
-          {posts.map((post) => (
-            <p class="shoka-decoration-circle group text-primary hover:text-blue relative px-6 py-2 text-base/9">
-              <span class="text-muted-foreground mr-2 text-xs">{displayDate.shortDate(post.data.date)}</span>
-              <a href={localizedPath(`/post/${encodeSlug(getPostSlug(post))}`, locale)} class="dashed-border">
-                {post?.data?.title}
-              </a>
-            </p>
-          ))}
-        </div>
-      )
-    }
-  </div>
-</div>
+<PostList posts={posts} variant="list" showPaginator={false} emptyVariant="category" />

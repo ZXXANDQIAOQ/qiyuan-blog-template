@@ -1,5 +1,4 @@
 ---
-import ButtonLink from '@components/control/ButtonLink.astro';
 import type { HomeSiderType } from '@constants/enum';
 import { RESERVED_ROUTES } from '@constants/router';
 import { configuredSeriesSlugs, enabledSeriesSlugs, routers, siteConfig } from '@constants/site-config';
@@ -29,7 +28,7 @@ const allTags = Object.entries(tags).map(([tag, count]) => ({ tag, count }));
 
 // 生成唯一 ID 前缀
 const uniqueId = `home-info-${Math.random().toString(36).substring(2, 11)}`;
-const { className } = Astro.props;
+const { className, isDrawer = false } = Astro.props;
 
 // Filter navigation items to exclude disabled series
 const filteredRouters = filterNavItems(routers, configuredSeriesSlugs, enabledSeriesSlugs, RESERVED_ROUTES);
@@ -45,101 +44,152 @@ const normalizePath = (p: string | undefined): string => {
 
 // 头像路径来自配置（数据层，不含部署前缀），渲染时统一补 base，
 // 否则 GitHub Pages 子路径部署下头像会 404。
-const avatarSrc = withBase(siteConfig.avatar ?? '/img/avatar.jpg');
+const avatarSrc = withBase(siteConfig.avatar ?? '/img/avatar.svg');
+
+// 头像尺寸：侧栏 88×88，抽屉内缩到 72×72 以省高度（§6.4 / §6.11）
+const avatarSize = isDrawer ? 72 : 88;
+
+// 侧栏菜单项（§6.5）：默认/hover/激活三态，左侧 2px 竖条作为「颜色 + 实心条」双信号
+const menuItemClass =
+  'group relative flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 ease-in-out hover:bg-white/[0.04] hover:text-foreground';
+
+const menuItemBarClass =
+  'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:scale-y-0 before:rounded-full before:bg-primary/50 before:transition-transform before:duration-200 before:ease-[cubic-bezier(0.25,1,0.5,1)] before:content-[""] group-hover:before:scale-y-100';
+
+const menuItemActiveClass =
+  'bg-primary/[0.09] font-semibold text-primary before:scale-y-100 before:bg-primary before:shadow-[0_0_12px_hsl(var(--primary)/0.55)]';
+
+const subItemClass =
+  'group relative flex h-9 w-full items-center gap-2 rounded-lg pl-9 pr-3 text-[13px] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.04] hover:text-foreground';
+
+const subItemActiveClass = 'bg-primary/[0.06] font-medium text-primary';
 ---
 
-<div class={cn('flex flex-col items-center md:py-2', className)} data-home-info-container={uniqueId}>
-  <div class="relative h-40 w-40 rounded-full" style={getLqipStyle(siteConfig.avatar ?? '/img/avatar.jpg')}>
-    <img
-      transition:persist="page-home-info-avatar"
-      class="shadow-card-darker hover:animate-shake h-full w-full rounded-full transition"
-      src={avatarSrc}
-      alt={`${siteConfig.name ?? ''} avatar`}
-      loading="eager"
-      fetchpriority="high"
-    />
+<!-- 个人信息卡（§6.4） -->
+<div class={cn('flex flex-col', className)} data-home-info-container={uniqueId}>
+  <div class="cyber-card flex w-full flex-col items-center">
+    <!-- 头像 88×88 / 圆角 20 / 青色描边 + 弱光 -->
+    <div class="group relative shrink-0" style={getLqipStyle(siteConfig.avatar ?? '/img/avatar.svg')}>
+      <img
+        transition:persist="page-home-info-avatar"
+        class="max-w-none rounded-[20px] border border-primary/25 object-cover shadow-[0_0_24px_hsl(var(--primary)/0.16)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03] group-hover:shadow-[0_0_32px_hsl(var(--primary)/0.28)]"
+        style={`width:${avatarSize}px;height:${avatarSize}px`}
+        src={avatarSrc}
+        alt="站点作者头像"
+        loading="eager"
+        fetchpriority="high"
+        width={avatarSize}
+        height={avatarSize}
+      />
+      <!-- 1px 内描边，把头像压进玻璃卡而不是「贴上去」 -->
+      <span
+        aria-hidden="true"
+        class="pointer-events-none absolute inset-0 rounded-[20px] ring-1 ring-inset ring-white/10"
+      ></span>
+    </div>
+
+    <p class="mt-4 text-lg font-bold tracking-[-0.02em] text-foreground">{siteConfig?.name}</p>
+    <p class="mt-2 line-clamp-2 max-w-full text-center text-[13px] leading-[1.7] text-muted-foreground">
+      {getContentSiteField(locale, 'description') ?? siteConfig?.description}
+    </p>
+
+    <!-- 社交图标：28×28 / 圆角 8 / gap 8（§6.4） -->
+    <div class="mt-4 w-full">
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        {
+          /* Social 组件按 §6.4 重写为 28×28 图标按钮 */
+        }
+        <Social />
+      </div>
+    </div>
+
+    <!-- 统计区：三列 mono 青色数字（抽屉里去掉以省高度，§6.11） -->
+    {
+      !isDrawer && (
+        <div class="mt-5 grid w-full grid-cols-3 border-t border-border/60 pt-4">
+          <a
+            href={localizedPath('/', locale)}
+            class="group flex flex-col items-center justify-center transition-colors"
+            aria-label={t(locale, 'homeInfo.articles')}
+          >
+            <span class="font-mono text-xl font-bold tabular-nums text-primary transition-[text-shadow] duration-200 group-hover:[text-shadow:0_0_16px_hsl(var(--primary)/0.35)]">
+              {postCount}
+            </span>
+            <span class="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+              {t(locale, 'homeInfo.articles')}
+            </span>
+          </a>
+          <a
+            href={localizedPath('/categories', locale)}
+            class="group flex flex-col items-center justify-center border-x border-border/50 transition-colors"
+            aria-label={t(locale, 'homeInfo.categories')}
+          >
+            <span class="font-mono text-xl font-bold tabular-nums text-primary transition-[text-shadow] duration-200 group-hover:[text-shadow:0_0_16px_hsl(var(--primary)/0.35)]">
+              {Object.keys(countMap).length}
+            </span>
+            <span class="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+              {t(locale, 'homeInfo.categories')}
+            </span>
+          </a>
+          <a
+            href={localizedPath('/tags', locale)}
+            class="group flex flex-col items-center justify-center transition-colors"
+            aria-label={t(locale, 'homeInfo.tags')}
+          >
+            <span class="font-mono text-xl font-bold tabular-nums text-primary transition-[text-shadow] duration-200 group-hover:[text-shadow:0_0_16px_hsl(var(--primary)/0.35)]">
+              {allTags?.length ?? 0}
+            </span>
+            <span class="mt-1 text-[11px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+              {t(locale, 'homeInfo.tags')}
+            </span>
+          </a>
+        </div>
+      )
+    }
   </div>
 
-  <p class="mt-2">{siteConfig?.name}</p>
-  <p class="text-muted-foreground mt-3 text-center">{getContentSiteField(locale, 'description') ?? siteConfig?.description}</p>
-  <Social />
-  <div
-    class="text-muted-foreground mt-3 flex justify-center text-center text-sm/4 whitespace-nowrap select-none dark:text-white/80"
-  >
-    <a href={localizedPath('/', locale)} class="hover:text-blue flex cursor-pointer flex-col gap-2 p-1 transition">
-      <span class="text-lg/5 font-bold">{postCount}</span>
-      {t(locale, 'homeInfo.articles')}
-    </a>
-    <div class="bg-muted-foreground mx-3 w-px"></div>
-    <a href={localizedPath('/categories', locale)} aria-label={t(locale, 'homeInfo.categories')} class="hover:text-blue">
-      <p class="flex cursor-pointer flex-col gap-2 p-1 transition">
-        <span class="text-lg/5 font-bold">{Object.keys(countMap).length}</span>
-        {t(locale, 'homeInfo.categories')}
-      </p>
-    </a>
-    <div class="bg-muted-foreground mx-3 w-px"></div>
-    <a href={localizedPath('/tags', locale)} class="hover:text-blue flex cursor-pointer flex-col gap-2 p-1 transition">
-      <span class="text-lg/5 font-bold">{allTags?.length ?? 0}</span>
-      {t(locale, 'homeInfo.tags')}
-    </a>
-  </div>
-  <div class="mt-6 flex w-full flex-col items-center gap-2.5">
+  <!-- 侧栏导航菜单（§6.5）：去掉粉色胶囊按钮，回到「左条 + 青底」的克制激活态 -->
+  <nav class="mt-4 flex w-full flex-col gap-1" aria-label={t(locale, 'drawer.navMenu')}>
     {
       filteredRouters.map((item, index) => {
         const displayName = resolveNavName(item.nameKey, item.name, locale);
         if (item.children?.length) {
           const collapseId = `${uniqueId}-collapse-${index}`;
-          const childActive = item.children.some((c) => c.path && normalizePath(c.path) === normalizePath(strippedPath));
+          const childIsActive = item.children.some((c) => c.path && normalizePath(c.path) === normalizePath(strippedPath));
           return (
-            <div
-              class={cn(
-                'bg-foreground/10 flex w-40 flex-col rounded-xl transition-all duration-300',
-                childActive ? 'opacity-100' : 'opacity-75 hover:opacity-100',
-              )}
-              data-collapsible
-            >
+            <div class="flex w-full flex-col" data-collapsible>
               <button
-                class={cn(
-                  'flex-center h-12 w-full cursor-pointer rounded-xl transition-colors',
-                  childActive
-                    ? 'bg-gradient-shoka-button text-primary-foreground shadow-md'
-                    : 'hover:bg-foreground/5',
-                )}
+                class={cn(menuItemClass, menuItemBarClass, 'justify-start', childIsActive && menuItemActiveClass)}
                 data-collapse-trigger={collapseId}
-                aria-expanded={childActive ? 'true' : 'false'}
-                aria-current={childActive ? 'true' : undefined}
+                aria-expanded={childIsActive ? 'true' : 'false'}
+                aria-current={childIsActive ? 'true' : undefined}
                 aria-label={t(locale, 'common.menuLabel', { name: displayName })}
                 type="button"
               >
-                {item.icon && <Icon name={item.icon} class="mr-1.5" />}
-                {displayName}
+                {item.icon && <Icon name={item.icon} class="size-4 shrink-0" />}
+                <span class="grow text-left">{displayName}</span>
                 <Icon
                   name="ri:arrow-down-s-line"
-                  class="ml-2 size-5 transition-transform duration-300"
+                  class="size-4 shrink-0 transition-transform duration-200"
                   data-collapse-icon={collapseId}
-                  style={childActive ? 'transform: rotate(180deg)' : undefined}
+                  style={childIsActive ? 'transform: rotate(180deg)' : undefined}
                 />
               </button>
-              <div class={cn(childActive ? '' : 'collapse-hidden')} data-collapse-content={collapseId}>
-                <div class="flex flex-col items-center">
+              <div class={cn('w-full', childIsActive ? '' : 'collapse-hidden')} data-collapse-content={collapseId}>
+                <div class="flex flex-col gap-0.5 py-1">
                   {item.children.map((child) => {
                     const childName = resolveNavName(child.nameKey, child.name, locale);
                     const childUrl = child.path ? localizedPath(child.path, locale) : child.path;
                     const childActive = child.path ? normalizePath(child.path) === normalizePath(strippedPath) : false;
                     return (
-                      <ButtonLink
-                        url={childUrl}
-                        label={childName}
-                        variant="gradient-shoka"
+                      <a
+                        href={childUrl}
                         aria-current={childActive ? 'page' : undefined}
-                        className={cn('shoka-button-shadow h-12 w-40 rounded-xl text-base tracking-wider transition-all duration-300', {
-                          'bg-gradient-shoka-button text-primary-foreground opacity-100 shadow-md': childActive,
-                          'bg-none text-muted-foreground/80 opacity-75 hover:bg-muted-foreground/10 hover:opacity-100 shadow-none': !childActive,
-                        })}
+                        class:list={[subItemClass, childActive && subItemActiveClass]}
                       >
-                        {child.icon && <Icon name={child.icon} class="mr-1.5" />}
+                        {child.icon && <Icon name={child.icon} class="size-3.5 shrink-0" />}
                         {childName}
-                      </ButtonLink>
+                      </a>
                     );
                   })}
                 </div>
@@ -150,25 +200,18 @@ const avatarSrc = withBase(siteConfig.avatar ?? '/img/avatar.jpg');
         const itemUrl = item.path ? localizedPath(item.path, locale) : item.path;
         const isActive = item.path ? normalizePath(item.path) === normalizePath(strippedPath) : false;
         return (
-          <ButtonLink
-            url={itemUrl}
-            label={displayName}
-            variant="gradient-shoka"
+          <a
+            href={itemUrl}
             aria-current={isActive ? 'page' : undefined}
-            className={cn(
-              'shoka-button-shadow h-12 w-40 rounded-xl text-base tracking-wider transition-all duration-300',
-              isActive
-                ? 'bg-gradient-shoka-button text-primary-foreground opacity-100 shadow-md'
-                : 'bg-none text-muted-foreground/80 opacity-75 hover:bg-muted-foreground/10 hover:opacity-100 shadow-none',
-            )}
+            class:list={[menuItemClass, menuItemBarClass, isActive && menuItemActiveClass]}
           >
-            {item.icon && <Icon name={item.icon} class="mr-1.5" />}
+            {item.icon && <Icon name={item.icon} class="size-4 shrink-0" />}
             {displayName}
-          </ButtonLink>
+          </a>
         );
       })
     }
-  </div>
+  </nav>
 </div>
 
 <style>

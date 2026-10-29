@@ -8,7 +8,7 @@ import { MacToolbar } from '@components/markdown/shared/MacToolbar';
 import { ViewSourceToggle } from '@components/markdown/shared/ViewSourceToggle';
 import { useIsDarkTheme } from '@hooks/useIsDarkTheme';
 import { useTranslation } from '@hooks/useTranslation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { openModal } from '@store/modal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

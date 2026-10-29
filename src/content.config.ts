@@ -60,6 +60,11 @@ const blogCollection = defineCollection({
       sticky: z.boolean().optional(),
       draft: z.boolean().optional(),
       tocNumbering: z.boolean().optional().default(true),
+      /**
+       * 文章主题色（§6.23-B）。用 enum 而不是自由字符串：
+       * 5 个取值之外的写法必须在构建期就报错，否则会悄悄渲染出一条透明短横线。
+       */
+      accent: z.enum(['cyan', 'neutral', 'magenta', 'amber', 'indigo']).optional(),
       excludeFromSummary: z.boolean().optional(),
       math: z.boolean().optional(),
       quiz: z.boolean().optional(),

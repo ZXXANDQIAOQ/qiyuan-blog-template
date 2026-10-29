@@ -2,10 +2,10 @@
 import CustomContent from '@components/common/CustomContent.astro';
 import HomeSider from '@components/layout/HomeSider.astro';
 import SummaryPanel, { type SummarySource } from '@components/post/SummaryPanel';
+import Breadcrumb from '@components/ui/Breadcrumb.astro';
 import Cover from '@components/ui/cover/Cover.astro';
 import { defaultContentConfig } from '@constants/content-config';
 import { HomeSiderType } from '@constants/enum';
-import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
@@ -126,6 +126,16 @@ const breadcrumbJsonLd = {
   itemListElement: breadcrumbListItems,
 };
 
+// 视觉面包屑（§6.16）的数据。与上面的 breadcrumbJsonLd 是两套东西：
+// 上面那套只给 Google 看（带 position / item 绝对地址），下面这套只给读屏和视觉用。
+// 改视觉时不要顺手删 JSON-LD，结构化数据丢了不是「看起来没事」的问题。
+const crumbItems = [
+  { label: homeName, href: localizedPath('/', locale) },
+  ...breadcrumbCategories.map((c) => ({ label: c.name, href: c.link })),
+  // 最后一项不带 href —— Breadcrumb 组件会把它渲染成「当前页」
+  { label: title ?? '' },
+];
+
 // 文章的 slug（用于 AI 摘要、编辑按钮等）
 const postSlug = getPostSlug(post);
 
@@ -165,49 +175,119 @@ if (post.data.description) {
   <TwoColumnLayout post={post}>
     <Cover slot="cover" data={post} />
     <HomeSider slot="sider" type={HomeSiderType.POST} post={post} />
-    <div class={`shadow-box bg-gradient-start flex flex-col gap-2 ${CONTENT_PADDING.standard}`}>
-      <!-- Breadcrumb Navigation -->
-      <nav class="text-muted-foreground flex items-center justify-between gap-2 text-sm">
-        <div class="flex items-center gap-2">
-          <div class="flex items-center gap-1">
-            <!-- Home Icon and Link -->
-            <Icon name="fa6-solid:house-chimney" class="h-4 w-4" />
-            <a href={localizedPath('/', locale)} aria-label={homeName}>
-              <span class="hover:text-blue transition-colors duration-300">{homeName}</span>
-            </a>
-          </div>
-          <!-- Category Breadcrumbs -->
-          {
-            breadcrumbCategories.map((category, index) => (
-              <>
-                <Icon name="ri:arrow-right-s-line" class="text-muted-foreground/60 h-4 w-4" />
-                <a
-                  href={category.link}
-                  class={`hover:text-blue transition-colors duration-300 ${index === breadcrumbCategories.length - 1 ? 'text-primary bg-primary/10 hover:text-primary hover:bg-primary/20 rounded-full px-2.5 py-1' : ''}`}
-                  aria-label={t(locale, 'breadcrumb.goToCategory', { name: category.name })}
-                >
-                  {category.name}
-                </a>
-              </>
-            ))
-          }
-        </div>
+
+    <!--
+      主栏外壳（design-spec §4.3）
+      旧的 `shadow-box bg-gradient-start CONTENT_PADDING.standard` 三件套已删：
+      规范取消了「主栏一整块大卡片」，区块节奏改由 .cyber-stack 的 48/64/32px
+      空白承担（见 effects.css 的纪律说明）。页面层不再自带 padding / 背景 / gap。
+    -->
+    <div class="cyber-stack">
+      <!-- 面包屑行：左边 §6.16 面包屑，右边 DEV 下的编辑入口 -->
+      <div class="post-crumbs-row">
+        <Breadcrumb items={crumbItems} />
         {import.meta.env.DEV && <EditButton client:only="react" postId={postId} />}
-      </nav>
+      </div>
+
       {isFallback && (
-        <div class="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
-          <Icon name="ri:translate-2" class="h-4 w-4 shrink-0" />
+        <div class="cyber-notice" role="note">
+          <Icon name="ri:translate-2" class="mt-0.5 size-4 shrink-0 text-neon-amber" aria-hidden="true" />
           <span>{t(locale, 'post.fallbackNotice', { lang: getLocaleLabel(locale) })}</span>
         </div>
       )}
-      {
-        !post.data.password && summaryText && summarySource && (
-          <SummaryPanel client:visible summary={summaryText} source={summarySource} className="mt-2" />
-        )
-      }
-      <article class="prose md:prose-sm dark:prose-invert" data-pagefind-body>
+
+      {!post.data.password && summaryText && summarySource && (
+        <SummaryPanel client:visible summary={summaryText} source={summarySource} />
+      )}
+
+      <!--
+        class 里的 prose 已去掉 `md:prose-sm`：正文 17px 是设计定的，
+        窄屏降到 16px 由 markdown.css 的 ≤480 断点管，不用 Typography 的 sm 档。
+
+        data-accent（§6.23-B）：由 frontmatter 的 accent 字段透传，供下面那条
+        48×2 短横线取色。映射表在 styles/cyber/effects.css 的 [data-accent] 块。
+        作用域挂在 article 上，短横线用 var(--article-accent, fallback) 取值。
+      -->
+      <article class="prose dark:prose-invert post-article" data-pagefind-body data-accent={post.data.accent}>
         <CustomContent Content={Content} />
       </article>
     </div>
   </TwoColumnLayout>
 </Layout>
+
+<style>
+  /* 面包屑行：高 40 由 Breadcrumb 自带，这里只负责和右侧按钮对齐 */
+  .post-crumbs-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  /* Breadcrumb 组件把高度写成了固定 40px，路径一长、在 390 下换行就会溢出这个盒子
+   * （内容 48px 撑在 40px 的框里，第二行会压到下面的摘要面板）。
+   * 这里只把「固定高」改成「最小高」，组件本身不动，其它页面照旧。 */
+  .post-crumbs-row :global(.cyber-crumbs) {
+    height: auto;
+    min-height: 40px;
+    min-width: 0;
+    padding-block: 6px;
+  }
+
+  /* DEV 下的 Edit 按钮不许被挤到换行（它里面是「图标 + Edit + 箭头」三段） */
+  .post-crumbs-row :global(button) {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* ≤768：去掉最后一项（当前文章标题）。
+   * 理由不是省地方 —— 是 Hero 的 H1 就在正上方 60px 处，同一串标题连着出现两次，
+   * 读者会先读到一个被青色底高亮的残句再读到完整标题。手机上这一项还会把
+   * 面包屑挤成两行。桌面保留，因为桌面一屏内 Hero 与正文的间距大得多。 */
+  @media (max-width: 768px) {
+    .post-crumbs-row :global(.cyber-crumbs li:last-child) {
+      display: none;
+    }
+    /* 分隔符 › 是挂在 li 自己的 ::before 上的，最后一项被隐藏时它一起消失，
+     * 行尾不会留一个孤零零的 ›。这条不需要额外规则。 */
+  }
+
+  /* 提示条（§6.21）：2px 左色条 + 8% 同色底 + 14px/1.7 文字。
+   * 色相走 --neon-amber（warning 档）：浅色模式下这个变量会自动压深，
+   * 不用为两套主题各写一条。 */
+  .cyber-notice {
+    --accent-color: var(--neon-amber);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border-left: 2px solid hsl(var(--accent-color));
+    border-radius: 8px;
+    background: hsl(var(--accent-color) / 0.08);
+    color: hsl(var(--foreground));
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* 正文顶部主题色短横线（§6.23-B 允许 accent 出现的第 3 个位置：48×2px）。
+   *
+   * --article-accent 由 frontmatter 的 accent 字段一路透传到本页 <article data-accent>
+   * 上，再由 styles/cyber/effects.css 的 [data-accent] 映射表换成具体色值 ——
+   * 这样做不用 JS 注入，也不用每篇文章自己写内联 style。
+   *
+   * fallback 是必须的：没写 accent 的文章会走 hsl(var(--primary)) 的青色，
+   * 而不是画一条 48×2 的透明线把正文往下顶 24px（那是个看不见的占位）。
+   *
+   * 注意：这条线是 accent 唯一被允许出现在正文里的地方。**不要**拿它去给
+   * 标题/链接/按钮上色 —— §6.23-B 明确禁止，否则整站会变成彩虹灯箱。 */
+  .post-article::before {
+    content: '';
+    display: block;
+    width: 48px;
+    height: 2px;
+    margin-bottom: 24px;
+    border-radius: 1px;
+    background: var(--article-accent, hsl(var(--primary)));
+  }
+</style>

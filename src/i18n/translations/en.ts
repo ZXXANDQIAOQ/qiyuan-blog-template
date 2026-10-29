@@ -230,6 +230,7 @@ export const uiStrings: UIStrings = {
   'pagination.page': 'Page {page}',
   'pagination.currentPage': 'Page {page}, current page',
   'pagination.of': 'of {total}',
+  'pagination.nav': 'Pagination',
 
   // ── Breadcrumb ──────────────────────────────────────────────
   'breadcrumb.home': 'Home',
@@ -305,7 +306,8 @@ export const uiStrings: UIStrings = {
 
   // ── Category Stats ────────────────────────────────────────
   'category.subCategoryCount': '{count} subcategories',
-  'category.postCount': '{count} posts',
+  'category.postCountShort': '{count} posts',
+  'category.postCount': '{count} articles',
 
   // ── Post Card ─────────────────────────────────────────────
   'post.readingTimeTooltip': 'Estimated reading time: {time}',
@@ -464,4 +466,17 @@ export const uiStrings: UIStrings = {
   'tempMail.verifyWait': 'Running human verification, please wait a moment and try again…',
   'tempMail.expiresHint':
     'Note: some sites (especially domestic platforms and financial services) block disposable email domains. This service is for legitimate one-time use only — do not abuse it.',
+
+  // ── Empty state (§6.8) ──────────────────────────────────────
+  'empty.title': 'Nothing here yet',
+  'empty.desc': 'The first post is on its way. Try the archives or a category meanwhile?',
+  'empty.categoryTitle': 'This category is empty',
+  'empty.categoryDesc': 'Browse another category, or go through the archives by date.',
+  'empty.tagTitle': 'No posts with this tag yet',
+  'empty.tagDesc': 'The tag exists, the writing is still on its way.',
+  'empty.searchTitle': 'No matching entries',
+  'empty.searchDesc': 'Try another keyword, or browse the archives.',
+  'empty.ctaArchives': 'Browse archives',
+  'empty.ctaTags': 'All tags',
+  'empty.hint': '$ ls ./posts --empty',
 };

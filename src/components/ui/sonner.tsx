@@ -6,7 +6,7 @@
  */
 
 import { useIsDarkTheme } from '@hooks/useIsDarkTheme';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
 function Toaster({ ...props }: ToasterProps) {

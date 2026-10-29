@@ -79,14 +79,15 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
 ---
 
 <!doctype html>
-<html transition:name="root" lang={htmlLang} class="vertical-scrollbar">
+<html transition:name="root" lang={htmlLang} class="vertical-scrollbar dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href={withBase('/favicon.ico')} sizes="48x48" />
     <meta name="generator" content={Astro.generator} />
-    <!-- 预加载头图海报：确保 header 背景与其他组件同步渲染 -->
-    <link rel="preload" as="image" href={withBase('/img/top-poster.webp')} fetchpriority="high" />
+    <meta name="color-scheme" content="dark light" />
+    <!-- 海报已降级为 Hero 纹理（opacity .12 + 灰阶），不再抢首屏带宽 -->
+    <link rel="preload" as="image" href={withBase('/img/top-poster.webp')} fetchpriority="low" />
     {/* Async load rounded fonts — Japanese pages use Gen Jyuu Gothic P, others use ChillRoundF (fix #113) */}
     {locale === 'ja' ? (
       <>
@@ -101,7 +102,7 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     )}
 
     <ClientRouter />
-    <LoadingIndicator color="#e9536a" />
+    <LoadingIndicator color="#1ae8ff" />
     <Tooltips />
 
     <!-- SEO 元数据由 astro-seo 管理 -->
@@ -190,9 +191,10 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     </script>
   </head>
   <body>
-    <div class="flex min-h-screen flex-col text-black dark:text-white">
+    <a href="#main" class="skip-to-main">跳到正文</a>
+    <div class="flex min-h-screen flex-col text-foreground">
       <Header isPostPage={isPostPage} tocNumbering={post?.data.tocNumbering ?? true} />
-      <main class="relative flex grow flex-col gap-4">
+      <main id="main" class="relative flex grow flex-col gap-4">
         {(<slot />)}
       </main>
       <FloatingGroup client:only="react" />
@@ -230,3 +232,18 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     }
   }
 </style>
+
+<script>
+  /**
+   * 图标离线注册（见 src/lib/iconify-offline.ts 顶部说明）
+   *
+   * 必须在浏览器里跑：@iconify/react 的 <Icon> 是运行时去 api.unisvg.com 拉数据的，
+   * 网络一慢/一断，导航图标、代码块工具栏图标就全部留白，并且每页刷 console error。
+   * 这里在模块加载期就把用到的 58 个图标注册进 Iconify 缓存，彻底去掉那次外网请求。
+   *
+   * 用 <script> 而不是在 frontmatter 里 import：frontmatter 是服务端执行的，
+   * 在 Node 里 addIcon 不会影响浏览器端的缓存。
+   */
+  import { registerOfflineIcons } from '@lib/iconify-offline';
+  registerOfflineIcons();
+</script>

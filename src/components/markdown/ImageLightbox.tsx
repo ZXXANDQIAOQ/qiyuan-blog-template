@@ -10,7 +10,7 @@ import { FloatingFocusManager, FloatingPortal, useDismiss, useFloating, useInter
 import { useKeyboardShortcut } from '@hooks/useKeyboardShortcut';
 import { useTranslation } from '@hooks/useTranslation';
 import { useZoomPan } from '@hooks/useZoomPan';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { useStore } from '@nanostores/react';
 import { $imageLightboxData, closeModal, type ImageLightboxData, navigateImage, openModal } from '@store/modal';
 import { AnimatePresence, motion } from 'motion/react';

@@ -1,10 +1,26 @@
 ---
-import EmptySvg from '@components/svg/EmptySvg';
-import { contentConfig, defaultCoverList } from '@constants/site-config';
+/**
+ * 文章列表 —— design-spec §5.1 / §6.6 / §6.8 / §6.23-A
+ *
+ * 一个列表容器，三种用途：
+ *   · 首页置顶段（1 篇）→ 自动用 Feature 卡（§6.23-A）
+ *   · 首页文章列表段 / /posts / 分类 / 标签 / 归档 → 单列横向卡 + 序号
+ *   · 系列页（isSimple）→ 无封面纯文字卡
+ *
+ * 关于两处「推断」的说明（显式 prop 永远优先）：
+ *   · variant：posts 只有 1 篇且不带分页器时按置顶 Feature 卡渲染 —— 这正是
+ *     首页置顶区的形态（§5.1「置顶区当前只有 1 篇」）。isSimple 时不推断，
+ *     系列页单篇仍然是文字卡。
+ *   · showSequence：序号只在首页「文章列表」段出现（§6.6 三条硬要求 ②），
+ *     判别条件是 isHomePage 且带分页器 —— 置顶段没有分页器，因此不会出现
+ *     同屏两个 `01`。
+ */
+import EmptyState from '@components/post/EmptyState.astro';
+import { defaultCoverList } from '@constants/site-config';
+import { cn } from '@lib/utils';
 import type { Page } from 'astro';
 import { shuffle } from 'es-toolkit';
 import type { BlogPost, PostCardData } from 'types/blog';
-import { getLocaleFromUrl, t } from '@/i18n';
 import Paginator from './Paginator.astro';
 import PostItemCard from './PostItemCard.astro';
 
@@ -12,61 +28,97 @@ interface Props {
   posts?: PostCardData[];
   page?: Page<BlogPost>;
   showPaginator?: boolean;
-  baseUrl?: string; // 分页基础路径
-  isHomePage?: boolean; // 是否是首页
-  isSimple?: boolean; // 是否隐藏封面
+  baseUrl?: string;
+  isHomePage?: boolean;
+  isSimple?: boolean;
+  /** 显式指定卡片形态，不传则按内容推断 */
+  variant?: 'list' | 'feature';
+  /** 显式指定是否渲染 01/02/03 序号，不传则按内容推断 */
+  showSequence?: boolean;
+  /** 空状态的语义变体 */
+  emptyVariant?: 'posts' | 'category' | 'tag' | 'search';
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyShowCta?: boolean;
+  className?: string;
 }
 
-const { posts, page, showPaginator = true, baseUrl, isHomePage = false, isSimple = false } = Astro.props;
-const locale = getLocaleFromUrl(Astro.url.pathname);
+const {
+  posts,
+  page,
+  showPaginator = true,
+  baseUrl,
+  isHomePage = false,
+  isSimple = false,
+  variant,
+  showSequence,
+  emptyVariant = 'posts',
+  emptyTitle,
+  emptyDescription,
+  emptyShowCta = true,
+  className,
+} = Astro.props as Props;
+
+const list = posts ?? [];
+
+const resolvedVariant = variant ?? (list.length === 1 && !showPaginator && !isSimple ? 'feature' : 'list');
+const resolvedShowSequence = showSequence ?? (isHomePage && showPaginator && !isSimple);
+
+/** 没有封面的文章从默认池里随机取一张，保证同一次渲染内不重复 */
 const covers = shuffle(defaultCoverList);
-
-const imagePosition = contentConfig.postCardImagePosition || 'alternating';
-const isUniformPosition = imagePosition !== 'alternating';
-
-/**
- * Calculate leftClip based on postCardImagePosition config
- * @param index - The index of the post in the list
- * @returns true if image should be on the left, false for right
- */
-function getLeftClip(index: number): boolean {
-  switch (imagePosition) {
-    case 'left':
-      return true;
-    case 'right':
-      return false;
-    default:
-      return index % 2 === 0;
-  }
-}
 ---
 
 {
-  !posts?.length && (
-    <div class="text-foreground/30 flex flex-col items-center gap-2">
-      <EmptySvg className="fill-foreground/20" />
-      <span>{t(locale, 'post.noPostsFound')}</span>
-    </div>
-  )
-}
-{
-  posts && posts?.length > 0 && (
+  list.length === 0 ? (
+    <EmptyState
+      variant={emptyVariant}
+      title={emptyTitle}
+      description={emptyDescription}
+      showCta={emptyShowCta}
+    />
+  ) : (
     <>
-      <div class="flex flex-col gap-4">
-        {posts.map((post, index) => (
-          <PostItemCard
-            key={post.slug}
-            data={post}
-            showTags={!isSimple}
-            leftClip={getLeftClip(index)}
-            randomCover={covers[index % covers.length]}
-            hideCover={isSimple}
-            isSimple={isSimple}
-            isUniformPosition={isUniformPosition}
-          />
+      <ul class={cn('post-list', resolvedVariant === 'feature' && 'post-list--feature', className)}>
+        {list.map((post, index) => (
+          <li class="post-list__item">
+            <PostItemCard
+              data={post}
+              variant={resolvedVariant}
+              index={index}
+              showSequence={resolvedShowSequence}
+              randomCover={covers[index % covers.length]}
+              showTags={!isSimple}
+              hideCover={isSimple}
+              isSimple={isSimple}
+            />
+          </li>
         ))}
-      </div>
+      </ul>
       {showPaginator && page && <Paginator page={page} baseUrl={baseUrl} isHomePage={isHomePage} />}
     </>
   )
 }
+
+<style>
+  /* 卡片之间只用 gap，不加分割线（§6.6） */
+  .post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .post-list__item {
+    /* 列表项本身不承载样式，全部交给卡片；
+       留 min-width: 0 防止中文长标题把 flex 撑破 */
+    min-width: 0;
+  }
+
+  @media (max-width: 768px) {
+    .post-list {
+      gap: 12px;
+    }
+  }
+</style>
