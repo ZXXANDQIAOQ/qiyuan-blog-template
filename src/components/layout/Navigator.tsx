@@ -11,7 +11,7 @@
  * - 右侧图标组：3 个 32×32 圆角 8 的图标按钮
  */
 
-import ThemeToggle from '@components/theme/ThemeToggle';
+// import ThemeToggle from '@components/theme/ThemeToggle'; // 恬谧版唯一主题，切换按钮已下线
 import { RESERVED_ROUTES } from '@constants/router';
 import { configuredSeriesSlugs, enabledSeriesSlugs, routers } from '@constants/site-config';
 import { useIsTablet } from '@hooks/useMediaQuery';
@@ -170,7 +170,7 @@ const Navigator = memo(function Navigator({ currentPath, locale = defaultLocale 
         })}
       </div>
 
-      {/* 右侧图标组：搜索 / 语言 / 主题，统一 32×32（§6.1） */}
+      {/* 右侧图标组：搜索 / 语言（恬谧版是唯一主题，主题切换按钮已移除） */}
       <div className="ml-auto flex items-center gap-1">
         <div className="cyber-iconbtn">
           <SearchTrigger />
@@ -180,9 +180,6 @@ const Navigator = memo(function Navigator({ currentPath, locale = defaultLocale 
             <LanguageSwitcher locale={locale} />
           </div>
         )}
-        <div className="cyber-iconbtn">
-          <ThemeToggle />
-        </div>
       </div>
     </div>
   );

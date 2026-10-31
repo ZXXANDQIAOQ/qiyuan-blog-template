@@ -144,32 +144,25 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
 
     <script is:inline lang="ts">
       // 主题系统 - 立即执行以防止 FOUC（无样式内容闪烁）
-      // 优先级：1. 用户手动选择 > 2. 默认浅色（恬谧版）
+      // 恬谧版是唯一主题：不再提供深色赛博霓虹，历史遗留的深色偏好一并清除
       (function() {
         function getTheme() {
-          // 用户明确选择了主题
-          if (localStorage.theme === 'dark') return 'dark';
-          if (localStorage.theme === 'light') return 'light';
-          // 未设置，默认浅色
           return 'light';
         }
 
         function applyTheme(theme) {
           var root = document.documentElement;
-          root.classList.toggle('dark', theme === 'dark');
+          root.classList.toggle('dark', false); // 永远浅色
           root.dataset.theme = theme; // For astro-mermaid autoTheme
         }
 
+        // 老访客 localStorage 里存的 theme=dark 会让旧脚本切回深色，直接清掉
+        try {
+          if ('theme' in localStorage) localStorage.removeItem('theme');
+        } catch (e) {}
+
         // 立即应用主题
         applyTheme(getTheme());
-
-        // 监听系统主题偏好变化
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-          // 仅当用户未明确选择主题时自动切换
-          if (!('theme' in localStorage)) {
-            applyTheme(getTheme());
-          }
-        });
 
         // View Transition 切换页面后重新应用主题（在 DOM 渲染前）
         document.addEventListener('astro:after-swap', function() {
