@@ -1,3 +1,269 @@
+/* =============================================================================
+ * 分类页 —— design-spec §5.4「两列分组卡」
+ *
+ * 覆盖：/categories（列表）与 /categories/[...slug]（详情）
+ * 组件：CategoryList / CategoryTitle / SubCategory / CategoryPostList
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 为什么整块重写，而不是在旧规则上打补丁
+ *
+ * 旧实现是 Shoka 的「树形缩进 + 虚线」：一级/二级分类都挂 .shoka-decoration-circle
+ * （::before 画一个 14px 圆点、::after 画一条固定 62px 高的实线/虚线竖条），
+ * 标题再加 .dashed-border 虚线底边。问题是竖条高度写死 62px，和行高解耦——
+ * 一旦行高变化（24px 标题换 26px / 移动端折行），竖条就与文字错位、相邻行之间
+ * 出现断口。所以这套不能改数值，只能整块退役。
+ *
+ * 新结构把「分组」交给 CSS Grid、「层级」交给一条真实的 1px 竖线
+ * （每行画一段、首尾相接 = 一条通线，与行高天然对齐），行高再变也不会错位。
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 发光：本页零发光。
+ * §2.5 的白名单（当前导航项 / hover 中的卡片与按钮 / Hero 主标题 / 激活目录项 /
+ * 空状态图标 / 年份时间线节点）里没有「分类行」。分类页的视觉锚点由 Hero 标题
+ * 和 1px 描边承担，hover 只做颜色变化（一级行标题变青 / 二级行竖线变青）。
+ *
+ * 色值纪律：全部走 hsl(var(--x))，本文件不出现任何字面色值。
+ * =========================================================================== */
+
+/* ============================================================================
+ * 1. 两列分组容器（§5.4）
+ *
+ * gap: 16px 32px —— 行间 16 是「卡片之间」的节奏（§4.3），列间 32 让左右两组
+ * 的 24px 标题之间留出足够的呼吸，否则两列的粗体标题会在视觉上连成一句。
+ * ========================================================================== */
+.cat-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 中文长分类名不许把 grid 列撑破 */
+.cat-groups__item {
+  min-width: 0;
+}
+
+/* ============================================================================
+ * 2. 一级分类行（CategoryTitle）
+ *    24px / 700 标题 + 右侧 mono 青计数，整行高 56，底部 1px --border（§5.4）
+ *
+ * 整行是一个 <a> 而不是「标题里套链接」：56px 的行高本身就是点击区，
+ * 只让文字可点会把移动端的命中面积缩到十来个像素高（§9.3 要求 ≥44×44）。
+ * ========================================================================== */
+.cat-group__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding-right: 4px;
+  border-bottom: 1px solid hsl(var(--border));
+  text-decoration: none;
+}
+
+.cat-group__name {
+  min-width: 0;
+  color: hsl(var(--foreground));
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  /* 分类名可能是一个长英文 slug，允许在任意处折行而不是溢出格子 */
+  overflow-wrap: anywhere;
+  transition: color var(--dur-base) var(--ease-in-out);
+}
+
+/* hover 只有这一处变化，不加发光（§2.5 配额） */
+.cat-group__link:hover .cat-group__name {
+  color: hsl(var(--primary));
+}
+
+.cat-group__count {
+  flex: none;
+  color: hsl(var(--primary));
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+ * 3. 二级及更深的分类行（SubCategory）
+ *    13px，padding-left 20px，行高 40，左侧 1px 竖线 --border，
+ *    hover 时竖线变青（§5.4）
+ *
+ * 竖线做法：每行 ::before 画一段 top:0/bottom:0 的 1px 线，相邻行首尾相接
+ * 就是一条从第一个子分类贯穿到最后一个的通线。旧实现把高度写死成 62px，
+ * 行高一动就断口，这是重写它的直接原因。
+ *
+ * 缩进用 --depth 计算（1 = 二级分类），三级起每级 +20px：
+ *   文字 padding-left = depth × 20，竖线 left = (depth − 1) × 20
+ * 这样每一级的竖线都贴在「它自己那一级文字的左缘再往左 20px」，
+ * 三级分类的线不会和二级分类的线重叠在同一条上。
+ * ========================================================================== */
+.cat-subs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cat-sub {
+  min-width: 0;
+}
+
+.cat-sub__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding-right: 4px;
+  padding-left: calc(var(--depth, 1) * 20px);
+  text-decoration: none;
+}
+
+.cat-sub__link::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc((var(--depth, 1) - 1) * 20px);
+  width: 1px;
+  background-color: hsl(var(--border));
+  transition: background-color var(--dur-base) var(--ease-in-out);
+}
+
+/* hover 信号就是竖线变青 —— 二级行不改文字色，避免与一级行（标题变青）
+   抢同一套语义，也算守住「一屏只允许有限个强调色」的纪律。 */
+.cat-sub__link:hover::before {
+  background-color: hsl(var(--primary));
+}
+
+.cat-sub__name {
+  min-width: 0;
+  overflow: hidden;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 子分类计数：刻意用 --muted-foreground 而不是青色。
+   青色留给一级行的计数，两级同为青会让「哪个是主分组」失去区分度；
+   但计数本身是原有信息（旧实现写作 `(N)`），不能因为改版就丢掉。 */
+.cat-sub__count {
+  flex: none;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+ * 4. 分类详情页的引导区（描述 + 计数）
+ * ========================================================================== */
+.cat-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* 计数行：12px mono（§3.2 Caption / 元信息），与面包屑同属导航辅助层 */
+.cat-detail__count {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+/* 分类描述：14px --muted-foreground，最多 3 行（§5.4）
+ * 行宽限 68ch 是 §3.3 的正文度量：描述虽短，但放开成整行宽会让长描述变成
+ * 一条横穿主栏的灰带，读起来比正文更累。 */
+.cat-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  max-width: 68ch;
+  color: hsl(var(--muted-foreground));
+  font-size: 14px;
+  line-height: 1.7;
+  letter-spacing: 0.008em;
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================================
+ * 5. 详情页的子分类导航
+ * 复用 .cat-subs / .cat-sub 的行样式，只额外给一个 12px 的说明标签
+ * ========================================================================== */
+.cat-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cat-nav__label {
+  margin: 0;
+  padding-left: 20px;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+ * 6. 响应式（§8）
+ * ========================================================================== */
+
+/* ≤768 收成单列。单列后分组之间 16px 不够：上一组的末行和下一组的 24px
+ * 标题会贴在一起，读起来像同一组，所以间距提到 --space-md（24px）。 */
+@media (max-width: 768px) {
+  .cat-groups {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+  }
+
+  .cat-group__name {
+    font-size: 20px;
+  }
+}
+
+/* ≤992 起触控区 ≥44×44（§9.3）。二级行桌面 40 高（§5.4），移动端补齐到 44 ——
+ * 视觉尺寸不变，只把行高抬 4px，行内文字仍是 13px。 */
+@media (max-width: 992px) {
+  .cat-sub__link {
+    min-height: 44px;
+  }
+}
+
+/* ============================================================================
+ * 7. Shoka 遗留规则（保留，勿删）
+ *
+ * 下面这些 .shoka-decoration-circle 规则仍在被 archives / tags / [seriesSlug]
+ * 页面引用，那几页还没迁移。提前删掉会当场把它们的树形装饰打散（圆点消失、
+ * 竖线消失），所以只在新分类组件里停止使用，规则本身等那几页迁完再统一清理。
+ * ========================================================================== */
 .shoka-decoration-circle:hover {
   &::before {
     @apply border-blue;

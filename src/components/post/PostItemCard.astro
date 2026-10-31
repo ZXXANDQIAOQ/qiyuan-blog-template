@@ -1,8 +1,24 @@
 ---
-// 导入所需的库和类型
+/**
+ * 文章卡片 —— design-spec §6.6（列表项）+ §6.23-A（置顶 Feature 卡）
+ *
+ * 两种形态，同一个组件：
+ *   · variant="list"     单列横向卡，缩略图 248×156 恒左置（首页/列表页/分类/标签/归档）
+ *   · variant="feature"  全宽置顶卡，封面 16:10 满宽 + 文字压在左半区（首页置顶区，同屏只有一张）
+ *
+ * 硬约束（改之前先读规范）：
+ *   1. 封面一律走 `<Image>` 输出响应式尺寸 + 固有宽高，防 CLS。cover 在 content 层
+ *      已被降级成字符串（见 content.config.ts 的 cover.transform），所以这里用
+ *      import.meta.glob 按文件名把 ImageMetadata 找回来；找不到就退回 <img> 并写死
+ *      16:10 的固有宽高，行为一致。
+ *   2. alt 一律为空 —— 标题在同一个 <article> 里可见，读屏再念一遍封面是噪音。
+ *   3. 序号 01/02/03 是「位置」不是「身份」：由列表索引生成、aria-hidden、
+ *      Feature 卡不渲染（§6.6 序号三条硬要求）。
+ *   4. 发光只允许一处，取 --glow-cyan-sm。禁止在这一层叠第二层 box-shadow 光。
+ */
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
 import { Badge } from '@components/ui/badge';
-import { Button } from '@components/ui/button';
-import { ScrollableRow } from '@components/ui/ScrollableRow';
 import { Routes } from '@constants/router';
 import { defaultCoverList } from '@constants/site-config';
 import { buildCategoryPath, buildTagPath, getCategoryArr, translateCategoryName } from '@lib/content';
@@ -16,24 +32,31 @@ import type { PostCardData } from '@/types/blog';
 
 export interface PostItemCardProps {
   data: PostCardData;
-  leftClip?: boolean;
-  randomCover: string;
+  /** 列表卡 / 置顶 Feature 卡 */
+  variant?: 'list' | 'feature';
+  /** 列表内序号（0 起）。仅在 showSequence 为真时渲染 */
+  index?: number;
+  /** 是否渲染左上角 mono 序号 —— 只有首页「文章列表」段为 true（§6.6） */
+  showSequence?: boolean;
+  randomCover?: string;
   showTags?: boolean;
-  hideCover?: boolean; // 隐藏图片，让内容铺满
-  isSimple?: boolean; // 是否简单模式
-  isUniformPosition?: boolean; // 是否统一图片位置（非交替模式）
+  /** 隐藏封面，让文字铺满（系列页 isSimple 用） */
+  hideCover?: boolean;
+  isSimple?: boolean;
 }
 
 const {
-  randomCover,
   data,
-  leftClip = true,
-  hideCover: hideCoverProp,
+  variant = 'list',
+  index = 0,
+  showSequence = false,
+  randomCover,
   showTags: showTagsProp,
+  hideCover: hideCoverProp,
   isSimple = false,
-  isUniformPosition = false,
 } = Astro.props as PostItemCardProps;
 
+const isFeature = variant === 'feature';
 const showTags = showTagsProp ?? !isSimple;
 const hideCover = hideCoverProp ?? isSimple;
 
@@ -45,203 +68,774 @@ const href = localizedPath(routeBuilder(Routes.Post, { slug, link, title }), loc
 const isDraft = import.meta.env.DEV && draft === true;
 const isFallback = postLocale != null && locale !== defaultLocale && postLocale !== locale;
 
-/**
- * 封面渲染地址。
- * - Astro ImageMetadata 对象：其 `src` 已由 Astro 处理过，保持原样。
- * - 字符串路径（默认封面列表 / frontmatter 手写 / 外部 URL）：这些是数据层
- *   的原始值，不含部署 base。外部 URL 必须跳过，否则会被错误改写。
- *   补 base 后，GitHub Pages 子路径部署才不会丢图。
- */
-const coverSrc =
-  typeof finalCover === 'string' ? (/^https?:\/\//.test(finalCover) ? finalCover : withBase(finalCover)) : (finalCover as { src: string }).src;
+/* ---------------------------------------------------------------------------
+ * 封面：拿回 ImageMetadata
+ *
+ * content.config.ts 的 cover schema 做了 `.transform(val => val.src)`，把
+ * ImageMetadata 降级成了路径字符串，于是 <Image> 拿不到固有宽高与 format。
+ * 这里把 src/assets/covers 下的资产找回来，让封面走 Astro 的优化管线
+ * （srcset + 固有宽高 + webp 转换）。三条路径按顺序兜底：
+ *
+ *   1. dev 下 content 有时仍给回 ImageMetadata 对象 —— 直接用；
+ *   2. 按 slug 精确命中 `/src/assets/covers/<slug>.webp`（最稳，dev/build 一致）；
+ *   3. 按文件名匹配 —— ⚠️ 必须剥掉构建哈希：build 后 src 是
+ *      `/_astro/astro-blog-rebuild.BycN6M46.webp`，拿原文件名直接比会全部落空。
+ *
+ * 三条都不中就走 <img> 兜底（写死 16:10 的固有宽高，不产生 CLS）。
+ * ------------------------------------------------------------------------- */
+const coverAssets = import.meta.glob<{ default: ImageMetadata }>('/src/assets/covers/*.{webp,jpg,jpeg,png,avif}', {
+  eager: true,
+});
+
+/** 去掉 query 与构建哈希后的文件名主干：x.BycN6M46.webp → x.webp */
+function coverStem(raw: string): string {
+  const file = raw.split('?')[0].split('/').pop() ?? '';
+  return file.replace(/\.[A-Za-z0-9_-]{6,}\./, '.');
+}
+
+function resolveCoverMeta(src: unknown, postSlug?: string): ImageMetadata | null {
+  // 1. content 层直接给了对象
+  if (src && typeof src === 'object' && 'width' in (src as object) && 'src' in (src as object)) {
+    return src as ImageMetadata;
+  }
+  // 2. slug 精确命中
+  if (postSlug) {
+    for (const ext of ['webp', 'jpg', 'jpeg', 'png', 'avif']) {
+      const hit = coverAssets[`/src/assets/covers/${postSlug}.${ext}`];
+      if (hit) return hit.default;
+    }
+  }
+  // 3. 文件名（剥哈希）匹配
+  if (typeof src === 'string' && src) {
+    const stem = coverStem(src);
+    for (const [path, mod] of Object.entries(coverAssets)) {
+      if (coverStem(path) === stem) return mod.default;
+    }
+  }
+  return null;
+}
+
+// content 层的 cover 声明是 string，运行时却可能还是 ImageMetadata 对象 —— 统一按 unknown 处理
+const rawCover = finalCover as unknown;
+const coverMeta = resolveCoverMeta(rawCover, slug);
+
+/** 字符串路径（默认封面池 / 手写 public 路径 / 外部 URL）需要补部署 base */
+const coverSrc = (() => {
+  if (typeof rawCover === 'string') {
+    return /^https?:\/\//.test(rawCover) ? rawCover : withBase(rawCover);
+  }
+  // build 下对象形式的 src 已经是最终 URL（/_astro/xxx.webp），不能再套 base
+  return (rawCover as { src?: string })?.src ?? '';
+})();
+
+const lqipProps = getLqipProps(finalCover);
 
 const categoryArr = getCategoryArr(categories?.[0]);
 const categoryLink = localizedPath(buildCategoryPath(categoryArr), locale);
 const categoryStr = categoryArr?.length ? translateCategoryName(categoryArr[categoryArr.length - 1], locale) : '';
 
-// 直接使用 description（已在 PostCardData 中计算好）
 const postDescription = description ?? '';
 
-// 获取 LQIP 样式用于图片占位符
-const lqipProps = getLqipProps(finalCover);
+/** 序号：01 / 02 / 03…（两位数补零，装饰用） */
+const seqLabel = String(index + 1).padStart(2, '0');
 
-// Stagger padding amounts for uniform position mode (following diagonal edge)
-// Only applied when images are on left, where the diagonal faces the content
-const staggerAmounts = ['pl-0', 'pl-2', 'pl-4', 'pl-6'] as const;
+/** 卡片上最多 3 个芯片 + `+N`（§6.6 标签行） */
+const visibleTags = (tags ?? []).slice(0, 3);
+const extraTagCount = Math.max(0, (tags?.length ?? 0) - visibleTags.length);
 
-/**
- * Get stagger padding class for a content row
- * @param rowIndex - The row index (0-3)
- * @returns Tailwind padding class or empty string
- */
-function getStaggerPadding(rowIndex: number): string {
-  // Only apply stagger for left image position (diagonal faces content)
-  if (!isUniformPosition || hideCover || !leftClip) return '';
-  return staggerAmounts[rowIndex];
-}
-
+/** 封面响应式参数：列表卡按 248px 渲染，Feature 卡按主栏宽渲染 */
+const coverSizes = isFeature
+  ? { widths: [560, 900, 1200], sizes: '(max-width: 768px) 100vw, (max-width: 1479px) 812px, 952px' }
+  : { widths: [248, 372, 496], sizes: '(max-width: 768px) 100vw, 248px' };
 ---
 
-<div
-  class={cn(
-    'hover:shadow-card-darker group text-card-foreground shadow-card relative flex rounded-lg bg-white transition-shadow md:flex-col dark:bg-transparent',
-    'post-item-card',
-  )}
+<!--
+  data-accent（§6.23-B 文章主题色）：只驱动 hover 左缘 2px 实心条，
+  绝不用于文字/按钮/发光 —— 注释不能写在标签里，Astro 会把它当属性解析。
+-->
+<article
+  class={cn('post-card', isFeature && 'post-card--feature', isSimple && 'post-card--simple')}
+  data-variant={variant}
+  data-accent={data.accent}
 >
+  {/* 序号：装饰性锚点，读屏跳过（§6.6 ①） */}
+  {
+    showSequence && !isFeature && !hideCover && (
+      <span class="post-seq" aria-hidden="true">
+        {seqLabel}
+      </span>
+    )
+  }
+
   {
     !hideCover && (
       <a
-        aria-label="post-link"
+        class="post-cover"
         href={href}
+        aria-hidden="true"
+        tabindex="-1"
         style={lqipProps.style}
-        class={cn(
-          'md:clip-path-none relative h-46.5 max-h-46.5 w-[calc(50%-2rem)] overflow-hidden md:w-auto',
-          leftClip ? 'rounded-s-lg clip-path-post-img-left order-1' : 'rounded-e-lg clip-path-post-img-right order-2',
-          'md:clip-path-none md:order-0',
-          lqipProps.class,
-        )}
+        data-astro-prefetch="hover"
       >
-        <img
-          src={coverSrc}
-          loading="lazy"
-          alt="post cover"
-          class="h-full w-full cursor-pointer object-cover transition duration-500 group-hover:scale-110 group-hover:rotate-3"
-        />
+        {coverMeta ? (
+          <Image
+            src={coverMeta}
+            alt=""
+            widths={coverSizes.widths}
+            sizes={coverSizes.sizes}
+            loading={isFeature ? 'eager' : 'lazy'}
+            decoding="async"
+            class="post-cover__img"
+          />
+        ) : (
+          <img
+            class="post-cover__img"
+            src={coverSrc}
+            alt=""
+            width={isFeature ? 1200 : 496}
+            height={isFeature ? 750 : 312}
+            loading={isFeature ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+        )}
+        <span class="post-cover__scrim" aria-hidden="true" />
       </a>
     )
   }
-  <div
-    class={cn(
-      'flex flex-col gap-2 pb-2 md:pb-4 pt-4 md:pt-1',
-      'px-4 md:px-4',
-      // Reduce margin on the side adjacent to image diagonal when uniform left position
-      isUniformPosition && !hideCover && leftClip && '-ml-3',
-      hideCover ? 'w-full' : 'w-[calc(50%+2rem)] md:w-full',
-      !hideCover && (leftClip ? 'order-2' : 'order-1'),
-      'md:order-0',
+
+  <div class="post-body">
+    {isFeature && (
+      <span class="post-pin">
+        <Icon name="ri:pushpin-2-fill" aria-hidden="true" />
+        {t(locale, 'post.pinned')}
+      </span>
     )}
-  >
-    <ScrollableRow
-      client:visible
-      className={cn('w-full', { 'order-2 pb-3 md:pb-0': isSimple }, getStaggerPadding(0), 'md:pl-0 md:pr-0')}
-      innerClassName="items-center justify-between gap-4 w-full"
-      fadeWidth={20}
-    >
+
+    {/* 元信息行：分类（青 ▸）+ 日期 + 字数，项间 1px 竖线（§6.6） */}
+    <div class="post-meta">
       {
         categoryStr && (
-          <a href={categoryLink} class="flex-center hover:text-blue text-muted-foreground shrink-0 text-xs whitespace-nowrap transition duration-300">
-            <Icon name="gg:flag" />
-            {categoryStr}
+          <a href={categoryLink} class="post-meta__cat">
+            {/* 紧凑写，避免行内空白把「▸」和分类名撑开 */}
+            <span class="post-meta__marker" aria-hidden="true">
+              ▸
+            </span>
+            <span>{categoryStr}</span>
           </a>
         )
       }
-      <div class="text-muted-foreground flex shrink-0 items-center gap-3 text-xs">
-        {
-          date ? (
-            <p class="flex-center gap-1 whitespace-nowrap">
-              <Icon name="fa6-solid:calendar-days" />
-              {displayDate.date(date)}
-            </p>
-          ) : null
-        }
-        <p class="flex-center gap-1 whitespace-nowrap">
-          <Icon name="fa6-solid:pen-nib" />
-          {t(locale, 'post.wordCount', { count: wordCount })}
-        </p>
-        <button
-          class="flex-center gap-1 whitespace-nowrap md:hidden"
-          title={t(locale, 'post.readingTimeTooltip', { time: readingTime })}
-          data-tooltip-placement="top"
-        >
-          <Icon name="fa6-solid:clock" />
-          {readingTime}
-        </button>
-
-      </div>
-    </ScrollableRow>
-    <div class={cn('mt-1 flex flex-col space-y-1.5 p-0', getStaggerPadding(1), 'md:pl-0 md:pr-0')}>
-      <div class="flex items-center gap-2">
-        <a href={href} aria-label="post-link" class="min-w-0 flex-1"
-          ><h2 class="text-primary hover:text-blue line-clamp-1 truncate text-xl font-bold transition-colors duration-300">
-            {title}
-          </h2>
-        </a>
-        {
-          isDraft && (
-            <Badge className="bg-yellow-700 border border-yellow-600/20 gap-1 text-white shrink-0 hover:bg-yellow-500 whitespace-nowrap transition-colors duration-300 ">
-              <Icon name="fa6-solid:file-pen" class="h-3 w-3" />
-              {t(locale, 'post.draft')}
-            </Badge>
-          )
-        }
-        {
-          isFallback && (
-            <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 gap-1 shrink-0 whitespace-nowrap transition-colors duration-300">
-              <Icon name="ri:translate-2" class="h-3 w-3" />
-              {getLocaleLabel(postLocale ?? defaultLocale)}
-            </Badge>
-          )
-        }
-      </div>
+      {
+        date && (
+          <span class="post-meta__item">
+            <time datetime={date.toISOString()}>{displayDate.date(date)}</time>
+          </span>
+        )
+      }
+      <span class="post-meta__item post-meta__item--wc">
+        {t(locale, 'post.wordCount', { count: wordCount })}
+      </span>
+      <span class="post-meta__item post-meta__item--rt" title={t(locale, 'post.readingTimeTooltip', { time: readingTime })}>
+        {readingTime}
+      </span>
     </div>
-    <p
-      class={cn(
-        'text-muted-foreground line-clamp-3 h-15 text-sm md:h-auto md:max-h-15',
-        { 'line-clamp-2 h-10 md:max-h-10': isSimple },
-        getStaggerPadding(2),
-        'md:pl-0 md:pr-0',
-      )}
-    >
-      {postDescription}
-    </p>
+
+    <div class="post-title-row">
+      <a href={href} class="post-title-link" data-astro-prefetch="hover">
+        <h2 class={cn('post-title', isFeature && 'post-title--feature')}>{title}</h2>
+      </a>
+      {
+        isDraft && (
+          <Badge className="post-flag post-flag--draft">
+            <Icon name="fa6-solid:file-pen" aria-hidden="true" />
+            {t(locale, 'post.draft')}
+          </Badge>
+        )
+      }
+      {
+        isFallback && (
+          <Badge className="post-flag post-flag--fallback">
+            <Icon name="ri:translate-2" aria-hidden="true" />
+            {getLocaleLabel(postLocale ?? defaultLocale)}
+          </Badge>
+        )
+      }
+    </div>
+
     {
-      showTags && tags?.length && (
-        <ScrollableRow
-          client:visible
-          className={cn(
-            'pt-1 pb-1',
-            leftClip ? 'mr-18' : 'ml-18',
-            'md:mx-0',
-            getStaggerPadding(3),
-            'md:pl-0 md:pr-0',
-          )}
-          innerClassName="gap-2"
-          fadeWidth={16}
-        >
-          {tags.map((tag: string) => (
-            <a href={localizedPath(buildTagPath(tag), locale)}>
-              <Badge
-                className='hover:text-badge-primary/80 shrink-0 cursor-pointer gap-0.5 border-none px-1 text-xs font-bold whitespace-nowrap transition-colors duration-300 flex'
-                variant="outline"
-              >
-                <Icon name="fa6-solid:tags" /> {tag}
-              </Badge>
-            </a>
-          ))}
-        </ScrollableRow>
+      postDescription && (
+        <p class={cn('post-desc', isFeature && 'post-desc--feature')}>{postDescription}</p>
       )
     }
-    <a
-      href={href}
-      aria-label="more info"
-      class={cn('absolute -bottom-1', hideCover ? '-right-1' : leftClip ? '-right-1' : '-left-1', 'md:left-auto md:-right-1')}
-    >
-      <Button
-        className={cn(
-          'bg-gradient-shoka-button rounded-2xl transition-all hover:translate-y-1 hover:scale-105 md:h-7 md:px-2 md:py-1 md:text-xs',
-          hideCover
-            ? 'rounded-se-none rounded-es-none hover:translate-x-1'
-            : leftClip
-              ? 'rounded-se-none rounded-es-none hover:translate-x-1'
-              : 'rounded-ss-none rounded-ee-none hover:-translate-x-1',
-          'md:rounded-ss-2xl md:rounded-se-none md:rounded-ee-2xl md:rounded-es-none md:hover:translate-x-1',
-        )}
-      >
-        more...
-      </Button>
+
+    {
+      showTags && visibleTags.length > 0 && (
+        <ul class="post-tags">
+          {visibleTags.map((tag: string) => (
+            <li>
+              <a href={localizedPath(buildTagPath(tag), locale)} class="post-tag">
+                {tag}
+              </a>
+            </li>
+          ))}
+          {extraTagCount > 0 && (
+            <li>
+              <span class="post-tag post-tag--more">+{extraTagCount}</span>
+            </li>
+          )}
+        </ul>
+      )
+    }
+
+    <a href={href} class="post-readmore" tabindex="-1" aria-hidden="true">
+      {t(locale, 'post.readMore')}
+      <span class="post-readmore__arrow" aria-hidden="true">
+        →
+      </span>
     </a>
   </div>
-</div>
+</article>
 
 <style>
+  /* ==========================================================================
+   * 卡片外壳：玻璃底 + 上亮下暗的 1px 边框（§6.4 的 border-image 方案）
+   * 不复用 .cyber-card，因为它的 padding 是 24px，而 §6.6 要求 16px；
+   * 且 .cyber-card 是无 layer 的普通类，Tailwind 的 p-* 会被它压住。
+   * 变量完全一致，视觉同源。
+   * ======================================================================== */
+  .post-card {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 20px;
+    padding: 16px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background-image:
+      linear-gradient(var(--glass-bg), var(--glass-bg)),
+      linear-gradient(160deg, var(--glass-border-top), var(--glass-border-bottom) 55%, var(--glass-border-bottom));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: var(--glass-inner-glow);
+    color: hsl(var(--card-foreground));
+    /* 焦点环不能被裁：卡片自身 overflow 保持 visible（§9.2） */
+    transition:
+      transform var(--dur-ui) var(--ease-out-quart),
+      box-shadow var(--dur-ui) var(--ease-out-quart),
+      background-image var(--dur-ui) var(--ease-in-out);
+  }
+
+  /* hover：位移 2px + 一处发光（--glow-cyan-sm），不叠加第二层光 */
+  .post-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      var(--glass-inner-glow),
+      var(--shadow-card),
+      0 0 0 1px hsl(var(--primary) / 0.18),
+      var(--glow-cyan-sm);
+  }
+
+  .post-card:active {
+    transform: translateY(0) scale(0.995);
+    transition-duration: var(--dur-fast);
+  }
+
+  /* ---- 文章主题色左条（§6.23-B 允许 accent 出现的第 2 个位置） ----------------
+   * 只在 hover 时出现，宽 2px、opacity .85，色值来自 data-accent 映射的
+   * --article-accent（见 styles/cyber/effects.css 的 [data-accent] 块）。
+   * 用 scaleY 展开而不是直接淡入：左条是「从卡片长出来」的锚点，纯淡入会像
+   * 一片贴纸。上下各留 12px 是为了避开 12px 圆角，否则直条会戳出圆角外。
+   */
+  .post-card[data-accent]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--article-accent, hsl(var(--primary)));
+    opacity: 0;
+    transform: scaleY(0.4);
+    transform-origin: center;
+    transition:
+      opacity var(--dur-ui) var(--ease-out-quart),
+      transform var(--dur-ui) var(--ease-out-quart);
+  }
+
+  .post-card[data-accent]:hover::before {
+    opacity: 0.85;
+    transform: scaleY(1);
+  }
+
+  /* reduced-motion 下不展开，但仍然要显示（信息不能只靠动效传达） */
+  @media (prefers-reduced-motion: reduce) {
+    .post-card[data-accent]::before {
+      transform: none;
+    }
+  }
+
+  /* ---- 序号 ---------------------------------------------------------------- */
+  .post-seq {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: hsl(var(--background) / 0.62);
+    color: hsl(var(--muted-foreground));
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.55;
+    text-shadow: 0 1px 2px hsl(var(--background) / 0.8);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ---- 封面 ---------------------------------------------------------------- */
+  .post-cover {
+    position: relative;
+    flex: 0 0 248px;
+    width: 248px;
+    height: 156px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: hsl(var(--surface-2));
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* 系统级亮度上限：全站统一压 8%，不做逐图特例（§6.6 / §6.23-C） */
+  .post-cover > :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.92) saturate(0.88) contrast(1.03);
+    transition: transform 600ms var(--ease-out-expo);
+  }
+
+  /* 底部 scrim + 整图 6% 页面底色 */
+  .post-cover__scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, transparent 45%, hsl(var(--background) / 0.55)),
+      hsl(var(--background) / 0.06);
+    pointer-events: none;
+  }
+
+  .post-card:hover .post-cover > :global(img) {
+    transform: scale(1.02);
+  }
+
+  /* ---- 文字区 -------------------------------------------------------------- */
+  .post-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    /* 横向间距全部交给分隔线自带的 margin，保证「分类→日期→字数」三处一致 */
+    column-gap: 0;
+    row-gap: 2px;
+    color: hsl(var(--muted-foreground));
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .post-meta__cat {
+    /* 用 inline-block 而不是 inline-flex：flex 会让分隔线的 ::before 变成
+       flex item 并吃到一个额外 gap，三处间距就对不齐了。 */
+    display: inline-block;
+    white-space: nowrap;
+    color: hsl(var(--muted-foreground));
+    transition: color var(--dur-base) var(--ease-in-out);
+  }
+
+  .post-meta__cat:hover {
+    color: hsl(var(--primary));
+  }
+
+  .post-meta__marker {
+    /* ▸ 与分类名之间的间隔由模板里的自然空白提供，这里不再加 margin，
+       否则两处间隔会叠加成 7px 左右，和三处竖线间距对不齐 */
+    color: hsl(var(--primary));
+    font-size: 12px;
+  }
+
+  /* 项间 1px 竖线：所有相邻项都走同一条规则（分类也算一项） */
+  .post-meta > * + *::before {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: 10px;
+    margin-inline: 8px;
+    vertical-align: -1px;
+    background: hsl(var(--foreground) / 0.12);
+  }
+
+  .post-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .post-title-link {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .post-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    color: hsl(var(--foreground));
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: -0.015em;
+    transition: color var(--dur-base) var(--ease-in-out);
+  }
+
+  .post-title-link:hover .post-title {
+    color: hsl(var(--primary));
+  }
+
+  /* 摘要：≥769 两行 / ≤768 三行，两种都必须锁最小高（否则整列节奏散掉） */
+  .post-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: 48px;
+    margin-top: 6px;
+    color: hsl(var(--muted-foreground));
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: 0.008em;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- 标签芯片（§6.14 青变体，最多 3 个 + `+N`） ------------------------- */
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .post-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid hsl(var(--primary) / 0.3);
+    border-radius: 6px;
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    transition:
+      border-color var(--dur-base) var(--ease-in-out),
+      background-color var(--dur-base) var(--ease-in-out);
+  }
+
+  .post-tag:hover {
+    border-color: hsl(var(--primary) / 0.55);
+    background: hsl(var(--primary) / 0.18);
+  }
+
+  .post-tag--more {
+    border-color: hsl(var(--border));
+    background: hsl(var(--foreground) / 0.05);
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ---- 「阅读 →」（§6.6 要求，替代原来的粉色 more... 胶囊） ---------------- */
+  .post-readmore {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: flex-start;
+    margin-top: auto;
+    padding-top: 12px;
+    color: hsl(var(--primary));
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: color var(--dur-base) var(--ease-in-out);
+  }
+
+  .post-readmore__arrow {
+    display: inline-block;
+    transition: transform var(--dur-base) var(--ease-out-quart);
+  }
+
+  .post-card:hover .post-readmore__arrow {
+    transform: translateX(4px);
+  }
+
+  /* ---- 徽章（草稿 / 兜底语言） -------------------------------------------- */
+  .post-flag {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .post-flag--draft {
+    border: 1px solid hsl(var(--neon-amber) / 0.3);
+    background: hsl(var(--neon-amber) / 0.12);
+    color: hsl(var(--neon-amber));
+  }
+
+  .post-flag--fallback {
+    border: 1px solid hsl(var(--neon-violet) / 0.3);
+    background: hsl(var(--neon-violet) / 0.12);
+    color: hsl(var(--neon-violet-soft));
+  }
+
+  /* ==========================================================================
+   * Feature 变体（§6.23-A）
+   * 全宽、封面铺满、文字压左半区。桌面 272px / ≤992 232px / ≤768 改堆叠。
+   * ======================================================================== */
+  .post-card--feature {
+    display: block;
+    overflow: hidden;
+    padding: 0;
+    height: 272px;
+    border-radius: 14px;
+  }
+
+  .post-card--feature .post-cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    flex: none;
+    border-radius: 0;
+  }
+
+  /* 置顶封面比常规卡亮 2%，仍在全局亮度上限内 */
+  .post-card--feature .post-cover > :global(img) {
+    filter: brightness(0.94) saturate(0.9) contrast(1.03);
+  }
+
+  .post-card--feature:hover .post-cover > :global(img) {
+    transform: scale(1.03);
+    transition-duration: 500ms;
+  }
+
+  /* 三段式横向覆盖层：文字压左侧深底，右侧留出封面主体 */
+  .post-card--feature .post-cover__scrim {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--background) / 0.92) 0%,
+      hsl(var(--background) / 0.72) 46%,
+      hsl(var(--background) / 0.12) 100%
+    );
+  }
+
+  .post-card--feature .post-body {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    padding: 24px;
+  }
+
+  .post-pin {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 4px;
+    height: 22px;
+    padding: 0 8px;
+    margin-bottom: 14px;
+    border: 1px solid hsl(var(--primary) / 0.3);
+    border-radius: 6px;
+    background: hsl(var(--primary) / 0.16);
+    color: hsl(var(--primary));
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.1em;
+  }
+
+  .post-card--feature .post-meta {
+    margin-top: 0;
+  }
+
+  .post-title--feature {
+    /* 28px × 1.3 × 2 行 ≈ 73px：必须按两行预留，clamp 成一行会丢版本号 */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    max-width: 60%;
+    min-height: 73px;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+  }
+
+  .post-desc--feature {
+    max-width: 54%;
+    min-height: 48px;
+    margin-top: 10px;
+  }
+
+  .post-card--feature .post-tags {
+    margin-top: auto;
+  }
+
+  .post-card--feature .post-readmore {
+    margin-top: 0;
+    padding-top: 8px;
+  }
+
+  /* ---- 隐藏封面（系列页 isSimple） ---------------------------------------- */
+  .post-card--simple {
+    padding: 16px;
+  }
+
+  /* ==========================================================================
+   * 响应式（断点是 max-width 语义：md = ≤768，tablet = ≤992，xs = ≤480）
+   * ======================================================================== */
+  @media (max-width: 992px) {
+    .post-card--feature {
+      height: 232px;
+    }
+
+    .post-title--feature {
+      font-size: 24px;
+      min-height: 62px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .post-card {
+      gap: 12px;
+      padding: 12px;
+    }
+
+    /* 列表卡在移动端改纵向：封面全宽 16:9 置顶 */
+    .post-card:not(.post-card--feature):not(.post-card--simple) {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .post-card:not(.post-card--feature) .post-cover {
+      width: 100%;
+      height: auto;
+      flex: 0 0 auto;
+      aspect-ratio: 16 / 9;
+    }
+
+    /* 摘要改三行 + 最小高 72 */
+    .post-card:not(.post-card--feature) .post-desc {
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      min-height: 72px;
+    }
+
+    .post-title {
+      font-size: 18px;
+    }
+
+    /* Feature 卡改堆叠：封面在上，文字在下，覆盖层转垂直渐变 */
+    .post-card--feature {
+      display: flex;
+      flex-direction: column;
+      height: auto;
+    }
+
+    .post-card--feature .post-cover {
+      position: relative;
+      inset: auto;
+      aspect-ratio: 16 / 9;
+      height: auto;
+    }
+
+    .post-card--feature .post-cover__scrim {
+      background: linear-gradient(180deg, hsl(var(--background) / 0.2) 0%, hsl(var(--background) / 0.95) 100%);
+    }
+
+    .post-card--feature .post-body {
+      padding: 16px;
+    }
+
+    .post-title--feature {
+      max-width: 100%;
+      min-height: 0;
+      font-size: 22px;
+    }
+
+    .post-desc--feature {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .post-title {
+      font-size: 17px;
+    }
+
+    /* 阅读时长在窄屏没地方放，省掉（字数已够判断长短） */
+    .post-meta__item--rt {
+      display: none;
+    }
+  }
+
+  /* hover 只保留颜色变化，去掉位移与缩放（§7.5） */
+  @media (prefers-reduced-motion: reduce) {
+    .post-card:hover,
+    .post-card:active {
+      transform: none;
+    }
+
+    .post-card:hover .post-cover > :global(img),
+    .post-card--feature:hover .post-cover > :global(img) {
+      transform: none;
+    }
+
+    .post-card:hover .post-readmore__arrow {
+      transform: none;
+    }
+  }
 </style>

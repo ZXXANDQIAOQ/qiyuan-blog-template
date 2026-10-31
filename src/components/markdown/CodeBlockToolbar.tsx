@@ -6,7 +6,7 @@
 import { CopyButton } from '@components/markdown/shared/CopyButton';
 import { MacToolbar } from '@components/markdown/shared/MacToolbar';
 import { useTranslation } from '@hooks/useTranslation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { extractCode, extractCodeClassName, extractCodeHTML, extractLanguage } from '@lib/content-enhancer-utils';
 import { openModal } from '@store/modal';
 import { useMemo } from 'react';

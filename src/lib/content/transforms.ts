@@ -6,7 +6,7 @@
  */
 
 import { defaultLocale } from '@/i18n/config';
-import type { BlogPost } from '@/types/blog';
+import type { ArticleAccent, BlogPost } from '@/types/blog';
 import { getPostLocale, getPostSlug } from './locale';
 import { getPostDescriptionWithSummary, getPostLastCategory, getPostReadingTime } from './posts';
 
@@ -25,6 +25,8 @@ export type PostFieldMap = {
   tags: string[] | undefined;
   categories: string[] | string[][] | undefined;
   draft: boolean | undefined;
+  /** 文章主题色（§6.23-B），透传 frontmatter accent */
+  accent: ArticleAccent | undefined;
   // 计算字段
   categoryName: string | undefined; // from getPostLastCategory()
   description: string; // from getPostDescriptionWithSummary()
@@ -47,6 +49,7 @@ const fieldExtractors: { [K in keyof PostFieldMap]: (post: BlogPost, locale: str
   tags: (p) => p.data?.tags,
   categories: (p) => p.data?.categories,
   draft: (p) => p.data?.draft,
+  accent: (p) => p.data?.accent,
   // 计算字段
   categoryName: (p) => getPostLastCategory(p).name || undefined,
   description: (p, locale) => getPostDescriptionWithSummary(p, locale),
@@ -104,6 +107,7 @@ const POST_CARD_DATA_KEYS = [
   'tags',
   'categories',
   'draft',
+  'accent',
   'wordCount',
   'readingTime',
   'postLocale',

@@ -42,11 +42,28 @@ export const colors = {
     foreground: 'hsl(var(--warning-foreground))',
   },
 
-  // Shoka theme accent (replaces hardcoded #E95469)
+  // Shoka theme accent（类名保留，值换青 —— 见 design-spec §2.4）
+  // 走 var() 以便深/浅色主题自动适配
   shoka: {
-    DEFAULT: '#E95469',
-    light: '#FF6B7A',
-    dark: '#D63F55',
+    DEFAULT: 'hsl(var(--primary))',
+    light: 'hsl(var(--neon-cyan-soft))',
+    dark: 'hsl(196 100% 42%)',
+  },
+
+  // 霓虹三色（§2.2）：青（主）/ 紫（辅）/ 琥珀（警示）
+  neon: {
+    cyan: 'hsl(var(--neon-cyan))',
+    'cyan-soft': 'hsl(var(--neon-cyan-soft))',
+    violet: 'hsl(var(--neon-violet))',
+    'violet-soft': 'hsl(var(--neon-violet-soft))',
+    amber: 'hsl(var(--neon-amber))',
+  },
+
+  // 底色三阶（§2.1）：页面底 → 分区底 → 卡片底 → 悬浮层
+  surface: {
+    1: 'hsl(var(--surface-1))',
+    2: 'hsl(var(--surface-2))',
+    3: 'hsl(var(--surface-3))',
   },
 
   // Theme toggle colors
@@ -211,9 +228,10 @@ export const shadows = {
   inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
 
   // Custom shadows from project
-  card: '0 0.625rem 1.875rem rgba(90, 97, 105, 0.12)',
-  'card-darker': '0 0.625rem 1.875rem rgba(90, 97, 105, 0.2)',
-  'shoka-button': '0px 0px 16px 0px rgb(233, 84, 105, 0.8)',
+  // 恬谧版：紫调柔和投影替代黑灰投影；原粉色实心外扩已废弃（§10-13/45）
+  card: '0 10px 32px rgba(124, 108, 200, 0.10), 0 2px 8px rgba(124, 108, 200, 0.05)',
+  'card-darker': '0 16px 40px rgba(124, 108, 200, 0.16), 0 4px 12px rgba(124, 108, 200, 0.07)',
+  'shoka-button': '0 8px 20px hsl(var(--primary) / 0.24)',
 } as const;
 
 /**
@@ -239,23 +257,27 @@ export const borderRadius = {
  * Duration and easing functions for consistent motion.
  */
 export const animation = {
-  // Duration in milliseconds
+  // Duration in milliseconds（§7.1）
   duration: {
-    fast: 150,
-    tween: 200, // Between fast and normal
-    normal: 250,
-    ui: 300, // Common UI interaction
-    slow: 350,
-    slower: 500,
+    fast: 120,
+    tween: 160,
+    normal: 200, // --dur-base
+    ui: 260, // --dur-ui
+    slow: 360, // --dur-slow
+    slower: 520, // --dur-enter
+    enter: 520, // --dur-enter（滚动进场）
     flipCard: 600, // Card flip animation
   },
 
-  // Easing functions
+  // Easing functions（§7.1）
   easing: {
     linear: 'linear',
     easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
     easeOut: 'cubic-bezier(0, 0, 0.2, 1)',
     easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    outExpo: 'cubic-bezier(0.16, 1, 0.3, 1)', // 进场、位移
+    outQuart: 'cubic-bezier(0.25, 1, 0.5, 1)', // hover 位移
+    drawer: 'cubic-bezier(0.22, 1, 0.36, 1)', // 抽屉
     spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // Spring-like easing
   },
 
@@ -364,10 +386,11 @@ export const zIndex = {
  * Color Palettes
  *
  * Multi-color arrays for gradients and backgrounds.
+ * 恬谧：雾紫 → 奶油灰阶（浅色）/ 深空霓虹（暗色保持不变）
  */
 export const gridBackground = {
-  light: ['#ed719a', '#FFACDE', '#FBD7ED', '#EEF1F0', '#DDDDDD', '#B4B4B4'],
-  dark: ['#212832', '#3F4659', '#8592A7', '#EEEFEA', '#212832', '#3F4659'],
+  light: ['#6c5fc7', '#a79df0', '#d2cdff', '#ffffe8', '#f2eedd', '#e0dbca'],
+  dark: ['#0b0e14', '#11151d', '#1ae8ff', '#6fecf9', '#161a22', '#242833'],
 } as const;
 
 /**

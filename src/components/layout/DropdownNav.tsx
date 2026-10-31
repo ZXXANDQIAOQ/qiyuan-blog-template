@@ -1,6 +1,6 @@
 import Popover from '@components/ui/popover';
 import type { Router } from '@constants/router';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 import { memo, useCallback, useState } from 'react';
 import { defaultLocale, localizedPath, resolveNavName, stripLocaleFromPath, t } from '@/i18n';
@@ -21,28 +21,29 @@ const DropdownNavComponent = ({ item, currentPath, className, locale = defaultLo
 
   const renderDropdownContent = useCallback(
     () => (
-      <div className="nav-dropdown flex flex-col">
+      /* 下拉面板（§6.1）：宽 200 / 玻璃 / 圆角 10 / 顶部 1px 高光 / --shadow-pop */
+      <div
+        className="flex w-[200px] flex-col gap-0.5 rounded-[10px] border border-white/10 bg-[var(--glass-bg-strong)] p-1 shadow-[var(--shadow-pop)] backdrop-blur-[20px]"
+      >
         {children?.length
-          ? children.map((child: Router, index) => {
+          ? children.map((child: Router) => {
               const childName = resolveNavName(child.nameKey, child.name, locale);
               const childUrl = child.path ? localizedPath(child.path, locale) : child.path;
+              const isChildActive = child.path ? strippedPath === child.path : false;
               return (
                 <a
                   key={child.path}
                   href={childUrl}
+                  aria-current={isChildActive ? 'page' : undefined}
                   className={cn(
-                    'group px-4 py-2 text-base outline-hidden transition-colors duration-300 hover:bg-gradient-shoka-button',
-                    {
-                      'rounded-ss-2xl': index === 0,
-                      'rounded-ee-2xl': index === children.length - 1,
-                      'bg-gradient-shoka-button text-muted': strippedPath === child.path,
-                    },
+                    'flex h-9 items-center gap-2 rounded-md px-3 text-[13px] transition-colors duration-200',
+                    isChildActive
+                      ? 'bg-primary/[0.09] font-medium text-primary'
+                      : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
                   )}
                 >
-                  <div className="flex items-center gap-2 text-white transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white">
-                    {child.icon && <Icon icon={child.icon} className="size-4" />}
-                    {childName}
-                  </div>
+                  {child.icon && <Icon icon={child.icon} className="size-4 shrink-0" />}
+                  {childName}
                 </a>
               );
             })
@@ -57,20 +58,20 @@ const DropdownNavComponent = ({ item, currentPath, className, locale = defaultLo
       <button
         type="button"
         className={cn(
-          'inline-flex h-10 items-center px-4 py-2 text-base tracking-wider',
-          'relative after:absolute after:bottom-1 after:left-1/2 after:h-0.5 after:w-0',
-          'after:-translate-x-1/2 after:bg-white after:transition-all after:duration-300 after:content-[""]',
+          'relative flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold tracking-[0.06em] whitespace-nowrap',
+          'text-muted-foreground transition-colors duration-200 ease-in-out hover:bg-white/5 hover:text-foreground',
+          isOpen && 'bg-white/5 text-foreground',
           className,
         )}
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label={t(locale, 'common.menuLabel', { name })}
       >
-        {icon && <Icon icon={icon} className="mr-1.5" />}
+        {icon && <Icon icon={icon} className="mr-1 size-4 shrink-0" />}
         {name}
         <Icon
-          icon="ri:arrow-drop-down-fill"
-          className={cn('absolute -right-1.5 size-6 transition-transform duration-300', {
+          icon="ri:arrow-down-s-line"
+          className={cn('size-4 shrink-0 transition-transform duration-200', {
             'rotate-180': isOpen,
           })}
         />

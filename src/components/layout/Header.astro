@@ -1,9 +1,7 @@
 ---
-import LogoSvg from '@assets/svg/logo.svg?react';
 import logoSrc from '@assets/svg/logo.svg?url';
 import { MobilePostHeader } from '@components/layout/MobilePostHeader';
 import { MenuIcon } from '@components/ui/MenuIcon';
-import { MAX_WIDTH } from '@constants/layout';
 import { siteConfig } from 'constants/site-config';
 import { getLocaleFromUrl, localizedPath } from '@/i18n';
 import Navigator from './Navigator';
@@ -14,37 +12,58 @@ interface Props {
 }
 
 const { isPostPage = false, tocNumbering = true } = Astro.props;
-const { alternate, title, showLogo } = siteConfig;
+const { alternate, title } = siteConfig;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 // 首页链接需带上 locale 与部署 base 前缀（GitHub Pages 子路径部署时必需）
 const homeHref = localizedPath('/', locale);
+const brand = alternate || title;
 ---
 
-<div
-  id="site-header"
-  class={`shadow-text fixed tablet:backdrop-blur inset-x-0 top-0 z-30 gap-4 py-2.5 text-white select-none tablet:py-2 tablet:pl-3 tablet:pr-0 overflow-visible`}
-  transition:name="site-header"
->
-  <div class={`mx-auto flex items-center justify-between tablet:w-full px-6 tablet:pl-10 tablet:pr-3 ${MAX_WIDTH.content}`}>
-    <!-- Desktop: Always show logo -->
+<!--
+  顶部导航（design-spec §6.1）
+  · 高 60px（≤992 为 56px，由 --nav-h 控制），fixed 吸顶
+  · 初始透明浮在 Hero 上；滚动后 .with-background 切成玻璃拟态
+  · 三段 flex：logo / 菜单 / 右侧图标组
+-->
+<div id="site-header" class="fixed inset-x-0 top-0 z-30 select-none overflow-visible" transition:name="site-header">
+  <div class="cyber-shell flex h-full items-center gap-8">
+    <!-- Desktop logo：符号 + 文字（§6.2） -->
     <a
       transition:persist="page-header-avatar"
-      class="tablet:hidden -my-4 mr-4 flex cursor-pointer items-center justify-center gap-1 whitespace-nowrap"
+      class="logo-link tablet:hidden flex shrink-0 items-center gap-2.5 whitespace-nowrap"
       href={homeHref}
       target="_self"
-      title={alternate || title}
-      aria-label={alternate || title}
+      title={brand}
+      aria-label={brand}
     >
-      {showLogo ? <LogoSvg className="h-8" /> : <p class="logo-text">{alternate || title}</p>}
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" focusable="false">
+          <!-- 注意：reset.css 有全局 `svg { fill: currentColor }`，
+               子元素必须显式写 fill="none"，否则描边方块会被填成实心青块 -->
+          <rect x="1" y="1" width="22" height="22" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
+          <line
+            x1="6.5"
+            y1="17.5"
+            x2="13.5"
+            y2="10.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"></line>
+          <rect x="14.5" y="7" width="2" height="2" fill="currentColor" rx="0.5"></rect>
+        </svg>
+      </span>
+      <span class="logo-text">{brand}</span>
     </a>
-    <!-- Mobile: MobilePostHeader (shows heading on post pages, logo otherwise) -->
-    <div class="tablet:flex tablet:grow hidden items-center justify-center">
+    <!-- Mobile: MobilePostHeader（文章页显示标题，其他页显示 logo）
+         用 client:load 而非 client:only：SSR 阶段就能输出 logo，JS 失败时移动端导航仍有品牌标识 -->
+    <div class="tablet:flex tablet:grow hidden min-w-0 items-center justify-center">
       <MobilePostHeader
-        client:only="react"
+        client:load
         isPostPage={isPostPage}
         enableNumbering={tocNumbering}
-        logoElement={showLogo ? 'svg' : 'text'}
-        logoText={alternate || title}
+        logoElement="text"
+        logoText={brand}
         logoSrc={logoSrc}
         homeHref={homeHref}
       />
@@ -53,9 +72,41 @@ const homeHref = localizedPath('/', locale);
   </div>
 </div>
 
-<!-- 移动端菜单按钮 -->
+<!-- 移动端菜单按钮：同样用 client:load 保证 SSR 出骨架（触控可点区域 56×56） -->
 <MenuIcon
-  client:only="react"
-  className="tablet:flex fixed top-0 left-3 z-52 hidden h-14 transition-transform"
+  client:load
+  className="tablet:flex fixed top-0 left-3 z-52 hidden h-14 items-center transition-transform"
   id="mobile-menu-container"
 />
+
+<style>
+  /*
+   * Logo 符号（§6.2）：24×24 / 圆角 6 / 1.5px 青描边 + 45° 短线 + 中心 3×3 青点
+   * 默认描边 0.75 透明度 + --glow-cyan-sm；hover 全亮 + 18px 青光。
+   * 这是全站唯一允许常驻发光的非内容元素（每屏 ≤3 处的配额之一）。
+   */
+  .logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: hsl(var(--primary) / 0.75);
+    border-radius: 6px;
+    box-shadow: var(--glow-cyan-sm);
+    transition:
+      color var(--dur-base) var(--ease-in-out),
+      box-shadow var(--dur-base) var(--ease-in-out);
+  }
+
+  .logo-link:hover .logo-mark,
+  .logo-link:focus-visible .logo-mark {
+    color: hsl(var(--primary));
+    box-shadow: 0 0 18px hsl(var(--primary) / 0.35);
+  }
+
+  @media (max-width: 992px) {
+    .logo-mark svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+</style>

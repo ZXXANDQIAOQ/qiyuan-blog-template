@@ -1,143 +1,323 @@
 ---
-import { Button } from '@components/ui/button';
-import { categoryMap } from '@constants/category';
+/**
+ * 精选分类卡 —— design-spec §6.7
+ *
+ * 3 列等宽网格（≤992 两列，≤768 一列），每卡 16:9 封面 + 压深底的白字标题
+ * + 右上角计数 + 左下角一行说明。
+ *
+ * 这一版替换掉了原来的 <FlippedCard> 3D 翻转结构：
+ *   · 翻转卡要翻到背面才有信息，等于首屏什么也看不到；
+ *   · 原实现的网格在深色主题下塌成单列、三张卡只显示一张图。
+ * 删掉的东西：3D 翻转、缎带三角角标、`bg-gradient-shoka-button` 的 more... 胶囊、
+ * 青字压白图（`text-primary` + `shadow-text-on-light`，在浅色封面上不可读）。
+ *
+ * 发光：本组件常驻零发光。hover 只有边框渐变 + 2px 顶部进度条 + 位移 2px，
+ * 不叠加 box-shadow 光 —— 首页主栏已经有一处卡片 hover 光，再加会破配额。
+ */
 import { Routes } from '@constants/router';
 import { siteConfig } from '@constants/site-config';
-import {
-  type Category,
-  getCategoryByLink,
-  getCategoryList,
-  getParentCategory,
-  getPostsByCategory,
-  translateCategoryName,
-} from '@lib/content';
-import { toPostRefs } from '@lib/content/transforms';
-import { getLqipStyle } from '@lib/lqip';
-import { routeBuilder } from '@lib/route';
-import { cn } from '@lib/utils';
-import { Icon } from 'astro-icon/components';
+import { getCategoryByLink, getCategoryList, getPostsByCategory, translateCategoryName } from '@lib/content';
 import { getLocaleFromUrl, localizedPath, t, withBase } from '@/i18n';
-import type { PostRef } from '@/types/blog';
-import FlippedCard from './FlippedCard.astro';
 
-interface CategoryWithPosts {
+interface FeaturedCategoryCard {
   link: string;
-  label?: string;
+  /** 完整分类路径（已 localize） */
+  href: string;
+  name: string;
   image: string;
-  posts: PostRef[];
-  category: Category | null;
-  parentCategory: Category | null;
+  description: string;
+  postCount: number;
+  childCount: number;
 }
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const { categories } = await getCategoryList(locale);
+const featured = siteConfig.featuredCategories ?? [];
 
-const categoryPosts: CategoryWithPosts[] = await Promise.all(
-  siteConfig.featuredCategories?.map(async (category) => {
-    const categoryInfo = getCategoryByLink(categories, category?.link);
-    const posts = await getPostsByCategory(categoryInfo?.name ?? '', locale);
+const cards: FeaturedCategoryCard[] = await Promise.all(
+  featured.map(async (category) => {
+    const info = getCategoryByLink(categories, category?.link);
+    const posts = await getPostsByCategory(info?.name ?? '', locale);
+    const children = info?.children ?? [];
+
     return {
       link: category.link,
-      label: category?.label,
+      href: localizedPath(`${Routes.Categories}/${category.link}`, locale),
+      name: translateCategoryName(category.label ?? info?.name ?? category.link, locale),
       image: category.image,
-      category: categoryInfo,
-      parentCategory: getParentCategory(categoryInfo, categories),
-      posts: toPostRefs(posts),
-    };
-  }) || [],
+      description: category.description ?? '',
+      postCount: posts.length,
+      childCount: children.length,
+    } satisfies FeaturedCategoryCard;
+  }),
 );
+
+/** 封面素材 1536×928（≈16.6:9），卡片按 16:9 裁切 */
+const COVER_W = 1536;
+const COVER_H = 928;
 ---
 
-<div class="grid w-full grid-cols-2 gap-8 gap-y-4 md:grid-cols-1">
-  {
-    categoryPosts.map((category) => {
-      const parentCategory = category?.parentCategory;
-      const parentCategoryLink = parentCategory
-        ? localizedPath(Routes.Categories + '/' + (category?.link.split('/').slice(0, -1).join('/') ?? ''), locale)
-        : '';
-      const categoryInfo = category?.category;
-      const categoryLink = localizedPath(Routes.Categories + '/' + (category?.link ?? ''), locale);
-      const childrenLen = categoryInfo?.children?.length ?? 0;
-      const posts = category?.posts?.slice(0, 6 - (childrenLen ?? 0));
-      const displayName = translateCategoryName(category?.label ?? categoryInfo?.name ?? '', locale);
-      return (
-        <FlippedCard>
-          <div slot="front" class="flex-center relative h-full rounded-md px-2 py-4">
+{
+  cards.length > 0 && (
+    <ul class="cat-grid">
+      {cards.map((card) => (
+        <li class="cat-grid__item">
+          <a class="cat-card" href={card.href} data-astro-prefetch="hover">
+            {/* 封面：装饰性图片，标题文字已在卡内，alt 留空 */}
             <img
-              style={getLqipStyle(category.image)}
-              src={withBase(category.image)}
-              alt={category.label}
+              class="cat-card__img"
+              src={withBase(card.image)}
+              alt=""
+              width={COVER_W}
+              height={COVER_H}
               loading="lazy"
               decoding="async"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              class="absolute inset-0 -z-10 h-full w-full rounded-md object-cover"
             />
-            <h2 class="text-primary relative z-10 text-2xl font-bold tracking-widest shadow-text-on-light">
-              {displayName}
-            </h2>
-          </div>
-          <div slot="back" class="bg-card relative h-full flex-col rounded-md px-6 pt-16 pb-4">
-            <div
-              class={cn(
-                'from-gradient-shoka-button-start to-gradient-shoka-button-end absolute top-4 -left-4 grid h-8 max-w-[calc(100%+2rem)] place-items-center rounded-r-md bg-linear-to-l px-4',
-                "after:absolute after:top-full after:-left-4 after:h-0 after:w-0 after:border-t-0 after:border-r-16 after:border-b-16 after:border-l-16 after:border-transparent after:content-['']",
-                'after:border-r-gradient-shoka-button-end',
-              )}
-            >
-              <a class="hover:animate-vertical-shake block text-base text-white" href={categoryLink}>
-                {displayName}
-              </a>
-            </div>
-            <div class="grid max-h-24 grid-cols-2 gap-x-5 gap-y-3 overflow-auto">
-              {categoryInfo?.children?.length
-                ? categoryInfo.children.map((child) => (
-                    <a
-                      href={`${categoryLink}/${categoryMap[child?.name]}`}
-                      class="text-primary hover:text-blue truncate text-left transition-colors duration-300"
-                    >
-                      {translateCategoryName(child.name, locale)}
-                    </a>
-                  ))
-                : null}
-              {posts.map((post) => (
-                <a
-                  href={localizedPath(routeBuilder(Routes.Post, post), locale)}
-                  class="text-primary hover:text-blue truncate text-left transition-colors duration-300"
-                >
-                  {post.title}
-                </a>
-              ))}
-            </div>
-            <p class="text-muted-foreground absolute bottom-4 left-6 flex items-center text-sm">
-              {parentCategory?.name ? (
-                <a
-                  href={parentCategoryLink}
-                  class="group hover:text-blue mr-1 flex cursor-pointer items-center transition duration-300"
-                >
-                  <Icon name="ri:flag-fill" class="mr-0.5 text-base" />
-                  <span class="mr-2">{translateCategoryName(parentCategory.name, locale)}</span>
-                </a>
-              ) : null}
-              <Fragment>
-                <Icon name="gg:loadbar-doc" class="mr-0.5 text-base" />
-                {categoryInfo?.children?.length
-                  ? `${t(locale, 'category.subCategoryCount', { count: categoryInfo.children.length })}, `
-                  : ''}
-                {t(locale, 'category.postCount', { count: category.posts?.length ?? 0 })}
-              </Fragment>
-            </p>
-            <a href={categoryLink} aria-label="more info" class="absolute right-0 bottom-0">
-              <Button
-                className={cn(
-                  'bg-gradient-shoka-button rounded-2xl rounded-se-none rounded-es-none transition-all hover:translate-x-1 hover:translate-y-1 hover:scale-105 md:h-7 md:px-2 md:py-1 md:text-xs',
-                )}
-              >
-                more...
-              </Button>
-            </a>
-          </div>
-        </FlippedCard>
-      );
-    })
+
+            {/* 深底渐变覆盖层：解决「浅色封面上青字不可读」的核心手段 */}
+            <span class="cat-card__scrim" aria-hidden="true" />
+
+            {/* hover 渐变描边 */}
+            <span class="cat-card__border" aria-hidden="true" />
+
+            {/* hover 顶部进度条：青 → 紫，scaleX 0→1 */}
+            <span class="cat-card__bar" aria-hidden="true" />
+
+            {/*
+              右上角计数：带单位（「2 篇」）。
+              原来补零成 02 / 02 / 01，和文章卡的序号 01–04 同形同字号，
+              读者会误读成列表编号；单位把「数量」的语义拉回来。
+              读屏保留完整表述（「2 篇文章」），视觉上只显示短形式。
+            */}
+            <span class="cat-card__count">
+              <span class="sr-only">{t(locale, 'category.postCount', { count: card.postCount })}</span>
+              <span aria-hidden="true">{t(locale, 'category.postCountShort', { count: card.postCount })}</span>
+            </span>
+
+            <span class="cat-card__body">
+              <h3 class="cat-card__title">{card.name}</h3>
+              <span class="cat-card__meta">
+                {card.description ||
+                  (card.childCount > 0
+                    ? t(locale, 'category.subCategoryCount', { count: card.childCount })
+                    : t(locale, 'category.postCount', { count: card.postCount }))}
+              </span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  /* ---- 网格：3 列等宽 → ≤992 两列 → ≤768 一列（严禁 2+1 不等宽） -------- */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-</div>
+
+  .cat-grid__item {
+    min-width: 0;
+  }
+
+  /* ---- 卡片 -------------------------------------------------------------- */
+  .cat-card {
+    position: relative;
+    display: block;
+    /* 必须显式写 width：只给 aspect-ratio + min-height 时，Chrome 会用
+       「min-height × 16/9」反推宽度（168 × 16/9 ≈ 299px），把 229px 的网格列
+       撑破，三张卡会互相重叠 50 多 px。 */
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    min-height: 168px;
+    overflow: hidden;
+    border-radius: 12px;
+    /* 圆角裁切后焦点环会被吃掉，用 inset 焦点环兜底（见 :focus-visible） */
+    background-color: hsl(var(--surface-2));
+    box-shadow: 0 0 0 1px hsl(var(--border) / 0.7);
+    transition:
+      transform var(--dur-ui) var(--ease-out-quart),
+      box-shadow var(--dur-ui) var(--ease-out-quart);
+  }
+
+  .cat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.22);
+  }
+
+  .cat-card:active {
+    transform: translateY(0) scale(0.995);
+    transition-duration: var(--dur-fast);
+  }
+
+  /* 焦点态：outline 会被圆角裁掉，改成亮色内描边 + 外侧补一圈 */
+  .cat-card:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 12px;
+  }
+
+  .cat-card__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.9);
+    transition: transform 400ms var(--ease-out-expo);
+  }
+
+  .cat-card:hover .cat-card__img {
+    transform: scale(1.04);
+  }
+
+  /* 覆盖层：0.20 → 0.55 → 0.92，文字一律压深底 */
+  .cat-card__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--background) / 0.2) 0%,
+      hsl(var(--background) / 0.55) 55%,
+      hsl(var(--background) / 0.92) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* hover 渐变描边（1px，青 → 紫），默认透明 */
+  .cat-card__border {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.55), hsl(var(--neon-violet) / 0.35));
+    /* mask 里的 black 只是遮罩通道（决定哪里保留/挖空），不是视觉色值 */
+    -webkit-mask:
+      linear-gradient(black 0 0) content-box,
+      linear-gradient(black 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(black 0 0) content-box,
+      linear-gradient(black 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-in-out);
+    pointer-events: none;
+  }
+
+  .cat-card:hover .cat-card__border {
+    opacity: 1;
+  }
+
+  .cat-card__bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--neon-violet)));
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 300ms var(--ease-out-quart);
+    pointer-events: none;
+  }
+
+  .cat-card:hover .cat-card__bar {
+    transform: scaleX(1);
+  }
+
+  /* ---- 计数徽章（右上角） ------------------------------------------------- */
+  .cat-card__count {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: hsl(var(--background) / 0.65);
+    color: hsl(var(--neon-cyan));
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- 文字区（左下） ----------------------------------------------------- */
+  .cat-card__body {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+  }
+
+  .cat-card__title {
+    /* 白字压深底：--foreground 对 0.92 遮罩后的底 ≈ 13:1，达标 */
+    color: hsl(var(--foreground));
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    text-shadow: 0 1px 12px hsl(var(--background) / 0.65);
+  }
+
+  .cat-card__meta {
+    display: block;
+    /* 16:9 卡高度有限，说明只允许一行 */
+    overflow: hidden;
+    color: hsl(var(--muted-foreground));
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 22px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- 响应式 ------------------------------------------------------------ */
+  @media (max-width: 992px) {
+    .cat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .cat-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .cat-card__title {
+      font-size: 18px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cat-card:hover,
+    .cat-card:active {
+      transform: none;
+    }
+
+    .cat-card:hover .cat-card__img {
+      transform: none;
+    }
+
+    /* 进度条是纯装饰：降级后直接给满宽，状态信号仍由边框与位移缺口补上 */
+    .cat-card__bar {
+      transition: none;
+    }
+
+    .cat-card:hover .cat-card__bar {
+      transform: scaleX(1);
+    }
+  }
+</style>

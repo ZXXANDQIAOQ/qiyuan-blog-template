@@ -1,8 +1,25 @@
 ---
+/**
+ * Markdown 页面骨架 —— design-spec §5.7
+ *
+ * 被 about.md / privacy/index.md 等纯 Markdown 页共用。三处变化（相对旧版）：
+ *
+ * 1. 去掉 `shadow-box bg-gradient-start CONTENT_PADDING` 大卡片外壳。
+ *    旧版把主栏整块包成一张带 40px 内距的卡，和新规范「区块靠留白分节、
+ *    卡片自带内距」冲突，也吃掉了正文宽度。改用 `.cyber-stack`（gap 48/64/32）。
+ *
+ * 2. 顶部横向个人卡用 frontmatter 的 `showProfile` 开关控制。
+ *    PageLayout 同时服务隐私页 —— 隐私页顶上突然挂一张你的头像卡会很怪，
+ *    所以默认关闭，只有 about.md 显式打开。
+ *
+ * 3. §5.7 的链接列表箭头写在这里，限定 `.prose` 后代：
+ *    不进 markdown.css 是因为那套规则全局生效，会把正文里所有 ul 列表
+ *    都加上箭头 —— 规范只在「平台/社交/联系」这类链接列表要箭头。
+ */
 import CustomContent from '@components/common/CustomContent.astro';
 import HomeSider from '@components/layout/HomeSider.astro';
+import ProfileStrip from '@components/layout/ProfileStrip.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING } from '@constants/layout';
 import { seoConfig } from '@constants/site-config';
 import Layout from './Layout.astro';
 import TwoColumnLayout from './TwoColumnLayout.astro';
@@ -12,6 +29,8 @@ export interface Props {
     title: string;
     description?: string;
     coverTitle?: string;
+    /** 关于页专用：顶部横向个人卡（§5.7）。隐私页不传 */
+    showProfile?: boolean;
   };
 }
 
@@ -22,7 +41,8 @@ const { frontmatter } = Astro.props;
   <TwoColumnLayout>
     <Cover slot="cover" title={frontmatter.coverTitle ?? frontmatter.title} />
     <HomeSider slot="sider" />
-    <div class={`shadow-box bg-gradient-start mx-0 flex w-full flex-col gap-8 ${CONTENT_PADDING.standard}`}>
+    <div class="cyber-stack">
+      {frontmatter.showProfile && <ProfileStrip />}
       <div class="prose md:prose-sm dark:prose-invert" data-pagefind-body>
         <CustomContent>
           <slot />
@@ -31,3 +51,27 @@ const { frontmatter } = Astro.props;
     </div>
   </TwoColumnLayout>
 </Layout>
+
+<style>
+  /*
+   * §5.7：「联系 / 平台 / 社交」这类链接列表，每项前加 → 青色箭头，
+   * hover 时箭头右移 3px。限定 .prose ul 里包含 <a> 的列表项才加，
+   * 避免把普通条目列表（比如「我在做什么」里的三个东西）也变成箭头列表。
+   */
+  .prose :where(ul) :where(li):has(a)::before {
+    content: '→';
+    display: inline-block;
+    margin-right: 8px;
+    color: hsl(var(--primary));
+    transition: transform var(--dur-base) var(--ease-out-expo);
+  }
+
+  .prose :where(ul) :where(li):has(a):hover::before {
+    transform: translateX(3px);
+  }
+
+  /* 这类列表项本身去掉默认圆点，箭头就是它的标记 */
+  .prose :where(ul) :where(li):has(a) {
+    list-style: none;
+  }
+</style>

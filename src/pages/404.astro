@@ -1,190 +1,193 @@
 ---
-import HomeSider from '@components/layout/HomeSider.astro';
-import Cover from '@components/ui/cover/Cover.astro';
+/**
+ * 404 页 —— design-spec §5.8
+ *
+ * 这一页刻意不走 TwoColumnLayout：
+ *   · 规范要求「Hero 不显示，整页只有主栏居中内容」，所以没有 Cover、
+ *     没有侧栏，自然也没有页脚；
+ *   · 内容是单块居中的东西，套 12 列栅格只会多出一层无意义的包装。
+ *
+ * 猫的 SVG 结构沿用旧版（0 / 4 / 4 三个字符形变成一张猫脸，有记忆点），
+ * 只做配色与动效改造：粉色全部换成线框青，按钮换成 §6.13 规格，
+ * 并补上旧版完全缺失的 reduced-motion 降级。
+ */
 import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { Icon } from 'astro-icon/components';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const title = `404 - ${t(locale, 'notFound.title')}`;
 const description = t(locale, 'notFound.description');
-
-// Debug flag: Set to true to pause animation at the "Cat" shape for inspection
-const DEBUG_CAT_STATE = false;
 ---
 
 <Layout title={title} description={description}>
-  <TwoColumnLayout>
-    <Cover slot="cover" title="404" />
-    <HomeSider slot="sider" />
-      <div class:list={['cat-404-container', { 'debug-paused': DEBUG_CAT_STATE }]}>
-        <svg class="cat-404" viewBox="0 0 600 350" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-             <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
+  <div class="nf">
+    <div class="nf__inner">
+      <svg class="nf__cat" viewBox="0 0 600 350" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <g class="composition">
+          {/* '0' → 猫头 */}
+          <g class="head-group">
+            <ellipse class="digit-0-bg" cx="300" cy="200" rx="35" ry="70" />
+            <ellipse class="digit-0-outline" cx="300" cy="200" rx="35" ry="70" />
+          </g>
 
-          <!-- Group for the whole composition -->
-          <g class="composition">
-            
-            <!-- THE '0' -> HEAD -->
-            <g class="head-group">
-               <!-- Background fill for the head -->
-               <ellipse class="digit-0-bg" cx="300" cy="200" rx="35" ry="70" />
-               <!-- The Outline (strokes) -->
-               <ellipse class="digit-0-outline" cx="300" cy="200" rx="35" ry="70" />
+          {/* 左 '4' → 左耳 */}
+          <g class="digit-4 left-4">
+            <path class="ear-shape left-ear-path" d="M220,140 L160,220 Q190,220 220,220 Z" />
+            <line class="stem" x1="220" y1="140" x2="220" y2="280" />
+          </g>
+
+          {/* 右 '4' → 右耳 */}
+          <g class="digit-4 right-4">
+            <path class="ear-shape right-ear-path" d="M440,140 L380,220 Q410,220 440,220 Z" />
+            <line class="stem" x1="440" y1="140" x2="440" y2="280" />
+          </g>
+
+          {/* 五官 */}
+          <g class="face-features">
+            <g class="eyes-group">
+              <ellipse class="eye" cx="260" cy="195" rx="9" ry="13" />
+              <circle class="eye-highlight" cx="264" cy="191" r="3" />
+              <ellipse class="eye" cx="340" cy="195" rx="9" ry="13" />
+              <circle class="eye-highlight" cx="344" cy="191" r="3" />
             </g>
 
-            <!-- THE '4' (Left) -> LEFT EAR -->
-            <g class="digit-4 left-4">
-              <!-- Triangle part: Morphing path -->
-              <!-- Start: Standard 4 triangle (Right-angled) -->
-              <path class="ear-shape left-ear-path" d="M220,140 L160,220 Q190,220 220,220 Z" /> 
-              <!-- Vertical line (Stem) -->
-              <line class="stem" x1="220" y1="140" x2="220" y2="280" />
-            </g>
+            <path class="nose" d="M292,218 Q300,215 308,218 L300,226 Z" />
 
-            <!-- THE '4' (Right) -> RIGHT EAR -->
-            <g class="digit-4 right-4">
-              <!-- Triangle part: Morphing path -->
-              <!-- Start: Standard 4 triangle -->
-              <path class="ear-shape right-ear-path" d="M440,140 L380,220 Q410,220 440,220 Z" />
-              <!-- Vertical line (Stem) -->
-              <line class="stem" x1="440" y1="140" x2="440" y2="280" />
-            </g>
+            <path class="mouth" d="M300,226 Q290,236 280,228" />
+            <path class="mouth" d="M300,226 Q310,236 320,228" />
 
-            <!-- FACE FEATURES -->
-            <g class="face-features">
-
-              <!-- Eyes -->
-              <g class="eyes-group">
-                <ellipse class="eye" cx="260" cy="195" rx="9" ry="13" />
-                <circle class="eye-highlight" cx="264" cy="191" r="3" />
-
-                <ellipse class="eye" cx="340" cy="195" rx="9" ry="13" />
-                <circle class="eye-highlight" cx="344" cy="191" r="3" />
-              </g>
-
-              <!-- Nose (Soft Rounded Triangle) -->
-              <path class="nose" d="M292,218 Q300,215 308,218 L300,226 Z" />
-
-              <!-- Mouth (Simple Cute Curves, Disconnected) -->
-              <path class="mouth" d="M300,226 Q290,236 280,228" />
-              <path class="mouth" d="M300,226 Q310,236 320,228" />
-
-              <!-- Whiskers (Straight, fanning out) -->
-              <g class="whiskers">
-                <line x1="240" y1="215" x2="190" y2="205" />
-                <line x1="240" y1="225" x2="190" y2="225" />
-                <line x1="240" y1="235" x2="190" y2="245" />
-
-                <line x1="360" y1="215" x2="410" y2="205" />
-                <line x1="360" y1="225" x2="410" y2="225" />
-                <line x1="360" y1="235" x2="410" y2="245" />
-              </g>
+            <g class="whiskers">
+              <line x1="240" y1="215" x2="190" y2="205" />
+              <line x1="240" y1="225" x2="190" y2="225" />
+              <line x1="240" y1="235" x2="190" y2="245" />
+              <line x1="360" y1="215" x2="410" y2="205" />
+              <line x1="360" y1="225" x2="410" y2="225" />
+              <line x1="360" y1="235" x2="410" y2="245" />
             </g>
           </g>
-        </svg>
+        </g>
+      </svg>
 
-        <div class="message-container">
-          <p class="fade-text">{t(locale, 'notFound.message')}</p>
-        </div>
+      <p class="nf__code" aria-hidden="true">404</p>
+      <p class="nf__message">{t(locale, 'notFound.message')}</p>
 
-        <div class="actions">
-           <a href={localizedPath('/', locale)} class="action-btn home-btn">
-            <Icon name="fa6-solid:house-chimney" />
-            <span>{t(locale, 'notFound.backHome')}</span>
-          </a>
-          <a href={localizedPath('/archives', locale)} class="action-btn archive-btn">
-            <Icon name="ri:archive-2-fill" />
-            <span>{t(locale, 'notFound.browseArchives')}</span>
-          </a>
-        </div>
+      <div class="nf__actions">
+        <a class="nf-btn nf-btn--primary" href={localizedPath('/', locale)}>
+          <Icon name="fa6-solid:house-chimney" aria-hidden="true" />
+          <span>{t(locale, 'notFound.backHome')}</span>
+        </a>
+        <a class="nf-btn nf-btn--ghost" href={localizedPath('/archives', locale)}>
+          <Icon name="ri:archive-2-fill" aria-hidden="true" />
+          <span>{t(locale, 'notFound.browseArchives')}</span>
+        </a>
       </div>
+    </div>
+  </div>
+</Layout>
 
 <style>
-  .cat-404-container {
-    /* Palette - soft pastel colors for light mode */
-    --c-stroke: #f5a0b8;
-    --c-head-bg: rgba(245, 160, 184, 0.1);
-    --c-ear-fill: rgba(245, 180, 160, 0.2);
-    --c-nose: #f5b0a0;
-    --c-features: #666;
+  /* ---- 页面壳：满视口居中，让开 fixed 的导航 ---- */
+  .nf {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: 720px;
+    min-height: 100dvh;
+    margin-inline: auto;
+    /* 上内边距吃掉 fixed 导航的高度，下边距给视觉留呼吸 */
+    padding: calc(var(--nav-h) + 32px) var(--page-pad-x) 64px;
+    box-sizing: border-box;
+  }
+
+  .nf__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* ---- 猫：线框青（§5.8 指定色值） ---- */
+  .nf__cat {
+    --c-stroke: hsl(186 100% 55% / 0.55);
+    --c-features: hsl(210 22% 80%);
+    --c-head-bg: hsl(186 100% 55% / 0.06);
+    --c-ear-fill: hsl(186 100% 55% / 0.08);
+    --c-nose: hsl(186 100% 55% / 0.5);
 
     --anim-dur: 6s;
 
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: "寒蝉全圆体", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    overflow: hidden;
-  }
-
-  :global(.dark) .cat-404-container {
-    --c-stroke: rgba(241, 139, 179, 0.7);
-    --c-head-bg: rgba(241, 139, 179, 0.1);
-    --c-ear-fill: rgba(240, 163, 135, 0.15);
-    --c-nose: rgba(240, 163, 135, 0.8);
-    --c-features: #bbb;
-  }
-
-  .cat-404 {
-    width: 100%;
-    max-width: 500px;
+    max-width: 460px;
     height: auto;
     overflow: visible;
+    /* 全局 reset 里有 svg{fill:currentColor}，不显式清掉的话
+       只描边的图形会被灌成实心块 */
+    fill: none;
+    transform-origin: center;
   }
 
-  /* Debug State: Pause everything at 3s (50% mark) where the cat is fully formed */
-  .debug-paused * {
-    animation-play-state: paused !important;
-    animation-delay: -3s !important; /* Force jump to mid-animation */
-  }
-
-  /* --- ANIMATIONS --- */
-
-  /* HEAD: 0 -> Face */
-  /* Start: Tall Thin Oval (Digit 0). End: Wide Oval (Cat Head) */
+  /* 形变：0 / 4 / 4 → 猫脸。用 d: path() 做，Chrome/Safari 均支持；
+     不支持的浏览器会停在第一帧的三个字符上，仍然是可辨识的 404。 */
   .digit-0-bg {
     fill: var(--c-head-bg);
     opacity: 0;
     transform-origin: center;
-    animation: head-bg var(--anim-dur) ease-in-out infinite;
+    animation: nf-head-bg var(--anim-dur) ease-in-out infinite;
   }
+
   .digit-0-outline {
     fill: none;
     stroke: var(--c-stroke);
     stroke-width: 12;
     stroke-linecap: round;
     transform-origin: center;
-    animation: head-outline var(--anim-dur) ease-in-out infinite;
+    animation: nf-head-outline var(--anim-dur) ease-in-out infinite;
   }
 
-  .nose {
-    fill: var(--c-nose);
+  @keyframes nf-head-bg {
+    0%,
+    20% {
+      rx: 35;
+      ry: 70;
+      opacity: 0;
+    }
+    35%,
+    75% {
+      rx: 130;
+      ry: 95;
+      opacity: 1;
+    }
+    90%,
+    100% {
+      rx: 35;
+      ry: 70;
+      opacity: 0;
+    }
   }
 
-  @keyframes head-bg {
-    0%, 20% { rx: 35; ry: 70; opacity: 0; }
-    35%, 75% { rx: 130; ry: 95; opacity: 1; }
-    90%, 100% { rx: 35; ry: 70; opacity: 0; }
-  }
-  @keyframes head-outline {
-    0%, 20% { rx: 35; ry: 70; stroke-width: 12; }
-    35%, 75% { rx: 130; ry: 95; stroke-width: 8; }
-    90%, 100% { rx: 35; ry: 70; stroke-width: 12; }
+  @keyframes nf-head-outline {
+    0%,
+    20% {
+      rx: 35;
+      ry: 70;
+      stroke-width: 12;
+    }
+    35%,
+    75% {
+      rx: 130;
+      ry: 95;
+      stroke-width: 8;
+    }
+    90%,
+    100% {
+      rx: 35;
+      ry: 70;
+      stroke-width: 12;
+    }
   }
 
-
-  /* EARS: 4 -> Triangle */
   .ear-shape {
     fill: none;
     stroke: var(--c-stroke);
@@ -194,93 +197,118 @@ const DEBUG_CAT_STATE = false;
   }
 
   .stem {
+    fill: none;
     stroke: var(--c-stroke);
     stroke-width: 12;
     stroke-linecap: round;
   }
 
-  /* Left Ear Animation */
   .left-ear-path {
-    animation: left-ear-morph var(--anim-dur) ease-in-out infinite,
-               ear-color-l var(--anim-dur) ease-in-out infinite;
+    animation:
+      nf-left-ear var(--anim-dur) ease-in-out infinite,
+      nf-ear-color var(--anim-dur) ease-in-out infinite;
   }
-  /* Left Ear Target: 
-     Calculated to sit on the ellips curvature (rx130, ry95)
-     Base: (200, 140) to (260, 110) with Q curve
-     Tip: (180, 50)
-  */
-  @keyframes left-ear-morph {
-    0%, 20% { 
-      d: path("M220,140 L160,220 Q190,220 220,220 Z"); 
-    }
-    35%, 75% { 
-      d: path("M180,50 L200,140 Q230,115 260,110 Z"); 
-    }
-    90%, 100% { 
-      d: path("M220,140 L160,220 Q190,220 220,220 Z"); 
-    }
-  }
-  .left-4 .stem { animation: stem-fade var(--anim-dur) ease-in-out infinite; }
 
-
-  /* Right Ear Animation */
   .right-ear-path {
-    animation: right-ear-morph var(--anim-dur) ease-in-out infinite,
-               ear-color-r var(--anim-dur) ease-in-out infinite;
+    animation:
+      nf-right-ear var(--anim-dur) ease-in-out infinite,
+      nf-ear-color var(--anim-dur) ease-in-out infinite;
   }
-  /* Right Ear Target: Mirror of Left
-     Base: (340, 110) to (400, 140) with Q curve
-     Tip: (420, 50)
-  */
-  @keyframes right-ear-morph {
-    0%, 20% { 
-      d: path("M440,140 L380,220 Q410,220 440,220 Z"); 
+
+  @keyframes nf-left-ear {
+    0%,
+    20% {
+      d: path('M220,140 L160,220 Q190,220 220,220 Z');
     }
-    35%, 75% { 
-      d: path("M420,50 L340,110 Q370,115 400,140 Z"); 
+    35%,
+    75% {
+      d: path('M180,50 L200,140 Q230,115 260,110 Z');
     }
-    90%, 100% { 
-      d: path("M440,140 L380,220 Q410,220 440,220 Z"); 
+    90%,
+    100% {
+      d: path('M220,140 L160,220 Q190,220 220,220 Z');
     }
   }
-  .right-4 .stem { animation: stem-fade var(--anim-dur) ease-in-out infinite; }
 
-
-  @keyframes stem-fade {
-    0%, 20% { opacity: 1; stroke-dasharray: 200; stroke-dashoffset: 0; }
-    30%, 80% { opacity: 0; stroke-dashoffset: 200; }
-    90%, 100% { opacity: 1; stroke-dashoffset: 0; }
+  @keyframes nf-right-ear {
+    0%,
+    20% {
+      d: path('M440,140 L380,220 Q410,220 440,220 Z');
+    }
+    35%,
+    75% {
+      d: path('M420,50 L340,110 Q370,115 400,140 Z');
+    }
+    90%,
+    100% {
+      d: path('M440,140 L380,220 Q410,220 440,220 Z');
+    }
   }
 
-  @keyframes ear-color-l {
-    0%, 20% { fill: transparent; stroke-width: 12; }
-    35%, 75% { fill: var(--c-ear-fill); stroke-width: 6; stroke: var(--c-stroke); }
-    90%, 100% { fill: transparent; stroke-width: 12; }
+  @keyframes nf-ear-color {
+    0%,
+    20% {
+      fill: transparent;
+      stroke-width: 12;
+    }
+    35%,
+    75% {
+      fill: var(--c-ear-fill);
+      stroke-width: 6;
+      stroke: var(--c-stroke);
+    }
+    90%,
+    100% {
+      fill: transparent;
+      stroke-width: 12;
+    }
   }
 
-  @keyframes ear-color-r {
-    0%, 20% { fill: transparent; stroke-width: 12; }
-    35%, 75% { fill: var(--c-ear-fill); stroke-width: 6; stroke: var(--c-stroke); }
-    90%, 100% { fill: transparent; stroke-width: 12; }
+  .left-4 .stem,
+  .right-4 .stem {
+    animation: nf-stem-fade var(--anim-dur) ease-in-out infinite;
   }
 
-  /* FEATURES */
+  @keyframes nf-stem-fade {
+    0%,
+    20% {
+      opacity: 1;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 0;
+    }
+    30%,
+    80% {
+      opacity: 0;
+      stroke-dashoffset: 200;
+    }
+    90%,
+    100% {
+      opacity: 1;
+      stroke-dashoffset: 0;
+    }
+  }
+
   .face-features {
-    animation: features-fade var(--anim-dur) ease-in-out infinite;
+    animation: nf-features var(--anim-dur) ease-in-out infinite;
     transform-origin: 300px 200px;
   }
 
-  @keyframes features-fade {
-    0%, 25% { opacity: 0; transform: scale(0.9); }
-    35%, 75% { opacity: 1; transform: scale(1); }
-    85%, 100% { opacity: 0; transform: scale(0.9); }
-  }
-
-  @keyframes whiskers-twitch {
-    0%, 35% { transform: rotate(0deg); }
-    40% { transform: rotate(3deg); }
-    45% { transform: rotate(-3deg); }
-    50%, 100% { transform: rotate(0deg); }
+  @keyframes nf-features {
+    0%,
+    25% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    35%,
+    75% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    85%,
+    100% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
   }
 
   .eye {
@@ -288,109 +316,248 @@ const DEBUG_CAT_STATE = false;
   }
 
   .eye-highlight {
-    fill: white;
+    fill: hsl(0 0% 100% / 0.9);
+  }
+
+  .nose {
+    fill: var(--c-nose);
   }
 
   .mouth {
+    fill: none;
     stroke: var(--c-features);
     stroke-width: 3;
-    fill: none;
     stroke-linecap: round;
   }
 
   .whiskers {
+    fill: none;
     stroke: var(--c-features);
     stroke-width: 2;
     stroke-linecap: round;
-    fill: none;
-    animation: whiskers-twitch var(--anim-dur) ease-in-out infinite;
+    animation: nf-whiskers var(--anim-dur) ease-in-out infinite;
     transform-origin: 300px 200px;
   }
 
-  /* TEXT */
-  .message-container {
-    margin-top: 1.5rem;
+  @keyframes nf-whiskers {
+    0%,
+    35% {
+      transform: rotate(0deg);
+    }
+    40% {
+      transform: rotate(3deg);
+    }
+    45% {
+      transform: rotate(-3deg);
+    }
+    50%,
+    100% {
+      transform: rotate(0deg);
+    }
   }
 
-  .fade-text {
-    color: #999;
-    font-size: 1.25rem;
+  /*
+    Glitch：4.8s 一个周期，只在 96.5%–99% 这 120ms 内抖动，
+    青/紫各偏 2px 做色差重影。周期里 96.5% 之前完全静止，
+    所以它不会变成一块持续闪的东西。
+  */
+  @keyframes nf-glitch {
+    0%,
+    96.5% {
+      transform: translateX(0);
+      filter: none;
+    }
+    97% {
+      transform: translateX(-2px);
+      filter: drop-shadow(2px 0 0 hsl(var(--neon-cyan) / 0.8)) drop-shadow(-2px 0 0 hsl(var(--neon-violet) / 0.8));
+    }
+    97.5% {
+      transform: translateX(2px);
+      filter: drop-shadow(-2px 0 0 hsl(var(--neon-cyan) / 0.8)) drop-shadow(2px 0 0 hsl(var(--neon-violet) / 0.8));
+    }
+    98.5%,
+    100% {
+      transform: translateX(0);
+      filter: none;
+    }
+  }
+
+  .nf__cat {
+    animation: nf-glitch 4.8s steps(1, end) infinite;
+  }
+
+  /* ---- 文案 ---- */
+  .nf__code {
+    margin-top: 8px;
+    color: hsl(var(--primary));
+    font-family: var(--font-mono);
+    font-size: 12px;
     font-weight: 500;
-    text-align: center;
+    line-height: 1.5;
+    letter-spacing: 0.32em;
+    /* 字母间距会在末位留一格空白，补回来让它在视觉上真居中 */
+    text-indent: 0.32em;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .fade-text {
-      color: #aaa;
-    }
+  .nf__message {
+    margin-top: 16px;
+    max-width: 42ch;
+    color: hsl(var(--muted-foreground));
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.7;
   }
-  
-  .actions {
+
+  /* ---- 按钮（§6.13） ---- */
+  .nf__actions {
     display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
   }
-  
-  .action-btn {
-    display: flex;
+
+  .nf-btn {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 1;
+    white-space: nowrap;
     text-decoration: none;
-    font-size: 0.95rem;
-    position: relative;
-    overflow: hidden;
+    transition:
+      filter var(--dur-base) var(--ease-out-expo),
+      transform var(--dur-base) var(--ease-out-expo),
+      background-color var(--dur-base) var(--ease-out-expo),
+      border-color var(--dur-base) var(--ease-out-expo),
+      box-shadow var(--dur-base) var(--ease-out-expo);
   }
 
-  .home-btn {
-    background: linear-gradient(135deg, #ed6ea0 0%, #ec8c69 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(237, 110, 160, 0.25);
+  .nf-btn--primary {
+    /* 青 → 深青，取按钮渐变变量，不手写色值 */
+    background: var(--gradient-shoka-button);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 2px 12px hsl(var(--primary) / 0.18);
   }
 
-  .home-btn:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(237, 110, 160, 0.35);
+  .nf-btn--primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    /* §6.13 原文写 0 0 24px / 0.35，超出 §2.5 的 0.14–0.28 区间，
+       按硬配额收敛到 glow-cyan-md 这一档 */
+    box-shadow: var(--glow-cyan-md);
   }
 
-  .archive-btn {
-    background: linear-gradient(135deg, rgba(237, 110, 160, 0.06) 0%, rgba(236, 140, 105, 0.06) 100%);
-    color: #ed6ea0;
-    border: 2px solid rgba(237, 110, 160, 0.25);
+  .nf-btn--ghost {
+    border: 1px solid hsl(var(--primary) / 0.35);
+    color: hsl(var(--primary));
   }
 
-  .archive-btn:hover {
-    background: linear-gradient(135deg, rgba(237, 110, 160, 0.12) 0%, rgba(236, 140, 105, 0.12) 100%);
-    border-color: rgba(237, 110, 160, 0.4);
-    transform: translateY(-2px) scale(1.02);
+  .nf-btn--ghost:hover {
+    border-color: hsl(var(--primary) / 0.6);
+    background: hsl(var(--primary) / 0.1);
+    box-shadow: var(--glow-cyan-sm);
   }
 
-  @media (prefers-color-scheme: dark) {
-    .home-btn {
-      background: linear-gradient(135deg, rgba(241, 139, 179, 0.9) 0%, rgba(240, 163, 135, 0.9) 100%);
-      box-shadow: 0 2px 8px rgba(241, 139, 179, 0.3);
+  .nf-btn:active {
+    transform: translateY(0) scale(0.985);
+    transition-duration: var(--dur-fast);
+  }
+
+  .nf-btn:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  .nf-btn :global(svg) {
+    width: 16px;
+    height: 16px;
+    flex: none;
+  }
+
+  @media (max-width: 768px) {
+    .nf {
+      padding: calc(var(--nav-h) + 24px) var(--page-pad-x) 48px;
     }
 
-    .home-btn:hover {
-      box-shadow: 0 6px 20px rgba(241, 139, 179, 0.4);
-    }
-
-    .archive-btn {
-      background: linear-gradient(135deg, rgba(241, 139, 179, 0.08) 0%, rgba(240, 163, 135, 0.08) 100%);
-      color: #f18bb3;
-      border-color: rgba(241, 139, 179, 0.3);
-    }
-
-    .archive-btn:hover {
-      background: linear-gradient(135deg, rgba(241, 139, 179, 0.18) 0%, rgba(240, 163, 135, 0.18) 100%);
-      border-color: rgba(241, 139, 179, 0.5);
+    .nf__cat {
+      max-width: 320px;
     }
   }
 
-/* Browser support for d: path() animation is generally good in modern browsers (Chrome/Safari/Firefox). */
+  @media (max-width: 480px) {
+    .nf__actions {
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .nf-btn {
+      width: 100%;
+    }
+  }
+
+  /*
+    reduced-motion：
+      1. 关掉 glitch（规范明确要求）；
+      2. 形变动画也一并停 —— 它是 6s 无限循环，属于 §7.5 说的
+         「循环装饰动画」。用负延迟把它定格在 3s（50%，猫脸已成形）那一帧，
+         而不是留在 0% 的三个字符上。
+  */
+  @media (prefers-reduced-motion: reduce) {
+    .nf__cat {
+      animation: none !important;
+    }
+
+    .digit-0-bg,
+    .digit-0-outline,
+    .ear-shape,
+    .stem,
+    .face-features,
+    .whiskers {
+      animation: none !important;
+      animation-delay: -3s !important;
+    }
+
+    .digit-0-bg {
+      opacity: 1;
+      rx: 130;
+      ry: 95;
+    }
+
+    .digit-0-outline {
+      rx: 130;
+      ry: 95;
+      stroke-width: 8;
+    }
+
+    .left-ear-path {
+      d: path('M180,50 L200,140 Q230,115 260,110 Z');
+      fill: var(--c-ear-fill);
+      stroke-width: 6;
+    }
+
+    .right-ear-path {
+      d: path('M420,50 L340,110 Q370,115 400,140 Z');
+      fill: var(--c-ear-fill);
+      stroke-width: 6;
+    }
+
+    .face-features {
+      opacity: 1;
+    }
+
+    .nf-btn--primary:hover,
+    .nf-btn--ghost:hover {
+      transform: none;
+    }
+
+    .nf-btn:active {
+      transform: none;
+    }
+  }
 </style>
-  </TwoColumnLayout>
-</Layout>

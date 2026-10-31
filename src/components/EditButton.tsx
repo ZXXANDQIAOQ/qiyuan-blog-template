@@ -8,7 +8,7 @@
 
 import { devConfig } from '@constants/site-config';
 import { useIsMounted } from '@hooks/useIsMounted';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import type { EditorConfig } from '@lib/config/types';
 import { cn } from '@lib/utils';
 import { useCallback } from 'react';

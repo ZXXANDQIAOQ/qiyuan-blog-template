@@ -1,6 +1,7 @@
 @import "./reset.css";
 @import "tailwindcss";
 @import "./utils.css";
+@import "../cyber/effects.css";
 @config "../../../tailwind.config.mjs";
 
 @font-face {
@@ -25,25 +26,86 @@
     @apply cursor-pointer;
   }
 
+  /* ---------------------------------------------------------------------------
+   * 全局背景（§2.1 / §10-44）
+   * 原来的 /img/background.gif（4.8MB 粉色底纹）整层删除，改为
+   * 「深空底 + 双色光晕 + 32px 网格」三层纯 CSS 方案：0 请求、不抖、可换主题。
+   * ------------------------------------------------------------------------- */
   body {
     overscroll-behavior-y: none;
-    background: 
-      linear-gradient(to bottom, var(--bg-overlay), var(--bg-overlay)),
-      url('/img/background.gif') no-repeat center center fixed;
-    background-size: cover;
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(900px 620px at 12% -8%, hsl(var(--neon-cyan) / 0.1), transparent 70%),
+      radial-gradient(820px 540px at 84% 4%, hsl(var(--neon-violet) / 0.08), transparent 72%),
+      linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size:
+      auto,
+      auto,
+      32px 32px,
+      32px 32px;
+    background-position: center top;
+    background-attachment: fixed;
     scroll-behavior: smooth;
-    letter-spacing: 0.02em;
+    font-family: var(--font-body);
+    letter-spacing: 0.01em;
     color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* 标题字体（§3.1 / §10-4）：删掉「寒蝉全圆体」，改无衬线 display 栈 + 负字距 */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    font-family: "寒蝉全圆体", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    letter-spacing: 0.04em;
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  /* 字号阶梯（§3.2 + §8.1：clamp 而非多断点重写） */
+  h1 {
+    font-size: clamp(26px, 4vw + 12px, 44px);
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  h2 {
+    font-size: clamp(20px, 2.2vw + 12px, 26px);
+    line-height: 1.35;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    font-size: 20px;
+    line-height: 1.45;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  h4 {
+    font-size: 17px;
+    line-height: 1.55;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  h5 {
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  h6 {
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   /* Japanese pages: use Gen Jyuu Gothic P for correct JIS glyphs (fix #113) */
@@ -57,11 +119,51 @@
 
   html {
     scrollbar-gutter: stable;
-    background: 
-      linear-gradient(to bottom, var(--bg-overlay), var(--bg-overlay)),
-      url('/img/background.gif') no-repeat center center fixed;
-    background-size: cover;
+    background-color: hsl(var(--background));
     overflow: auto;
+  }
+
+  /* ---------------------------------------------------------------------------
+   * 焦点样式（§9.2）—— 禁止 outline:none
+   * ------------------------------------------------------------------------- */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: inherit;
+    box-shadow: 0 0 0 4px hsl(var(--ring) / 0.18);
+  }
+
+  .dark :focus-visible {
+    outline-color: hsl(186 100% 70%);
+    box-shadow: 0 0 0 4px hsl(186 100% 55% / 0.22);
+  }
+
+  /* 鼠标点击不显示焦点环，键盘导航必须显示 */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* 跳转正文链接（§9.4） */
+  .skip-to-main {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    transform: translateY(-120%);
+    padding: 0 16px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0 0 8px 0;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    font-size: 14px;
+    font-weight: 600;
+    transition: transform var(--dur-base) var(--ease-out-quart);
+  }
+
+  .skip-to-main:focus {
+    transform: translateY(0);
   }
 
   .vertical-scrollbar::-webkit-scrollbar {
@@ -93,58 +195,119 @@
       display: none;
     }
   }
+
+  /* ---------------------------------------------------------------------------
+   * reduced-motion 全局降级（§7.5）
+   * 降级后仍可用的信息通道：颜色变化 / 边框变化 / 背景明度
+   * ------------------------------------------------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .footer-diamond,
+    .hero-orbit,
+    .empty-scan {
+      animation: none !important;
+    }
+  }
 }
 
 /* utils */
 @layer components {
+  /* §10-13：粉色实心外扩（0 0 0.75rem var(--color-pink-a3)）改为克制青光 */
   .shoka-button-shadow {
-    box-shadow: 0 0 0.75rem var(--color-pink-a3);
+    box-shadow: var(--glow-cyan-sm);
     &:hover {
-      box-shadow: 0 0 0.75rem var(--color-pink);
+      box-shadow: var(--glow-cyan-md);
     }
   }
-  #site-header {
-    @apply relative translate-y-0 text-white transition-transform duration-300;
 
-    /* Pseudo-element for gradient background with opacity transition */
+  /* ---------------------------------------------------------------------------
+   * 顶部导航容器（§6.1 / §10-7）
+   * 初始透明浮在 Hero 上；.with-background 由 Navigator 按滚动位置切换。
+   * ------------------------------------------------------------------------- */
+  #site-header {
+    @apply relative translate-y-0 transition-transform duration-300;
+    height: var(--nav-h);
+    color: hsl(var(--foreground));
+
+    /* 玻璃拟态背景层：透明 → 深空玻璃
+       除了 Navigator 的 .with-background（JS）之外，再用 scroll() timeline 做一层
+       纯 CSS 兜底：JS 挂掉时吸顶导航依然有背景，不会出现「白字压正文」。 */
     &::before {
       content: "";
-      @apply pointer-events-none absolute inset-0 -z-1 bg-gradient-header opacity-0 transition-opacity duration-300 ease-out;
+      @apply pointer-events-none absolute inset-0 -z-1 opacity-0 transition-opacity duration-300 ease-out;
+      background: hsl(var(--background) / 0.72);
+      backdrop-filter: blur(16px) saturate(1.2);
+      -webkit-backdrop-filter: blur(16px) saturate(1.2);
+      border-bottom: 1px solid hsl(var(--border) / 0.6);
     }
 
-    button,
-    a {
-      @apply shadow-text;
-      &::after {
-        transition-duration: 400ms;
-        @apply bg-white;
+    @supports (animation-timeline: scroll()) {
+      &::before {
+        animation: header-glass-in linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 24px 140px;
       }
     }
-    .nav-dropdown a {
+
+    /* 导航内不再使用描边阴影视作「压图可读」手段（§10-8） */
+    button,
+    a {
       text-shadow: none;
     }
   }
-  .clip-path-post-img-left {
-    clip-path: polygon(0 0, 92% 0%, 100% 100%, 0% 100%);
+
+  @keyframes header-glass-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
-  .clip-path-post-img-right {
-    clip-path: polygon(0 0%, 100% 0%, 100% 100%, 8% 100%);
-  }
+
+  /* ---------------------------------------------------------------------------
+   * Logo 文字标识（§6.2）
+   * 原来：粉色手写体 "Bear Days" + 双层硬 text-shadow，已全部删除。
+   * 现在：站点 alternate 大写、16px/600、字距 0.12em，颜色走前景色。
+   * ------------------------------------------------------------------------- */
   .logo-text {
-    font-size: 2rem;
-    text-shadow:
-      3px 4px 2px #060000,
-      -1px -1px 0px #ffffff;
+    font-family: var(--font-display);
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    line-height: 0.95;
-    text-align: center;
-    font-family: "Bear Days", sans-serif;
-    font-weight: 700;
-    color: #e9546b;
+    white-space: nowrap;
+    color: hsl(var(--foreground));
+    text-shadow: none;
+    transition:
+      color var(--dur-base) var(--ease-in-out),
+      text-shadow var(--dur-base) var(--ease-in-out);
+  }
+
+  @media (max-width: 992px) {
+    .logo-text {
+      font-size: 14px;
+    }
   }
 }
 
-.dark .logo-text {
-  color: #ed788c;
+/* Logo 交互态：符号描边点亮 + 文字转青（hover 只改颜色与描边，不位移） */
+a:hover > .logo-text,
+a:focus-visible > .logo-text {
+  color: hsl(var(--primary));
+  text-shadow: 0 0 18px hsl(var(--primary) / 0.3);
 }

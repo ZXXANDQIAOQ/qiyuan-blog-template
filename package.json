@@ -35,6 +35,7 @@
     "save-slugs": "npx tsx scripts/save-slugs.ts"
   },
   "dependencies": {
+    "@antfu/install-pkg": "^2.1.0",
     "@antv/infographic": "^0.2.4",
     "@astrojs/react": "^4.4.2",
     "@astrojs/rss": "^4.0.14",

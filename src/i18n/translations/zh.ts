@@ -229,6 +229,7 @@ export const uiStrings = {
   'pagination.page': '第 {page} 页',
   'pagination.currentPage': '第 {page} 页，当前页',
   'pagination.of': '共 {total} 页',
+  'pagination.nav': '分页导航',
 
   // ── Breadcrumb ──────────────────────────────────────────────
   'breadcrumb.home': '首页',
@@ -304,6 +305,11 @@ export const uiStrings = {
 
   // ── Category Stats ────────────────────────────────────────
   'category.subCategoryCount': '{count} 个子分类',
+  // 分类卡右上角徽标的短表述（12px mono，位置窄，不能写「篇文章」）
+  'category.postCountShort': '{count} 篇',
+  // 完整表述：sr-only 读屏、分类详情页计数、底部说明行都还在用它。
+  // 注意这两个 key 必须同时存在 —— 之前改徽标时把 postCount 改名成 postCountShort，
+  // 结果 5 处调用直接渲染出 'category.postCount' 原文。
   'category.postCount': '{count} 篇文章',
 
   // ── Post Card ─────────────────────────────────────────────
@@ -460,4 +466,17 @@ export const uiStrings = {
   'tempMail.lastChecked': '上次检查：{time}',
   'tempMail.verifyWait': '正在进行人机验证，请稍候片刻再试…',
   'tempMail.expiresHint': '提示：部分网站（尤其国内平台、金融类）会屏蔽临时邮箱域名；此服务仅供一次性验证码等合规用途，请勿用于滥用。',
+
+  // ── Empty state (§6.8) ──────────────────────────────────────
+  'empty.title': '这里还没有文章',
+  'empty.desc': '第一篇正在路上。先去归档或分类里翻翻？',
+  'empty.categoryTitle': '这个分类还是空的',
+  'empty.categoryDesc': '换个分类看看，或者去归档里按时间翻。',
+  'empty.tagTitle': '这个标签还没有文章',
+  'empty.tagDesc': '标签建好了，内容还在路上。',
+  'empty.searchTitle': '没有匹配的条目',
+  'empty.searchDesc': '换个关键词试试，或者直接翻归档。',
+  'empty.ctaArchives': '浏览归档',
+  'empty.ctaTags': '全部标签',
+  'empty.hint': '$ ls ./posts --empty',
 } as const;

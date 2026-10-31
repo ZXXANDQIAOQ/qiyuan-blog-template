@@ -1,29 +1,44 @@
 ---
-import { cn } from '@lib/utils';
+/**
+ * 一级分类行 —— design-spec §5.4
+ *
+ * 24px / 700 标题 + 右侧 mono 青计数，整行高 56，底部 1px --border。
+ * 样式全部在 src/styles/components/category.css 的 `.cat-group__*` 段
+ * （放在全局表里是因为 SubCategory 渲染的是子元素，Astro 的 scoped style
+ * 管不到子组件内部的节点，两处共用同一套类名更省事）。
+ *
+ * 相比旧实现的三处改动：
+ *   1. 删掉 .shoka-decoration-circle（14px 圆点 + 62px 固定竖条）与
+ *      .dashed-border 虚线底边 —— 那套竖条高度写死，行高一变就断口；
+ *   2. 整行 <a> 而不是「标题里套链接」。视觉上没有区别，但 56px 的行高
+ *      本身就是点击区，符合 §9.3「移动端最小 44×44」；
+ *   3. 计数从 `(2)` 改成右侧独立的 mono 青色数字。括号是旧版在一行里
+ *      塞多级信息时的妥协写法，现在两列分组里空间足够，就不需要括号。
+ *
+ * 计数对读屏的处理：视觉上是零填充的 `02`，但它单独念出来是无意义的，
+ * 所以真实文本用「2 篇文章」并 sr-only 化，视觉数字 aria-hidden。
+ *
+ * 发光：零发光。§2.5 白名单里没有分类行，hover 只改标题颜色。
+ */
+import { getLocaleFromUrl, t } from '@/i18n';
 
 interface Props {
   title: string;
   count?: number;
   href: string;
-  level?: 'h2' | 'h3';
-  className?: string;
 }
 
-const { title, count = 0, href, level = 'h2', className } = Astro.props;
-const Tag = level;
+const { title, count = 0, href } = Astro.props;
+
+/** locale 自己从 URL 推：父组件少传一个必填 prop，也就少一处可能传错的地方 */
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const safeCount = Number.isFinite(count) ? count : 0;
 ---
 
-<Tag
-  class={cn(
-    'shoka-decoration-circle px-7.5 group relative py-5 text-2xl/9 h-19 font-bold',
-    {
-      'h-17 text-lg': level === 'h3',
-    },
-    className,
-  )}
->
-  <a href={href} class="dashed-border group-hover:border-blue group-hover:text-blue border-b">
-    {title}
-  </a>
-  <span class={cn('text-[0.8em] text-muted-foreground')}>({count})</span>
-</Tag>
+<a class="cat-group__link" href={href} data-astro-prefetch="hover">
+  <span class="cat-group__name">{title}</span>
+  <span class="cat-group__count">
+    <span class="sr-only">{t(locale, 'category.postCount', { count: safeCount })}</span>
+    <span aria-hidden="true">{String(safeCount).padStart(2, '0')}</span>
+  </span>
+</a>

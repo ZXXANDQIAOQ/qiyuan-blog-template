@@ -11,7 +11,7 @@ import { MacToolbar } from '@components/markdown/shared/MacToolbar';
 import { FloatingFocusManager, FloatingPortal, useDismiss, useFloating, useInteractions, useRole } from '@floating-ui/react';
 import { useTranslation } from '@hooks/useTranslation';
 import { useZoomPan } from '@hooks/useZoomPan';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 import { useStore } from '@nanostores/react';
 import { $diagramFullscreenData, closeModal, type DiagramFullscreenData } from '@store/modal';

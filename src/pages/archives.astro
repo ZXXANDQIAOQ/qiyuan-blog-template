@@ -1,7 +1,22 @@
 ---
+/**
+ * 归档页 —— design-spec §5.6
+ *
+ * 结构：.cyber-stack（主栏唯一外壳）→ 面包屑 → 时间线
+ *
+ * 时间线的两个关键做法，都是为了「看起来是一条线」而不是一堆段落：
+ *   1. 竖线画在容器 .tl 的 ::before 上，不是每个年份各画一段。
+ *      分段画会在年份之间留出 gap，视觉上断成一条条短线。
+ *   2. 年份节点用 ::before 绝对定位在标题行上，top: 50% 让它永远落在
+ *      标题中线；标题行固定 40px 高，所以竖线起点 top: 20px 能精确接上
+ *      第一个节点，不会冒出一截「无头线」。
+ *
+ * 移动端（≤768）轨道整体让位给吸顶年份条：竖线和节点都隐藏，
+ * 否则在窄屏上那 8px 的缩进会把标题挤得太窄。
+ */
 import HomeSider from '@components/layout/HomeSider.astro';
+import Breadcrumb from '@components/ui/Breadcrumb.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { getPostSlug, getSortedPosts } from '@lib/content';
@@ -13,7 +28,8 @@ import Layout from '../layouts/Layout.astro';
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const posts = await getSortedPosts(locale);
 
-// 按年份对文章进行分组
+// 按年份分组。getSortedPosts 已按日期倒序，这里保持原顺序即可，
+// 所以「同一年内」的条目也是新的在上。
 const postsByYear = posts.reduce(
   (acc, post) => {
     const year = new Date(post.data.date).getFullYear();
@@ -33,39 +49,269 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
   <TwoColumnLayout>
     <Cover slot="cover" title={t(locale, 'archives.title')} />
     <HomeSider slot="sider" />
-    <div class={`shadow-box bg-gradient-start mx-0 flex w-full flex-col ${CONTENT_PADDING.standard}`}>
-      <h2 class="shoka-decoration-circle group relative h-19 px-6 py-5 text-2xl/9 font-bold md:text-xl/9">
-        <a href={localizedPath('/', locale)} class="dashed-border text-muted-foreground group-hover:border-blue group-hover:text-blue border-b">{t(locale, 'nav.home')}</a>
-        <span class="text-muted-foreground text-lg md:text-base"> / </span>
-        {t(locale, 'post.totalPosts', { count: posts.length })}
-      </h2>
-      <div class="flex flex-col gap-4 md:gap-5">
+
+    <div class="cyber-stack">
+      <Breadcrumb
+        items={[
+          { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
+          { label: t(locale, 'post.totalPosts', { count: posts.length }) },
+        ]}
+      />
+
+      <ol class="tl">
         {
           years.map((year) => (
-            <div>
-              <h3 class="text-xl font-bold md:text-base">
-                {year}
-                <span class="text-muted-foreground ml-2 text-base md:text-sm">{t(locale, 'post.yearPosts', { count: postsByYear[Number(year)].length })}</span>
-              </h3>
-              <div class="mt-2">
-                {postsByYear[Number(year)].map((post) => (
-                  <p class="shoka-decoration-circle group text-primary hover:text-blue relative px-6 py-2 text-base/9 md:flex md:flex-col md:items-stretch md:text-sm/9">
-                    <span class="text-muted-foreground mr-2 text-xs">
-                      {displayDate.date(post.data.date)}
-                    </span>
-                    <a
-                      href={localizedPath(`/post/${encodeSlug(getPostSlug(post))}`, locale)}
-                      class="dashed-border text-primary hover:text-blue truncate transition-colors"
-                    >
-                      {post.data.title}
-                    </a>
-                  </p>
-                ))}
+            <li class="tl__year">
+              <div class="tl__year-head">
+                <h2 class="tl__year-title">{year}</h2>
+                <span class="tl__year-count">
+                  {t(locale, 'post.yearPosts', { count: postsByYear[Number(year)].length })}
+                </span>
               </div>
-            </div>
+
+              <ol class="tl__entries">
+                {postsByYear[Number(year)].map((post) => (
+                  <li class="tl__entry">
+                    <a class="tl__link" href={localizedPath(`/post/${encodeSlug(getPostSlug(post))}`, locale)} data-astro-prefetch="hover">
+                      <time class="tl__date" datetime={post.data.date.toISOString()}>
+                        {displayDate.monthDay(post.data.date)}
+                      </time>
+                      <span class="tl__title">{post.data.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </li>
           ))
         }
-      </div>
+      </ol>
     </div>
   </TwoColumnLayout>
 </Layout>
+
+<style>
+  /* ---- 轨道与缩进（两处共用，改成变量避免出现对不齐的魔法数字） ---- */
+  .tl {
+    --tl-rail: 8px; /* 竖线的水平中心 */
+    --tl-indent: 28px; /* 标题与条目相对轨道的内缩 = 节点半径 6 + 14 间隙 + 8 */
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /*
+    一条线贯穿所有年份：挂在容器上、top: 20px 对齐第一个节点中心。
+    年份之间只有 gap 没有断点，所以它是一条连续的线。
+  */
+  .tl::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    bottom: 0;
+    left: calc(var(--tl-rail) - 0.5px);
+    width: 1px;
+    background: hsl(var(--border));
+    pointer-events: none;
+  }
+
+  .tl__year {
+    position: relative;
+  }
+
+  /* ---- 年份标题行：节点垂直对齐靠这里固定的 40px ---- */
+  .tl__year-head {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    height: 40px;
+    padding-left: var(--tl-indent);
+  }
+
+  /* 年份节点 12×12：§2.5 白名单内的发光位置，一屏最多同时看到 2 个 */
+  .tl__year-head::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: var(--tl-rail);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    box-shadow: var(--glow-cyan-sm);
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+
+  .tl__year-title {
+    margin: 0;
+    color: hsl(var(--foreground));
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tl__year-count {
+    color: hsl(var(--primary));
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- 条目 ---- */
+  .tl__entries {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tl__entry {
+    margin: 0;
+  }
+
+  .tl__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 36px;
+    margin-left: var(--tl-indent);
+    padding-inline: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition:
+      background-color var(--dur-base) var(--ease-out-expo),
+      color var(--dur-base) var(--ease-out-expo);
+  }
+
+  .tl__link:hover {
+    background: hsl(var(--primary) / 0.06);
+  }
+
+  /*
+    hover 时在轨道上补一个 3×3 青点：位置换算成「轨道中心 - 链接左缩进」，
+    这样它会精确落回那条竖线上，而不是飘在行的左边缘。
+  */
+  .tl__link::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: calc(var(--tl-rail) - var(--tl-indent) - 1.5px);
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    opacity: 0;
+    transform: translateY(-50%);
+    transition: opacity var(--dur-base) var(--ease-out-expo);
+    pointer-events: none;
+  }
+
+  .tl__link:hover::before {
+    opacity: 1;
+  }
+
+  .tl__date {
+    flex: 0 0 88px;
+    width: 88px;
+    color: hsl(var(--muted-foreground));
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tl__title {
+    /* min-width: 0 让 flex 子项能真正收缩，否则长标题会把行撑出容器 */
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: hsl(var(--foreground));
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: color var(--dur-base) var(--ease-out-expo);
+  }
+
+  .tl__link:hover .tl__title {
+    color: hsl(var(--primary));
+  }
+
+  /* 焦点环画在链接上，圆角与 hover 底色一致 */
+  .tl__link:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* ---- 移动端：轨道让位给吸顶年份条 ---- */
+  @media (max-width: 768px) {
+    .tl {
+      --tl-indent: 0px;
+      gap: 24px;
+    }
+
+    /* 竖线与节点一起隐藏：窄屏上 8px 的轨道会把标题挤掉一截 */
+    .tl::before,
+    .tl__year-head::before {
+      display: none;
+    }
+
+    .tl__year-head {
+      position: sticky;
+      /* 顶部导航是 fixed，吸顶条要让开它的高度 */
+      top: var(--nav-h);
+      z-index: 2;
+      align-items: center;
+      height: 40px;
+      margin-inline: calc(var(--page-pad-x) * -1);
+      padding-inline: var(--page-pad-x);
+      background: hsl(var(--background));
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .tl__year-title {
+      font-size: 18px;
+    }
+
+    .tl__link {
+      margin-left: 0;
+      padding-inline: 4px;
+      gap: 12px;
+    }
+
+    .tl__link::before {
+      display: none;
+    }
+
+    .tl__date {
+      flex: 0 0 64px;
+      width: 64px;
+    }
+
+    .tl__title {
+      font-size: 14px;
+    }
+  }
+
+  /* 位移类动效降级后本来就没有，这里只关掉过渡，避免 hove r颜色闪现 */
+  @media (prefers-reduced-motion: reduce) {
+    .tl__link,
+    .tl__link::before {
+      transition: none;
+    }
+  }
+</style>

@@ -1,36 +1,67 @@
 ---
+/**
+ * 二级（及更深）分类行 —— design-spec §5.4
+ *
+ * 13px，padding-left 20px，行高 40，左侧 1px 竖线（--border），hover 时竖线变青。
+ *
+ * 三处关键设计：
+ *
+ * 1. **竖线靠「每行一段、首尾相接」拼成通线**，而不是一条绝对定位的长线。
+ *    旧实现给每一行画一条高度写死 62px 的 ::after 竖条，行高只要不是 62px
+ *    就出现断口。现在每行的 ::before 撑满 top:0/bottom:0，行高怎么变都是连续的。
+ *
+ * 2. **递归自己**，而不是由父组件把子孙摊平。
+ *    真实内容目前只有一级分类（随笔/笔记/工具），但模板要支持
+ *    categories: [[笔记, 后端, 数据结构]] 这种三级路径，摊平的写法每加一级就要
+ *    再套一层 map。递归 + `--depth` 变量一次解决缩进与竖线位置：
+ *    文字 padding-left = depth × 20，竖线 left = (depth − 1) × 20。
+ *
+ * 3. **props 从 parentName: string 改成 parentNames: string[]**。
+ *    三级分类要拼 /categories/note/back-end/data-structure，单个父名不够用。
+ *    `buildCategoryPath` 本来就接受 string | string[]，这里只是把契约对齐。
+ *
+ * 发光：零发光，hover 只让竖线变青（§2.5 白名单里没有分类行）。
+ */
 import { buildCategoryPath, type Category, translateCategoryName } from '@lib/content';
-import { getLocaleFromUrl, localizedPath } from '@/i18n';
-import CategoryTitle from './CategoryTitle.astro';
+import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+import SubCategory from './SubCategory.astro';
 
 interface Props {
   category: Category;
-  parentName: string;
+  /** 父级分类名链（不含自己），用于拼出完整路径 */
+  parentNames: string[];
   countMap: Record<string, number>;
 }
 
-const { category, parentName, countMap } = Astro.props;
+const { category, parentNames, countMap } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
+
+/** 1 = 二级分类（挂在一级分类下面）。CSS 用它算缩进和竖线位置。 */
+const depth = Math.max(1, parentNames.length);
+const count = countMap[category.name] ?? 0;
+const names = [...parentNames, category.name];
 ---
 
-<CategoryTitle
-  title={translateCategoryName(category.name, locale)}
-  count={countMap[category.name]}
-  href={localizedPath(buildCategoryPath([parentName, category.name]), locale)}
-  level="h3"
-/>
-{
-  category.children?.length && (
-    <div class="category-second-level-container flex flex-col">
-      {category.children.map((grandChild) => (
-        <p class="shoka-decoration-circle relative px-7.5 py-2 text-base/9 text-primary hover:text-blue">
-          <a href={localizedPath(buildCategoryPath([parentName, category.name, grandChild.name]), locale)} class="dashed-border">
-            {translateCategoryName(grandChild.name, locale)}
-          </a>
-          <span class="text-sm text-muted-foreground">({countMap[grandChild.name] ?? 0})</span>
-        </p>
-      ))}
-    </div>
-  )
-}
-<!-- </div> -->
+<li class="cat-sub" style={`--depth:${depth}`}>
+  <a
+    class="cat-sub__link"
+    href={localizedPath(buildCategoryPath(names), locale)}
+    data-astro-prefetch="hover"
+  >
+    <span class="cat-sub__name">{translateCategoryName(category.name, locale)}</span>
+    <span class="cat-sub__count">
+      <span class="sr-only">{t(locale, 'category.postCount', { count })}</span>
+      <span aria-hidden="true">{String(count).padStart(2, '0')}</span>
+    </span>
+  </a>
+
+  {
+    category.children?.length ? (
+      <ul class="cat-subs">
+        {category.children.map((child) => (
+          <SubCategory category={child} parentNames={names} countMap={countMap} />
+        ))}
+      </ul>
+    ) : null
+  }
+</li>

@@ -36,10 +36,10 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
 
 <div
   class={cn(
-    'page-home-sider shadow-home-sider self-start flex flex-col items-stretch',
+    'page-home-sider flex flex-col items-stretch',
     isDrawer
       ? 'static h-auto min-h-0 w-full min-w-full max-w-none overflow-visible shadow-none'
-      : 'sticky top-0 tablet:overscroll-none min-w-64 max-w-64 tablet:hidden h-screen overflow-auto scrollbar-hidden px-2',
+      : 'w-full tablet:hidden',
     className,
   )}
   transition:name={isDrawer ? 'page-home-sider-drawer' : 'page-home-sider'}
@@ -48,7 +48,7 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     type === HomeSiderType.POST && (
       <HomeSiderSegmented
         client:only="react"
-        className="my-4 tablet:mb-0 flex justify-between text-sm/6 w-auto"
+        className="mb-4 flex w-auto justify-between text-sm/6"
         itemClass="grow"
         defaultValue={defaultSegmentType}
         id="inner-home-sider"
@@ -62,7 +62,7 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     data-default-type={defaultSegmentType}
   >
     <div slot="info" class="sider-slot" data-slot-type="info">
-      <HomeInfo className={type === HomeSiderType.HOME ? (isDrawer ? 'pt-2' : 'pt-18 md:pt-0') : ''} />
+      <HomeInfo isDrawer={isDrawer} />
     </div>
     <div slot="directory" class="sider-slot overflow-hidden h-full" data-slot-type="directory">
       {type === HomeSiderType.POST && <TableOfContents client:only="react" enableNumbering={post?.data.tocNumbering ?? true} />}
@@ -221,17 +221,16 @@ const nextPost = adjacentPosts.nextPost ? toPostRef(adjacentPosts.nextPost) : nu
     position: relative;
   }
 
+  /*
+   * 侧栏移到右侧后不再有 h-screen 固定高，绝对定位的 slot 会因容器高度塌陷而消失。
+   * 改为常规文档流：三个 slot 同一时刻只显示一个（由脚本切 .hidden），
+   * 进场/退场动画仍走 translateX，视觉表现不变。
+   */
   .sider-slot {
-    position: absolute;
+    position: relative;
     top: auto;
     left: 0;
     right: 0;
-  }
-
-  @media (768px >= width) {
-    .sider-slot {
-      position: relative;
-    }
   }
 
   .sider-slot.hidden {

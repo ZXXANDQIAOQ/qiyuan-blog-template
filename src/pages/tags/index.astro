@@ -1,23 +1,53 @@
 ---
+/**
+ * 标签总览 —— design-spec §5.5「/tags」+ §6.14「徽章 / 芯片」
+ *
+ * 结构：Hero 220（title 模式）→ 面包屑 → 芯片墙 → 折叠区
+ *
+ * 三处必须改掉的老写法（都在这次重写里删掉了）：
+ *   1. 旧的「主栏一整块大卡片 + 渐变底 + 大阴影」—— 新规范的边界感来自区块之间
+ *      48/64px 空白（§4.3），主栏不再是一整块底色。外壳一律交给 .cyber-stack，
+ *      页面层不许再包 padding / 背景 / gap（见 effects.css §1.1 的三条纪律）。
+ *   2. 旧的虚线圆圈装饰标题 + 逐断点缩字号 —— 那是 Shoka 的「两侧虚线 + 居中文字」
+ *      体系，§5.1 已改为「左对齐标题 + 右侧渐变细线」，这里直接用 <Divider>，
+ *      字号走 clamp，不再逐断点缩。
+ *   3. 旧的四色轮转（按下标取模配四种渐变）—— 12 个标签就是一道彩虹墙，与 §2.1
+ *      「全站只有一个冷光源」冲突。规范只允许青 / 中性两种芯片，层次靠
+ *      「前 20 个青描边」表达（见下方 PROMINENT_LIMIT）。
+ */
 import HomeSider from '@components/layout/HomeSider.astro';
 import { CollapsibleTags } from '@components/tag/CollapsibleTags';
 import { TagItem } from '@components/tag/TagItem';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { getAllTags, getSortedPosts } from '@lib/content';
+import Breadcrumb from '@/components/ui/Breadcrumb.astro';
+import Divider from '@/components/ui/divider';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const posts = await getSortedPosts(locale);
 const tags = getAllTags(posts);
+
+/**
+ * 数量降序。同数量时保持标签首次出现的顺序（Object.entries 的插入序，构建期稳定），
+ * 不再像旧版那样额外挂一个配色下标 —— 色调现在只由「是否落在前 20」决定。
+ */
 const sortedTags = Object.entries(tags)
   .sort(([, a], [, b]) => b - a)
-  .map(([tag, count], index) => ({ tag, count, colorIndex: index % 4 }));
+  .map(([tag, count]) => ({ tag, count }));
 
-const mainTags = sortedTags.filter(({ count }) => count > 1);
+/**
+ * 前 20 个用青描边突出（§5.5）。
+ * 这个数字是「一屏能扫完的量」而不是分页单位：超过 20 个之后，青描边就不再提供
+ * 区分度，只剩满屏青色，所以要硬切一刀。
+ */
+const PROMINENT_LIMIT = 20;
+
+/** 多篇共用的标签进墙（按数量降序）；单次出现的标签默认折叠（§5.5） */
+const wallTags = sortedTags.filter(({ count }) => count > 1);
 const singleTags = sortedTags.filter(({ count }) => count === 1);
 ---
 
@@ -25,16 +55,35 @@ const singleTags = sortedTags.filter(({ count }) => count === 1);
   <TwoColumnLayout>
     <Cover slot="cover" title={t(locale, 'tag.allTags')} />
     <HomeSider slot="sider" />
-    <div class={`shadow-box bg-gradient-start mx-0 flex w-full flex-col ${CONTENT_PADDING.normal}`}>
-      <h2 class="shoka-decoration-circle group relative h-19 px-6 py-5 text-2xl/9 font-bold md:text-xl/9">
-        <a href={localizedPath('/', locale)} class="dashed-border text-muted-foreground group-hover:border-blue group-hover:text-blue border-b">{t(locale, 'nav.home')}</a>
-        <span class="text-muted-foreground text-lg md:text-base"> / </span>
-        {t(locale, 'tag.totalTags', { count: sortedTags.length })}
-      </h2>
-      <div class="flex flex-wrap gap-3 px-4 md:px-0">
-        {mainTags.map((props) => <TagItem {...props} locale={locale} />)}
-      </div>
-      <CollapsibleTags tags={singleTags} locale={locale} client:only="react" />
+    <div class="cyber-stack">
+      <Breadcrumb
+        items={[
+          { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
+          { label: t(locale, 'tag.totalTags', { count: sortedTags.length }) },
+        ]}
+      />
+
+      <section class="cyber-section">
+        <Divider>{t(locale, 'tag.allTags')}</Divider>
+
+        {
+          wallTags.length > 0 && (
+            /* 芯片墙：flex wrap + gap 8（§5.5 写死了 8，不是 tailwind 的 gap-3=12） */
+            <div class="flex flex-wrap gap-2">
+              {wallTags.map(({ tag, count }, index) => (
+                <TagItem
+                  tag={tag}
+                  count={count}
+                  tone={index < PROMINENT_LIMIT ? 'primary' : 'neutral'}
+                  locale={locale}
+                />
+              ))}
+            </div>
+          )
+        }
+
+        <CollapsibleTags tags={singleTags} locale={locale} client:only="react" />
+      </section>
     </div>
   </TwoColumnLayout>
 </Layout>

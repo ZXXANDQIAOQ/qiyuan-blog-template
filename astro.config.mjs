@@ -208,7 +208,9 @@ export default defineConfig({
     // 站点地图排除内容后台：/studio 与 /studio/posts 不参与收录。
     // 后台页面本身已带 noindex，这里再加一道，避免 sitemap 主动暴露后台路径。
     sitemap({
-      filter: (page) => !page.includes('/studio'),
+      // 排除内容后台；以及 en/ja 语言入口关闭后退化成 /about.en、/about.ja 的兜底页
+      // （这两页故意不对外示人，不该被搜索引擎抓取）
+      filter: (page) => !page.includes('/studio') && !/\/about\.(en|ja)\/?$/.test(page),
     }),
     icon({
       include: {

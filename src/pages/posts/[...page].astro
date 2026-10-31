@@ -1,8 +1,23 @@
 ---
+/**
+ * 文章列表分页页 /posts/2、/posts/3… —— design-spec §5.2
+ *
+ * 结构：Hero（title 形态，220 高）→ 主栏 / 侧栏 → 面包屑 + 一个 `.cyber-section`
+ *
+ * §5.2 的三条「不做」：
+ *   · 不做 2 列网格 —— 单列横向卡，阅读视线只有一个方向；
+ *   · 不做封面左右交替切角；
+ *   · 不删侧栏 —— HomeSider 保留（首页同款），只在 ≤992 收进抽屉。
+ *
+ * 与旧版的区别：删掉 `CONTENT_PADDING.standard` + `bg-gradient-start` + `shadow-box`
+ * 的「主栏大卡片」外壳。横向留白现在只由 `.cyber-layout` 的 --page-pad-x 提供一次，
+ * 叠两层会把卡片缩窄 80px（这也是主栏曾经只有 720 的原因）。
+ */
 import HomeSider from '@components/layout/HomeSider.astro';
 import PostList from '@components/post/PostList.astro';
+import Breadcrumb from '@components/ui/Breadcrumb.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING, PAGINATION } from '@constants/layout';
+import { PAGINATION } from '@constants/layout';
 import { seoConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
@@ -10,7 +25,7 @@ import { getNonFeaturedPosts } from '@lib/content';
 import { toPostCardDataList } from '@lib/content/transforms';
 import type { PaginateFunction } from 'astro';
 import Divider from '@/components/ui/divider';
-import { defaultLocale, getLocaleFromUrl, t } from '@/i18n';
+import { defaultLocale, getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 export async function getStaticPaths({ paginate }: { paginate: PaginateFunction }) {
   const postCollections = await getNonFeaturedPosts(defaultLocale);
@@ -20,17 +35,27 @@ export async function getStaticPaths({ paginate }: { paginate: PaginateFunction 
 const { page } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const postCardData = toPostCardDataList(page.data, locale);
+
+const homeUrl = localizedPath('/', locale);
 ---
 
 <Layout title={seoConfig.title}>
   <TwoColumnLayout>
-    <Cover slot="cover" />
+    <Cover slot="cover" title={t(locale, 'post.postList')} />
     <HomeSider slot="sider" />
-    <div
-      class={`shadow-box bg-gradient-start tablet:shadow-none flex flex-col gap-4 overflow-hidden ${CONTENT_PADDING.standard}`}
-    >
-      <Divider>{t(locale, 'post.postList')}</Divider>
-      <PostList posts={postCardData} page={page} />
+    <div class="cyber-stack">
+      {/* §6.16：末项自动渲染成当前页样式（青底 + foreground 字），这里不传 href */}
+      <Breadcrumb
+        items={[
+          { label: t(locale, 'breadcrumb.home'), href: homeUrl },
+          { label: t(locale, 'post.totalPosts', { count: page.total }) },
+        ]}
+      />
+      <section class="cyber-section">
+        <Divider>{t(locale, 'post.postList')}</Divider>
+        {/* 显式 variant="list"：分页页永远是单列横向卡，不让「1 篇时推断成 feature」生效 */}
+        <PostList posts={postCardData} page={page} variant="list" />
+      </section>
     </div>
   </TwoColumnLayout>
 </Layout>

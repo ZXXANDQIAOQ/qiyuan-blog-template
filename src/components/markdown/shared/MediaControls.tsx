@@ -9,7 +9,7 @@
 
 import { usePlaybackProgress } from '@hooks/usePlaybackTime';
 import { useTranslation } from '@hooks/useTranslation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import type { PlaybackTimeStore } from '@lib/playback-time-store';
 import { cn } from '@lib/utils';
 import { memo, useRef } from 'react';

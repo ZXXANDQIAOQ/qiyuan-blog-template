@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from '@hooks/useTranslation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 
 interface ViewSourceToggleProps {

@@ -1,0 +1,126 @@
+---
+/**
+ * 横向个人卡 —— design-spec §5.7（关于页顶部）
+ *
+ * 侧栏的 HomeInfo 是「竖着排」的信息卡（头像在上、统计在下），关于页顶部需要的是
+ * 「横着排」的同一份信息：头像 72 + 昵称 + 简介 + 社交，平铺一行，整条高 120。
+ * 所以这里复用 HomeInfo 的数据源（siteConfig），但结构完全独立 ——
+ * 不能 import HomeInfo 来改样式，那会把侧栏的菜单/统计/标签云一并带进来。
+ *
+ * 为什么高 120 而不是自适应：关于页正文只有 490 字，如果顶部卡片忽高忽矮，
+ * 「卡片 ↔ 正文」的间距节奏会被破坏（§4.3 明确了这块是 20px 固定值）。
+ * 72 头像 + 24 内距 ×2 = 120，正好卡死。
+ *
+ * 数据缺口（等烁烁补）：social 目前只有 GitHub 一个真账号，图标区会偏空。
+ * 这是配置层的缺口，不是组件问题 —— 补 config/site.yaml 的 social 段即可。
+ */
+import Social from '@components/layout/Social.astro';
+import { siteConfig } from '@constants/site-config';
+import { getLocaleFromUrl, withBase } from '@/i18n';
+import { getContentSiteField } from '@/i18n/content';
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+
+// 名字/简介优先用 i18n 内容层，退回 site.yaml —— 和 Cover.astro 的取值顺序保持一致，
+// 否则 Hero 副标和这个卡片会显示成两套文案
+const name = getContentSiteField(locale, 'name') ?? siteConfig.name ?? siteConfig.title;
+const bio = getContentSiteField(locale, 'description') ?? siteConfig.description ?? '';
+const avatarSrc = withBase(siteConfig.avatar ?? '/img/avatar.svg');
+---
+
+<div class="profile-strip cyber-card">
+  <!-- 头像 72×72，圆角 16：比侧栏 88 小一档，因为横向布局里它只占左侧一小块 -->
+  <img
+    class="profile-strip__avatar"
+    src={avatarSrc}
+    alt=""
+    width="72"
+    height="72"
+    loading="eager"
+    decoding="async"
+  />
+
+  <div class="profile-strip__body">
+    <h2 class="profile-strip__name">{name}</h2>
+    {bio && <p class="profile-strip__bio">{bio}</p>}
+  </div>
+
+  <div class="profile-strip__social">
+    <Social />
+  </div>
+</div>
+
+<style>
+  .profile-strip {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 120px;
+    padding: 24px;
+  }
+
+  .profile-strip__avatar {
+    flex: none;
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    object-fit: cover;
+    /* 头像描边用青色降透明度，和卡片玻璃边框形成内外两层，不额外发光 */
+    border: 1px solid hsl(var(--primary) / 0.25);
+  }
+
+  .profile-strip__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .profile-strip__name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: hsl(var(--foreground));
+  }
+
+  .profile-strip__bio {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: hsl(var(--muted-foreground));
+    /* 简介可能超过一行，但卡片高度锁死 120，最多容两行，第三行起裁掉 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .profile-strip__social {
+    flex: none;
+    /* Social 内部是 flex-wrap + justify-center，横向排版里改右对齐更贴合「一整行」的收尾 */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 120px;
+  }
+
+  /* ≤768：社交图标换行后 120 高度会挤，改成堆叠 + 高度自适应 */
+  @media (max-width: 768px) {
+    .profile-strip {
+      height: auto;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 20px;
+    }
+
+    .profile-strip__social {
+      width: 100%;
+      justify-content: flex-start;
+      min-width: 0;
+    }
+  }
+</style>

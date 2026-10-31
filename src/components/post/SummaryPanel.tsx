@@ -36,7 +36,10 @@ const SummaryPanelContent = memo(
         style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
-          <div className="rounded-b-lg bg-foreground/5 px-4 py-4 text-muted-foreground text-sm leading-relaxed">
+          {/* 说明文字（§5.3）：14px / 1.7 / --foreground。
+           * 旧版是 text-muted-foreground + text-sm 压在 bg-foreground/5 的灰底上，
+           * 读起来像「次要信息」；但摘要面板是正文的开场白，不是脚注。 */}
+          <div className="bg-primary/[0.06] px-4 py-4 text-foreground text-sm leading-[1.7]">
             {/* 屏幕阅读器专用 */}
             <span className="sr-only">{summary}</span>
 
@@ -162,16 +165,18 @@ function SummaryPanel({ summary, source = 'ai', typingSpeed = 25, className }: S
 
   return (
     <ErrorBoundary FallbackComponent={InlineErrorFallback}>
-      <div className={cn('overflow-hidden rounded-lg', className)}>
+      {/* 外观（§5.3）：「1px 左青条 + 14px 说明文字」。
+       * 左条 2px、底色 primary/6%，左角不倒圆 —— 色条必须贴齐正文左缘，
+       * 圆角会把条的头尾切掉一截，看起来像贴歪的胶带。
+       * 只改外观，isExpanded / 打字机 / 三种来源的判定逻辑原样保留。 */}
+      <div className={cn('overflow-hidden rounded-r-lg border-primary border-l-2 bg-primary/[0.06]', className)}>
         {/* 触发按钮 */}
         <button
           type="button"
           onClick={handleToggle}
           className={cn(
-            'flex w-full cursor-pointer items-center justify-between bg-foreground/5 px-4 py-3 transition-all duration-250',
-            'hover:bg-foreground/10',
-            isExpanded && 'rounded-t-lg bg-foreground/10',
-            !isExpanded && 'rounded-lg',
+            'flex w-full cursor-pointer items-center justify-between px-4 py-3 transition-colors duration-200',
+            'hover:bg-primary/[0.09]',
           )}
           aria-expanded={isExpanded}
           aria-controls="summary-panel-content"

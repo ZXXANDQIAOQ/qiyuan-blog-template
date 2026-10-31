@@ -1,4 +1,4 @@
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 

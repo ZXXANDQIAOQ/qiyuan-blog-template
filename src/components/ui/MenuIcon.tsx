@@ -76,7 +76,7 @@ const MenuIcon = ({ className, id }: MenuIconProps) => {
   return (
     <div className={cn('flex-center', className)} id={id} style={{ viewTransitionName: 'home-menu-icon' }}>
       <button
-        className="size-10 flex-center cursor-pointer select-none rounded-full bg-white/20 text-shoka"
+        className="size-10 flex-center cursor-pointer select-none rounded-lg border border-white/10 bg-[rgba(14,18,26,0.72)] text-primary backdrop-blur-[12px] transition-colors duration-200 hover:border-primary/40 hover:text-primary"
         onClick={handleToggle}
         aria-label={isOpen ? t('menu.close') : t('menu.open')}
         aria-expanded={isOpen}

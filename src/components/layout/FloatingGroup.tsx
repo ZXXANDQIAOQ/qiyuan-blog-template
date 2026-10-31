@@ -1,103 +1,93 @@
 /**
  * FloatingGroup Component
  *
- * Floating action buttons for navigation and utilities.
- * - Scroll to top/bottom
- * - Christmas effects toggle
- * - Expand/collapse toggle
+ * 右侧悬浮工具组（design-spec §6.9）
+ *
+ * 收敛方案：原来的 3 个按钮（↑ / ↓ / ×）砍到 2 个，并删掉「× 收起」这个交互 ——
+ * 「收起工具栏」是一个用户学不会、也想不起来的操作，留着只会占位。
+ * 现在只剩：返回顶部 + 打开搜索（≤768 隐藏，移动端搜索在导航/抽屉里）。
  */
 
-import { useIsMounted } from '@hooks/useIsMounted';
 import { useTranslation } from '@hooks/useTranslation';
-import { Icon } from '@iconify/react';
+import { Icon } from '@/lib/iconify-react';
 import { cn } from '@lib/utils';
 import { useStore } from '@nanostores/react';
-import { $isDrawerOpen } from '@store/modal';
+import { $isDrawerOpen, openSearch } from '@store/modal';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-interface FloatingButtonProps {
-  onClick: () => void;
-  ariaLabel: string;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}
-
-function FloatingButton({ onClick, ariaLabel, title, children, className }: FloatingButtonProps) {
-  const isMounted = useIsMounted();
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full bg-background/80 p-2 opacity-80 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-background hover:opacity-100',
-        className,
-      )}
-      aria-label={ariaLabel}
-      title={isMounted ? title : undefined}
-    >
-      {children}
-    </button>
-  );
-}
+const SHOW_AFTER_Y = 240;
 
 export default function FloatingGroup() {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState(true);
   const isDrawerOpen = useStore($isDrawerOpen);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // 出现条件：scrollY > 240；其余时间 pointer-events: none + opacity 0
+  useEffect(() => {
+    const onScroll = () => setIsVisible(window.scrollY > SHOW_AFTER_Y);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-
-  const toggleExpand = () => setIsExpanded((prev) => !prev);
-
-  // Hide when drawer is open
-  const isHidden = isDrawerOpen;
+  const isHidden = !isVisible || isDrawerOpen;
 
   return (
     <motion.div
-      className="fixed right-4 bottom-4 z-50 flex flex-col gap-2 text-primary"
+      className="pointer-events-none fixed right-6 bottom-6 z-50 flex flex-col gap-2 md:right-4 md:bottom-4"
+      initial={false}
       animate={{
-        x: isHidden ? 200 : 0,
+        x: isDrawerOpen ? 120 : 0,
+        y: isHidden ? 8 : 0,
         opacity: isHidden ? 0 : 1,
-        pointerEvents: isHidden ? 'none' : 'auto',
       }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      style={{ pointerEvents: isHidden ? 'none' : 'auto' }}
+      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
     >
-      <AnimatePresence>
-        {isExpanded && (
+      <AnimatePresence initial={false}>
+        {isVisible && !isDrawerOpen && (
           <motion.div
             className="flex flex-col gap-2"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            transition={{ duration: 0.15, ease: 'easeInOut' }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           >
-            <FloatingButton onClick={scrollToTop} ariaLabel={t('floating.backToTop')} title={t('floating.backToTop')}>
-              <Icon icon="ri:arrow-up-s-line" className="h-5 w-5" />
-            </FloatingButton>
-            <FloatingButton
-              onClick={scrollToBottom}
-              ariaLabel={t('floating.scrollToBottom')}
-              title={t('floating.scrollToBottom')}
+            <button
+              type="button"
+              onClick={scrollToTop}
+              aria-label={t('floating.backToTop')}
+              className={cn(
+                'flex size-10 items-center justify-center rounded-[10px] border border-white/10 text-primary',
+                'bg-[rgba(14,18,26,0.72)] backdrop-blur-[12px]',
+                'transition-[border-color,box-shadow,transform] duration-200',
+                'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_0_18px_hsl(var(--primary)/0.22)]',
+              )}
             >
-              <Icon icon="ri:arrow-down-s-line" className="h-5 w-5" />
-            </FloatingButton>
+              <Icon icon="ri:arrow-up-line" className="size-[18px]" />
+            </button>
+
+            {/* 移动端搜索在导航里，这里隐藏（§6.9） */}
+            <button
+              type="button"
+              onClick={() => openSearch()}
+              aria-label={t('common.search')}
+              title={t('common.search')}
+              className={cn(
+                'flex size-10 items-center justify-center rounded-[10px] border border-white/10 text-primary md:hidden',
+                'bg-[rgba(14,18,26,0.72)] backdrop-blur-[12px]',
+                'transition-[border-color,box-shadow,transform] duration-200',
+                'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_0_18px_hsl(var(--primary)/0.22)]',
+              )}
+            >
+              <Icon icon="ri:search-line" className="size-[18px]" />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <FloatingButton
-        onClick={toggleExpand}
-        ariaLabel={t('floating.toggleToolbar')}
-        title={t('floating.toggleToolbar')}
-        className="size-9 flex-center"
-      >
-        <Icon icon={isExpanded ? 'ri:close-large-fill' : 'ri:magic-fill'} className="size-4" />
-      </FloatingButton>
     </motion.div>
   );
 }

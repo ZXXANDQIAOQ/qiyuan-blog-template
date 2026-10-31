@@ -230,6 +230,7 @@ export const uiStrings: UIStrings = {
   'pagination.page': 'ページ: {page}',
   'pagination.currentPage': '現在は{page}ページです',
   'pagination.of': '{total}ページの内、',
+  'pagination.nav': 'ページ送り',
 
   // ── パンくず ──────────────────────────────────────────────
   'breadcrumb.home': 'ホーム',
@@ -305,7 +306,8 @@ export const uiStrings: UIStrings = {
 
   // ── カテゴリーの統計 ────────────────────────────────────────
   'category.subCategoryCount': '{count}件のサブカテゴリー',
-  'category.postCount': '{count}件の投稿',
+  'category.postCountShort': '{count} 件',
+  'category.postCount': '{count} 件の記事',
 
   // ── 投稿カード ─────────────────────────────────────────────
   'post.readingTimeTooltip': '読み終える推定時間: {time}',
@@ -461,4 +463,17 @@ export const uiStrings: UIStrings = {
   'tempMail.lastChecked': '最終確認：{time}',
   'tempMail.verifyWait': '認証を実行中です。少し待ってから再度お試しください…',
   'tempMail.expiresHint': '注意：一部のサイト（特に国内プラットフォームや金融系）は使い捨てメールドメインをブロックします。このサービスは正規のワンタイム用途のみにご利用ください。',
+
+  // ── Empty state (§6.8) ──────────────────────────────────────
+  'empty.title': 'ここにはまだ記事がありません',
+  'empty.desc': '最初の記事を準備中です。アーカイブかカテゴリを覗いてみてください。',
+  'empty.categoryTitle': 'このカテゴリは空です',
+  'empty.categoryDesc': '別のカテゴリを見るか、アーカイブを日付順にどうぞ。',
+  'empty.tagTitle': 'このタグの記事はまだありません',
+  'empty.tagDesc': 'タグは用意できました。記事はもうすぐです。',
+  'empty.searchTitle': '一致する項目がありません',
+  'empty.searchDesc': '別のキーワードを試すか、アーカイブをご覧ください。',
+  'empty.ctaArchives': 'アーカイブを見る',
+  'empty.ctaTags': 'すべてのタグ',
+  'empty.hint': '$ ls ./posts --empty',
 };

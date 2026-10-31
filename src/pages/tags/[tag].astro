@@ -1,13 +1,30 @@
 ---
+/**
+ * 单个标签下的文章 —— design-spec §5.5「/tags/[tag]」
+ *
+ * 「结构与文章列表一致」这件事只有一种正确的实现方式：复用 <PostList>。
+ * 旧版本在这里手写了一遍列表（虚线圆圈装饰 + 下划线标题 / 固定 60px 的日期窄列 /
+ * 分类名重复出现在每行），那套视觉与 PostItemCard（缩略图 248×156 + 标题 20px +
+ * 摘要 2 行 clamp + 最多 3 个芯片）完全不是一套东西 —— 用户在 /posts 和
+ * /tags/xxx 之间跳转，等于换了个网站。
+ *
+ * 因此这里整块删除手写列表，改为 toPostCardDataList(→PostCardData) + PostList。
+ *
+ * 两点实现细节：
+ *   1. variant="list" 必须显式传。PostList 的默认推断是「只有 1 篇且无分页器 →
+ *      渲染成首页置顶的 Feature 卡」，而只有 1 篇文章的标签是常态，不显式声明会
+ *      让这些页面突然变成全宽 Feature 卡。
+ *   2. showPaginator={false}：标签页不分页，5 篇文章一次列完。
+ */
 import HomeSider from '@components/layout/HomeSider.astro';
+import PostList from '@components/post/PostList.astro';
 import Cover from '@components/ui/cover/Cover.astro';
-import { CONTENT_PADDING } from '@constants/layout';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
 import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
-import { getPostLastCategory, getPostSlug, getSortedPosts, normalizeTag, translateCategoryName } from '@lib/content';
-import { displayDate } from '@lib/date';
-import { encodeSlug } from '@lib/route';
+import { getSortedPosts, normalizeTag } from '@lib/content';
+import { toPostCardDataList } from '@lib/content/transforms';
+import Breadcrumb from '@/components/ui/Breadcrumb.astro';
 import { defaultLocale, getLocaleFromUrl, localizedPath, t } from '@/i18n';
 
 export async function getStaticPaths() {
@@ -31,47 +48,29 @@ const { tag } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const allPosts = await getSortedPosts(locale);
 const posts = allPosts.filter((post) => post.data.tags?.some((tg) => normalizeTag(tg) === tag));
+
+/** PostList 吃的是轻量 PostCardData，不是完整 BlogPost —— 在这里一次性转好 */
+const postCardData = toPostCardDataList(posts, locale);
 ---
 
 <Layout title={`${t(locale, 'tag.postsWithTag', { name: tag })} | ${siteConfig.title}`} description={t(locale, 'tag.postsWithTag', { name: tag })}>
   <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'tag.postsWithTag', { name: tag })} />
+    {/* Hero 用 title 模式（220px）。§5.5 要求 `#` 用 --neon-violet、字号 0.8em，
+        但 Cover 的标题是纯文本、且归卡片层所有（不在本次改动范围），所以这里整串
+        `#标签名` 同色 —— 已知妥协，不改 Cover。 */}
+    <Cover slot="cover" title={`#${tag}`} />
     <HomeSider slot="sider" />
-    <div class={`shadow-box mx-0 flex w-full flex-col bg-gradient-start ${CONTENT_PADDING.standard}`}>
-      <h2 class="shoka-decoration-circle has-children group relative h-19 px-6 py-5 text-2xl/9 font-bold">
-        <a
-          href={localizedPath('/tags', locale)}
-          class="dashed-border text-muted-foreground group-hover:border-blue group-hover:text-blue border-b">{t(locale, 'tag.all')}</a
-        >
-        <span class="text-muted-foreground text-lg"> / </span>
-        <span class="text-muted-foreground">{tag}</span>
-        <span class="text-muted-foreground text-lg">({t(locale, 'tag.postCount', { count: posts.length })})</span>
-      </h2>
-      {
-        posts?.length && (
-          <div class="category-second-level-container flex flex-col">
-            {posts.map((post) => {
-              const { link, name } = getPostLastCategory(post);
-              return (
-                <p class="shoka-decoration-circle group text-primary relative px-6 py-2 text-base/9 md:overflow-visible">
-                  <span class="text-muted-foreground inline-block w-15 text-xs md:relative md:-top-1">
-                    {displayDate.shortDate(post.data.date)}
-                  </span>
-                  <a
-                    href={localizedPath(link, locale)}
-                    class="text-muted-foreground hover:text-blue mr-2 inline-block text-xs md:relative md:-top-1"
-                  >
-                    {translateCategoryName(name, locale)}
-                  </a>
-                  <a href={localizedPath(`/post/${encodeSlug(getPostSlug(post))}`, locale)} class="dashed-border md:absolute md:top-7 md:left-7">
-                    {post?.data?.title}
-                  </a>
-                </p>
-              );
-            })}
-          </div>
-        )
-      }
+    <div class="cyber-stack">
+      <Breadcrumb
+        items={[
+          { label: t(locale, 'tag.all'), href: localizedPath('/tags', locale) },
+          { label: `#${tag}` },
+        ]}
+      />
+
+      <section class="cyber-section">
+        <PostList posts={postCardData} variant="list" showPaginator={false} emptyVariant="tag" />
+      </section>
     </div>
   </TwoColumnLayout>
 </Layout>

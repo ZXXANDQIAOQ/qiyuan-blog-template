@@ -3,24 +3,13 @@ layout: ../layouts/PageLayout.astro
 title: "About"
 coverTitle: "About me"
 date: 2026-05-10
-description: "Frontend, writing, life logs"
+description: "A frontend developer's notebook: notes on code that actually broke, essays on design, and the tools that stayed."
 ---
 
-Hi, this is your blog built with the Qiyuan Blog Template.
+I'm 烁 (Shuo), a frontend developer. TypeScript and CSS by day, unfinished side projects at night.
 
-A place to write code by day and musings by night — sharing tool reviews, learning pitfalls, and the occasional life fragment. Updates strive to be steady, content focuses on practical summaries, no filler.
+This site holds three kinds of writing: **notes** on things I actually shipped and broke — framework upgrades, CSS that only falls apart in Safari; **essays** on design and how I work; and a **tools** list of what stays on my taskbar, and why.
 
-Here you'll find: tech tinkering notes, tool reviews and sharing, pitfall records from learning, and occasionally life fragments.
+Everything here is written in Chinese. This page exists so the link isn't a dead end.
 
-Writing is the process of turning chaotic thoughts into clarity. You write it down to know what you're really thinking; you share it to meet people on the same wavelength.
-
-> The contact info below is just an example — replace it with your own.
-
-Contact: your-email@example.com
-
-Platform:
-- [GitHub](https://github.com/your-username)
-
-Social:
-- [Telegram](https://t.me/your-handle)
-- [X / Twitter](https://x.com/your-handle)
+GitHub and RSS are the two ways in — both in the footer. If something in a post doesn't run, open an issue.

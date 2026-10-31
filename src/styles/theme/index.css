@@ -1,84 +1,91 @@
+/* 赛博霓虹 v2 —— 渐变 / Shoka 遗留色名归零（见 docs/redesign/design-spec.md §2.4）
+ *
+ * 核心策略：--gradient-shoka-button-start/end、--color-pink、--color-pink-a3 这三个变量
+ * 被按钮、下拉、分段控件、抽屉、分类卡、文章卡等 10+ 处引用。
+ * 只改值、不改类名 —— 全站「粉→橙」胶囊按钮一次性变成「青→深青」。
+ */
 :root {
-  --gradient-bg-start: #fdfbfb;
-  --gradient-bg-end: #ebedee;
-  --gradient-bg: linear-gradient(180deg, var(--gradient-bg-start) 10%, var(--gradient-bg-end) 100%);
-  --gradient-pink: linear-gradient(279deg, #f96676 0%, #e91e63 100%);
-  --gradient-header: linear-gradient(-225deg, #e3fdf5 0, #ffe6fa 100%);
-  --bg-overlay: rgba(253, 251, 251, 0.88);
+  /* 恬谧版：暖奶油 → 雾紫渐变（#FFFFD0 → #D2CDFF） */
+  --gradient-bg-start: #ffffd0;
+  --gradient-bg-end: #d2cdff;
+  --gradient-bg: linear-gradient(168deg, #ffffd0 0%, #fffcd8 34%, #eae4ff 72%, #d2cdff 100%);
+  --gradient-pink: linear-gradient(140deg, hsl(60 100% 92%) 0%, hsl(250 75% 88%) 100%);
+  --gradient-header: linear-gradient(180deg, rgba(255, 255, 242, 0.9) 0%, rgba(255, 255, 242, 0.72) 100%);
+  --bg-overlay: rgba(255, 254, 242, 0.9);
 
   /* shoka migrate */
-  --box-bg-shadow: rgba(0, 0, 0, 0.1);
-  --grey-1-a5: rgba(253, 253, 253, 0.5);
-  --gradient-shoka-button-start: #ed6ea0;
-  --gradient-shoka-button-end: #ec8c69;
+  --box-bg-shadow: rgba(124, 108, 200, 0.12);
+  --grey-1-a5: rgba(255, 255, 252, 0.5);
+  --gradient-shoka-button-start: hsl(250 55% 68%);
+  --gradient-shoka-button-end: hsl(248 48% 56%);
   --gradient-shoka-button: linear-gradient(
     to right,
     var(--gradient-shoka-button-start) 0,
     var(--gradient-shoka-button-end) 100%
   );
-  --shoka-blue: 201 69% 54%;
-  --grey-4: 0 0% 80%;
-  --color-pink: #ed6ea0;
-  --color-pink-a3: rgba(237, 110, 160, 0.3);
+  --shoka-blue: 248 48% 56%;
+  --grey-4: 250 20% 62%;
+  --color-pink: hsl(248 48% 56%); /* 名字保留，值换雾紫 */
+  --color-pink-a3: rgba(108, 95, 199, 0.18);
 
   /* Shoka container/effect colors (primary uses --primary from shadcn theme) */
-  --shoka-default: 0 0% 40%;
-  --shoka-info: 210 100% 50%;
-  --shoka-success: 142 76% 36%;
-  --shoka-warning: 45 100% 40%;
-  --shoka-danger: 0 84% 60%;
+  --shoka-default: 249 16% 45%;
+  --shoka-info: 248 48% 56%;
+  --shoka-success: 150 30% 38%;
+  --shoka-warning: 32 58% 46%;
+  --shoka-danger: 0 60% 50%;
 
   /* Named text colors — adapted for light/dark mode readability */
-  --color-red: #e74c3c;
-  --color-pink-text: #e91e63;
-  --color-orange: #f39c12;
-  --color-yellow: #d4a017;
-  --color-green: #27ae60;
-  --color-aqua: #1abc9c;
-  --color-blue: #2e86c1;
-  --color-purple: #8e44ad;
-  --color-grey: #7f8c8d;
+  --color-red: #d05b52;
+  --color-pink-text: #6c5fc7; /* 残留类名，值换雾紫 */
+  --color-orange: #cf8d43;
+  --color-yellow: #c9a227;
+  --color-green: #4c8a6b;
+  --color-aqua: #4a9d8e;
+  --color-blue: #5b7fc4;
+  --color-purple: #8d5fc0;
+  --color-grey: #7d7694;
 }
 
 .dark {
-  --gradient-bg-start: #21252b;
-  --gradient-bg-end: #000;
+  --gradient-bg-start: #0b0e14;
+  --gradient-bg-end: #070910;
   --gradient-bg: linear-gradient(180deg, var(--gradient-bg-start) 10%, var(--gradient-bg-end) 100%);
-  --gradient-pink: linear-gradient(279deg, #f96676 0%, #e91e63 100%);
-  --gradient-header: linear-gradient(-225deg, #2d3230 0, #322d31 100%);
-  --bg-overlay: rgba(33, 37, 43, 0.88);
+  --gradient-pink: linear-gradient(135deg, hsl(186 100% 55%) 0%, hsl(280 95% 68%) 100%);
+  --gradient-header: linear-gradient(180deg, rgba(11, 14, 20, 0.92) 0%, rgba(11, 14, 20, 0.72) 100%);
+  --bg-overlay: rgba(11, 14, 20, 0.92);
 
   /* shoka migrate */
-  --box-bg-shadow: rgba(0, 0, 0, 0.5);
+  --box-bg-shadow: rgba(0, 0, 0, 0.55);
   --grey-1-a5: rgba(34, 34, 34, 0.5);
 
-  --gradient-shoka-button-start: #f18bb3cc;
-  --gradient-shoka-button-end: #f0a387cc;
+  --gradient-shoka-button-start: hsl(186 100% 52%);
+  --gradient-shoka-button-end: hsl(196 100% 42%);
   --gradient-shoka-button: linear-gradient(
     to right,
     var(--gradient-shoka-button-start) 0,
     var(--gradient-shoka-button-end) 100%
   );
-  --shoka-blue: 201 69% 77%;
-  --grey-4: 0 0% 40%;
-  --color-pink: #f18bb3;
-  --color-pink-a3: rgba(237, 110, 160, 0.3);
+  --shoka-blue: 186 100% 70%;
+  --grey-4: 200 18% 34%;
+  --color-pink: hsl(186 100% 55%);
+  --color-pink-a3: rgba(26, 232, 255, 0.3);
 
   /* Shoka container/effect colors (dark mode) */
-  --shoka-default: 0 0% 60%;
-  --shoka-info: 210 100% 65%;
-  --shoka-success: 142 76% 50%;
-  --shoka-warning: 45 100% 55%;
-  --shoka-danger: 0 84% 70%;
+  --shoka-default: 215 14% 62%;
+  --shoka-info: 186 100% 55%;
+  --shoka-success: 158 84% 45%;
+  --shoka-warning: 38 100% 62%;
+  --shoka-danger: 352 90% 62%;
 
   /* Named text colors — brighter for dark backgrounds */
   --color-red: #f87171;
-  --color-pink-text: #f472b6;
+  --color-pink-text: #6fecf9;
   --color-orange: #fbbf24;
   --color-yellow: #facc15;
   --color-green: #4ade80;
   --color-aqua: #2dd4bf;
   --color-blue: #60a5fa;
-  --color-purple: #c084fc;
+  --color-purple: #df9dfb;
   --color-grey: #9ca3af;
 }

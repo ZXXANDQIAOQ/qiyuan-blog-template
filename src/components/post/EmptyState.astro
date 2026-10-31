@@ -1,0 +1,259 @@
+---
+/**
+ * 空状态 —— design-spec §6.8
+ *
+ * 一个终端窗口轮廓的线框 SVG（扫描线循环 + 光标闪烁），配主文案 / 副文案 /
+ * 两个 CTA / 一行命令行形式的底部提示。分类页、标签页、搜索无结果共用，
+ * 只换文案不换图标。
+ *
+ * 发光配额：图标是 §2.5 明确白名单里的位置（「空状态图标」），所以描边允许
+ * 用 --glow-cyan-sm 一档，别再加第二层。
+ * 循环动画：scan / blink 两个，都在 prefers-reduced-motion 下停掉。
+ */
+import { Routes } from '@constants/router';
+import { cn } from '@lib/utils';
+import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+
+export interface Props {
+  /** 语义变体：决定文案，图标不变 */
+  variant?: 'posts' | 'category' | 'tag' | 'search';
+  /** 覆盖标题（不传则按 variant 取默认文案） */
+  title?: string;
+  /** 覆盖副文案 */
+  description?: string;
+  /** 是否显示「浏览归档 / 全部标签」两个 CTA，默认显示 */
+  showCta?: boolean;
+  className?: string;
+}
+
+const { variant = 'posts', title, description, showCta = true, className } = Astro.props as Props;
+
+const locale = getLocaleFromUrl(Astro.url.pathname);
+
+const copyByVariant = {
+  posts: { title: t(locale, 'empty.title'), description: t(locale, 'empty.desc') },
+  category: { title: t(locale, 'empty.categoryTitle'), description: t(locale, 'empty.categoryDesc') },
+  tag: { title: t(locale, 'empty.tagTitle'), description: t(locale, 'empty.tagDesc') },
+  search: { title: t(locale, 'empty.searchTitle'), description: t(locale, 'empty.searchDesc') },
+} as const;
+
+const copy = copyByVariant[variant] ?? copyByVariant.posts;
+const heading = title ?? copy.title;
+const desc = description ?? copy.description;
+---
+
+<div class={cn('empty-state', className)} role="status">
+  <div class="empty-state__icon">
+    <!--
+      SVG 的 fill/stroke 用内联 style 而不是表现属性：
+      表现属性不解析 hsl(var(--x)) 这种带 CSS 变量的值，会退回默认 fill（实心块）。
+    -->
+    <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden="true" focusable="false" style="display:block">
+      {/* 终端窗口轮廓 */}
+      <rect
+        x="6.75"
+        y="12.75"
+        width="82.5"
+        height="70.5"
+        rx="8"
+        style="fill:none;stroke:hsl(var(--primary) / 0.45);stroke-width:1.5"
+      />
+      {/* 标题栏分隔线 + 三个窗口点 */}
+      <line x1="7" y1="30" x2="89" y2="30" style="stroke:hsl(var(--primary) / 0.22);stroke-width:1" />
+      <circle cx="17" cy="21.5" r="2" style="fill:hsl(var(--primary) / 0.35)" />
+      <circle cx="25" cy="21.5" r="2" style="fill:hsl(var(--primary) / 0.22)" />
+      <circle cx="33" cy="21.5" r="2" style="fill:hsl(var(--primary) / 0.14)" />
+
+      {/* 三条扫描线：translateY 0→18px 循环，opacity 跟随 */}
+      <g class="empty-scan">
+        <rect x="18" y="40" width="52" height="3" rx="1.5" style="fill:hsl(var(--primary) / 0.55)" />
+        <rect x="18" y="49" width="38" height="3" rx="1.5" style="fill:hsl(var(--primary) / 0.38)" />
+        <rect x="18" y="58" width="30" height="3" rx="1.5" style="fill:hsl(var(--primary) / 0.24)" />
+      </g>
+
+      {/* 光标方块 6×14 */}
+      <rect class="empty-cursor" x="18" y="68" width="6" height="14" rx="1" style="fill:hsl(var(--primary))" />
+    </svg>
+  </div>
+
+  <p class="empty-state__title">{heading}</p>
+  <p class="empty-state__desc">{desc}</p>
+
+  {
+    showCta && (
+      <div class="empty-state__cta">
+        <a class="empty-btn empty-btn--primary" href={localizedPath(Routes.Archives, locale)}>
+          {t(locale, 'empty.ctaArchives')}
+        </a>
+        <a class="empty-btn empty-btn--ghost" href={localizedPath(Routes.Tags, locale)}>
+          {t(locale, 'empty.ctaTags')}
+        </a>
+      </div>
+    )
+  }
+
+  <p class="empty-state__hint">
+    <code>{t(locale, 'empty.hint')}</code>
+  </p>
+</div>
+
+<style>
+  .empty-state {
+    display: grid;
+    place-items: center;
+    min-height: 320px;
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-state__icon {
+    /* 白名单里的发光位置，只取一档 */
+    box-shadow: var(--glow-cyan-sm);
+    border-radius: 12px;
+    line-height: 0;
+  }
+
+  .empty-state__title {
+    margin-top: 24px;
+    color: hsl(var(--foreground));
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+
+  .empty-state__desc {
+    max-width: 320px;
+    margin-top: 8px;
+    color: hsl(var(--muted-foreground));
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+
+  .empty-state__cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  /* 主按钮（§6.13） */
+  .empty-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    transition:
+      background-color var(--dur-base) var(--ease-out-quart),
+      border-color var(--dur-base) var(--ease-out-quart),
+      box-shadow var(--dur-base) var(--ease-out-quart),
+      transform var(--dur-base) var(--ease-out-quart),
+      filter var(--dur-base) var(--ease-out-quart);
+  }
+
+  .empty-btn--primary {
+    /* 青 → 深青渐变，取 §2.4 的按钮渐变变量，不手写色值 */
+    background: var(--gradient-shoka-button);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 2px 12px hsl(var(--primary) / 0.18);
+  }
+
+  .empty-btn--primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    /* hover 态：唯一一处发光 */
+    box-shadow: var(--glow-cyan-sm);
+  }
+
+  .empty-btn--primary:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .empty-btn--ghost {
+    border: 1px solid hsl(var(--primary) / 0.35);
+    color: hsl(var(--primary));
+  }
+
+  .empty-btn--ghost:hover {
+    border-color: hsl(var(--primary) / 0.6);
+    background: hsl(var(--primary) / 0.1);
+  }
+
+  .empty-state__hint {
+    margin-top: 24px;
+    padding: 6px 12px;
+    border: 1px dashed hsl(var(--border));
+    border-radius: 6px;
+    color: hsl(var(--muted-foreground));
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+  }
+
+  /* ---- 循环动画 ----------------------------------------------------------- */
+  @keyframes empty-scan {
+    0% {
+      transform: translateY(0);
+      opacity: 0.35;
+    }
+    40% {
+      opacity: 1;
+    }
+    80% {
+      transform: translateY(18px);
+      opacity: 0.35;
+    }
+    100% {
+      transform: translateY(18px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes empty-blink {
+    0%,
+    50% {
+      opacity: 1;
+    }
+    50.01%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .empty-scan {
+    animation: empty-scan 3s linear infinite;
+  }
+
+  .empty-cursor {
+    animation: empty-blink 1.1s step-end infinite;
+  }
+
+  @media (max-width: 768px) {
+    .empty-state {
+      min-height: 260px;
+      padding: 32px 16px;
+    }
+  }
+
+  /* 循环装饰动画直接关闭（§7.5） */
+  @media (prefers-reduced-motion: reduce) {
+    .empty-scan,
+    .empty-cursor {
+      animation: none !important;
+    }
+
+    .empty-btn:hover {
+      transform: none;
+    }
+  }
+</style>
