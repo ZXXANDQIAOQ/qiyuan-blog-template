@@ -28,21 +28,24 @@
 
   /* ---------------------------------------------------------------------------
    * 全局背景（§2.1 / §10-44）
-   * 原来的 /img/background.gif（4.8MB 粉色底纹）整层删除，改为
-   * 「深空底 + 双色光晕 + 32px 网格」三层纯 CSS 方案：0 请求、不抖、可换主题。
+   * 「全局渐变底 + 双色柔光 + 32px 网格」多层纯 CSS 方案：0 请求、不抖、可换主题。
+   * 渐变放最底层并 fixed：整页上奶油下雾紫，滚动时视口内颜色恒定平滑，
+   * Hero、列表、页脚共享同一条渐变，不再出现「横线上下一块紫一块黄」的断层。
    * ------------------------------------------------------------------------- */
   body {
     overscroll-behavior-y: none;
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(900px 620px at 12% -8%, hsl(var(--neon-cyan) / 0.1), transparent 70%),
-      radial-gradient(820px 540px at 84% 4%, hsl(var(--neon-violet) / 0.08), transparent 72%),
-      linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      var(--page-glow-1),
+      var(--page-glow-2),
+      linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      var(--page-bg);
     background-size:
       auto,
       auto,
       32px 32px,
-      32px 32px;
+      32px 32px,
+      auto;
     background-position: center top;
     background-attachment: fixed;
     scroll-behavior: smooth;

@@ -71,11 +71,15 @@
     --shadow-card: 0 10px 32px rgba(124, 108, 200, 0.1), 0 2px 8px rgba(124, 108, 200, 0.05);
     --shadow-pop: 0 24px 56px rgba(124, 108, 200, 0.16), 0 4px 12px rgba(124, 108, 200, 0.07);
 
-    /* ---- Hero 背景（恬谧版：奶油→雾紫渐变 + 柔光斑） ---- */
+    /* ---- 全局页面背景（body 引用：横跨整页的恬谧渐变，fixed 随视口） ---- */
+    --page-bg: linear-gradient(180deg, #ffffd0 0%, #fffcd8 30%, #eae4ff 62%, #d2cdff 100%);
+    --page-glow-1: radial-gradient(900px 620px at 12% -8%, rgba(255, 255, 255, 0.55), transparent 70%);
+    --page-glow-2: radial-gradient(820px 540px at 84% 4%, hsl(250 70% 90% / 0.32), transparent 72%);
+
+    /* ---- Hero 背景（恬谧版：只留柔光斑，底色透出全局渐变，横线上下无断层） ---- */
     --hero-bg:
       radial-gradient(480px 260px at 82% 18%, rgba(255, 255, 255, 0.6), transparent 68%),
-      radial-gradient(360px 240px at 12% 90%, hsl(250 70% 90% / 0.8), transparent 70%),
-      linear-gradient(168deg, #ffffd0 0%, #fffcd8 30%, #eae4ff 74%, #d2cdff 100%);
+      radial-gradient(360px 240px at 12% 90%, hsl(250 70% 90% / 0.55), transparent 70%);
     --hero-poster-fade: linear-gradient(90deg, transparent 24%, rgba(255, 253, 235, 0.78) 100%);
   }
 
@@ -144,6 +148,11 @@
     --glow-violet-md: 0 0 28px hsl(var(--neon-violet) / 0.22);
     --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.45);
     --shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.55);
+
+    /* ---- 全局页面背景（暗色保持深空） ---- */
+    --page-bg: linear-gradient(180deg, #0b0e14 0%, #070910 100%);
+    --page-glow-1: radial-gradient(900px 620px at 12% -8%, hsl(var(--neon-cyan) / 0.1), transparent 70%);
+    --page-glow-2: radial-gradient(820px 540px at 84% 4%, hsl(var(--neon-violet) / 0.08), transparent 72%);
 
     /* ---- Hero 背景（暗色保持原深空霓虹） ---- */
     --hero-bg:
