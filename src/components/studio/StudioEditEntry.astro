@@ -1,0 +1,95 @@
+---
+/**
+ * 前台「编辑此篇」入口 —— 在线编辑链路的第一环
+ *
+ * 背景：Studio 后台（/studio）已有完整的编辑能力（KV 存储 + 构建前同步
+ * + Deploy Hook 重建），但入口藏在后台里，站长看到线上文章想改一处错字
+ * 时要先自己想起后台地址。这个组件把入口前置到文章页：
+ *
+ *   文章页（静态构建）→ 本组件探测登录态 → 已登录则显示「编辑此篇」
+ *   → 点击进入 /studio/posts/<slug>，表单自动带出全文。
+ *
+ * 为什么不在构建期判断登录：文章页是纯静态 HTML，登录态只有浏览器
+ * 运行时才知道，所以入口 HTML 始终输出、默认隐藏，由客户端脚本
+ * 调 GET /api/studio/session 探测（httpOnly Cookie 自动携带），
+ * 200 才显示。未登录访客看不到任何东西，也不会发多余请求之外的泄露。
+ */
+interface Props {
+  /** 文章 slug（getPostSlug 的输出） */
+  slug: string;
+}
+
+import { withBase } from '@/i18n/utils';
+
+const { slug } = Astro.props;
+const editHref = withBase(`/studio/posts/${encodeURIComponent(slug)}`);
+---
+
+<a id="studio-edit-entry" class="studio-entry hidden" href={editHref} title="在内容后台编辑这篇文章">
+  <svg
+    class="size-3.5"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M14.6 5.4l4 4L8.2 20H4.2v-4z"></path>
+    <path d="M12.6 7.4l4 4"></path>
+  </svg>
+  编辑此篇
+</a>
+
+<style>
+  .studio-entry {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--primary) / 0.25);
+    background: var(--color-background-primary, rgba(255, 255, 255, 0.72));
+    color: hsl(var(--primary));
+    font-size: 12.5px;
+    line-height: 1.6;
+    text-decoration: none;
+    white-space: nowrap;
+    flex: none;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .studio-entry:hover {
+    transform: translateY(-1px);
+    border-color: hsl(var(--primary) / 0.45);
+    box-shadow: var(--shadow-card, 0 10px 28px rgba(122, 111, 214, 0.12));
+  }
+
+  .studio-entry:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  .studio-entry.hidden {
+    display: none;
+  }
+</style>
+
+<script>
+  const entry = document.getElementById('studio-edit-entry');
+
+  if (entry) {
+    // 探测 Studio 登录态（httpOnly Cookie 会话，200 = 已登录）
+    fetch('/api/studio/session', { credentials: 'same-origin' })
+      .then((res) => {
+        if (res.ok) entry.classList.remove('hidden');
+      })
+      .catch(() => {
+        // 后台未部署或网络异常：保持隐藏，不影响正常阅读
+      });
+  }
+</script>

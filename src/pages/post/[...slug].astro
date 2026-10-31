@@ -25,6 +25,7 @@ import { encodeSlug } from '@lib/route';
 import { getOgImageUrl } from '@lib/seo/og-image';
 import { Icon } from 'astro-icon/components';
 import EditButton from '@/components/EditButton';
+import StudioEditEntry from '@/components/studio/StudioEditEntry.astro';
 import { defaultLocale, getLocaleFromUrl, getLocaleLabel, localizedPath, t, withBase } from '@/i18n';
 import { extractTextFromMarkdown } from '@/lib/sanitize';
 
@@ -187,6 +188,8 @@ if (post.data.description) {
       <div class="post-crumbs-row">
         <Breadcrumb items={crumbItems} />
         {import.meta.env.DEV && <EditButton client:only="react" postId={postId} />}
+        {/* 生产环境：登录态下显示「编辑此篇」，直达 Studio 后台（在线编辑入口） */}
+        {!import.meta.env.DEV && <StudioEditEntry slug={postSlug} />}
       </div>
 
       {isFallback && (

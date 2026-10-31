@@ -48,6 +48,13 @@ import StudioLayout from '@layouts/StudioLayout.astro';
 
     <p id="banner" class="studio-banner-error mx-4 mt-3 hidden sm:mx-6" role="alert"></p>
 
+    <!-- 本地草稿恢复条：浏览器意外关闭/刷新时不丢稿 -->
+    <div id="draft-bar" class="mx-4 mt-3 hidden items-center gap-3 sm:mx-6" role="status">
+      <span id="draft-text" class="grow text-[13px] opacity-80"></span>
+      <button id="draft-restore" class="studio-btn" type="button">恢复草稿</button>
+      <button id="draft-discard" class="studio-btn" type="button">丢弃</button>
+    </div>
+
     <div class="grid grow grid-cols-1 gap-0 lg:grid-cols-2">
       <div class="flex flex-col gap-3 p-4 sm:p-6">
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -121,16 +128,44 @@ import StudioLayout from '@layouts/StudioLayout.astro';
 
         <p class="m-0 text-[12px] opacity-65">草稿只存在后台，发布时会被跳过，网站上看不到。</p>
 
-        <label class="flex grow flex-col gap-1.5">
-          <span class="text-[13px] opacity-70">正文（Markdown）</span>
+        <div class="flex grow flex-col gap-1.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-[13px] opacity-70">正文（Markdown）</span>
+            <div id="md-toolbar" class="studio-toolbar" role="toolbar" aria-label="Markdown 快捷插入">
+              <button class="studio-tb-btn" type="button" data-act="h2" title="二级标题">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5v13M12.5 5.5v13M3.5 12h9"></path><path d="M17 10.5a2.6 2.6 0 0 1 4 2.1c0 1.2-.9 2-1.9 3l-2.1 2h4"></path></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="bold" title="加粗（Ctrl+B）">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7z"></path><path d="M7 12h7a3.5 3.5 0 0 1 0 7H7z"></path></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="italic" title="斜体（Ctrl+I）">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5h8M6 19h8M14.5 5l-5 14"></path></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="quote" title="引用">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5.5v13"></path><path d="M10 8h9M10 12h9M10 16h6"></path></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="code" title="行内代码">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.6 7L4 12l4.6 5"></path><path d="M15.4 7L20 12l-4.6 5"></path></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="link" title="链接">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.2 13.8a4 4 0 0 0 5.6 0l3-3a4 4 0 0 0-5.6-5.6l-1.5 1.5"></path><path d="M13.8 10.2a4 4 0 0 0-5.6 0l-3 3a4 4 0 0 0 5.6 5.6l1.5-1.5"></path></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="ul" title="无序列表">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H14"></path><circle cx="5.4" cy="6.5" r="1.1" fill="currentColor" stroke="none"></circle><circle cx="5.4" cy="12" r="1.1" fill="currentColor" stroke="none"></circle><circle cx="5.4" cy="17.5" r="1.1" fill="currentColor" stroke="none"></circle></svg>
+              </button>
+              <button class="studio-tb-btn" type="button" data-act="img" title="插入图片">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2.4"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M4.5 17l4.5-4.5 3.5 3.5 3-3 4 4"></path></svg>
+              </button>
+            </div>
+          </div>
           <textarea
             id="f-body"
             class="studio-input studio-input-mono grow"
             placeholder="在这里写 Markdown。支持 GFM、代码块、数学公式，右侧边写边预览。"></textarea>
-        </label>
+        </div>
 
         <p class="m-0 text-[12px] opacity-65">
-          点「保存」只是存好；回到文章列表点「发布到网站」，改动才会显示到网站上。
+          点「保存」只是存好；回到文章列表点「发布到网站」，改动才会显示到网站上。编辑过程中会自动留一份草稿在本浏览器，意外关页也不怕。
         </p>
       </div>
 
@@ -326,6 +361,10 @@ import StudioLayout from '@layouts/StudioLayout.astro';
 
       dirty = false;
       if (saveState) saveState.textContent = '已保存';
+      // 保存成功：这份内容的本地草稿使命完成
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {}
 
       // 新建成功后换成编辑态的 URL，避免刷新又变成新建
       if (isNew) {
@@ -347,6 +386,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
   async function load() {
     if (isNew) {
       loaded = true;
+      await maybeOfferDraftRestore();
       return;
     }
     try {
@@ -365,10 +405,143 @@ import StudioLayout from '@layouts/StudioLayout.astro';
       }
       fillForm(body.post ?? {});
       if (pageTitle) pageTitle.textContent = '编辑文章';
+      await maybeOfferDraftRestore();
     } catch {
       showError('网络断了，文章加载不出来。');
     } finally {
       loaded = true;
+    }
+  }
+
+  // --- Markdown 工具栏 ---
+  // 所有操作都基于 textarea 的选区：能撤销（浏览器原生 undo 栈），不重排光标。
+  const toolbar = el<HTMLElement>('md-toolbar');
+
+  function applyAction(act: string) {
+    if (!bodyEl) return;
+    const { selectionStart: s, selectionEnd: e, value } = bodyEl;
+    const sel = value.slice(s, e);
+
+    // 行首前缀：找到选区起点所在行行首
+    const lineStart = value.lastIndexOf('\n', s - 1) + 1;
+
+    const replace = (text: string, cursorOffset?: number | [number, number]) => {
+      bodyEl.setRangeText(text, s, e, 'end');
+      if (typeof cursorOffset === 'number') {
+        bodyEl.selectionStart = bodyEl.selectionEnd = s + cursorOffset;
+      } else if (Array.isArray(cursorOffset)) {
+        bodyEl.selectionStart = s + cursorOffset[0];
+        bodyEl.selectionEnd = s + cursorOffset[1];
+      }
+      bodyEl.focus();
+      markDirty();
+      renderPreview();
+    };
+
+    switch (act) {
+      case 'h2':
+        // 在行首插入「## 」
+        bodyEl.setRangeText('## ', lineStart, lineStart, 'end');
+        break;
+      case 'bold':
+        replace(sel ? `**${sel}**` : '****', sel ? undefined : [2, 2]);
+        break;
+      case 'italic':
+        replace(sel ? `*${sel}*` : '**', sel ? undefined : [1, 1]);
+        break;
+      case 'quote': {
+        // 选区内每一行都加「> 」
+        const block = value.slice(lineStart, Math.max(e, s));
+        const quoted = block
+          .split('\n')
+          .map((l) => (l.startsWith('> ') ? l : `> ${l}`))
+          .join('\n');
+        bodyEl.setRangeText(quoted, lineStart, Math.max(e, s), 'end');
+        break;
+      }
+      case 'code':
+        replace(sel ? `\`${sel}\`` : '``', sel ? undefined : [1, 1]);
+        break;
+      case 'link':
+        replace(`[${sel || '链接文字'}](url)`, sel ? undefined : [1, 5]);
+        break;
+      case 'ul':
+        bodyEl.setRangeText('- ', lineStart, lineStart, 'end');
+        break;
+      case 'img':
+        replace(`![图片描述](url)`, [2, 6]);
+        break;
+      default:
+        return;
+    }
+    bodyEl.focus();
+    markDirty();
+    renderPreview();
+  }
+
+  toolbar?.addEventListener('click', (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
+    if (btn) applyAction(btn.dataset.act as string);
+  });
+
+  // --- 本地自动草稿 ---
+  // 为什么存 localStorage：KV 是「保存」动作的远端存储，但写作中途误关
+  // 标签页时内容还没保存过。草稿只存本浏览器（含全部表单字段 + 时间），
+  // 保存到后台成功后即清除，恢复条只在草稿与当前内容不一致时出现。
+  const draftKey = `studio-draft:${editingSlug ?? 'new'}`;
+  const draftBar = el<HTMLElement>('draft-bar');
+  const draftText = el<HTMLElement>('draft-text');
+
+  let draftTimer: number | undefined;
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({ data: collect(), savedAt: Date.now() }),
+      );
+    } catch {
+      // 隐私模式存储配额满等场景：草稿失败不影响编辑
+    }
+  }
+
+  function scheduleDraft() {
+    window.clearTimeout(draftTimer);
+    draftTimer = window.setTimeout(saveDraft, 1200);
+  }
+
+  function timeAgo(ts: number) {
+    const mins = Math.max(1, Math.round((Date.now() - ts) / 60000));
+    return mins < 60 ? `${mins} 分钟前` : `${Math.round(mins / 60)} 小时前`;
+  }
+
+  async function maybeOfferDraftRestore() {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const { data, savedAt } = JSON.parse(raw) as { data: PostData; savedAt: number };
+      // 草稿正文和当前正文一样（刚保存过又回来）就不打扰
+      if (!data.body || data.body === bodyEl?.value) {
+        localStorage.removeItem(draftKey);
+        return;
+      }
+      if (draftText && draftBar) {
+        draftText.textContent = `发现一份本地草稿（${timeAgo(savedAt)}自动保存），比当前内容新。`;
+        draftBar.classList.remove('hidden');
+        draftBar.classList.add('flex');
+        el<HTMLButtonElement>('draft-restore')?.addEventListener('click', () => {
+          fillForm(data);
+          draftBar.classList.add('hidden');
+          markDirty();
+        });
+        el<HTMLButtonElement>('draft-discard')?.addEventListener('click', () => {
+          localStorage.removeItem(draftKey);
+          draftBar.classList.add('hidden');
+          draftBar.classList.remove('flex');
+        });
+      }
+    } catch {
+      // 草稿数据损坏：忽略
     }
   }
 
@@ -377,6 +550,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
   for (const node of [titleEl, descEl, dateEl, catEl, tagEl, coverEl]) {
     node?.addEventListener('input', () => {
       markDirty();
+      scheduleDraft();
       if (node === titleEl && isNew && slugEl && !slugEl.dataset.touched) {
         slugEl.value = slugify(titleEl.value);
       }
@@ -395,6 +569,7 @@ import StudioLayout from '@layouts/StudioLayout.astro';
   bodyEl?.addEventListener('input', () => {
     markDirty();
     renderPreview();
+    scheduleDraft();
   });
 
   saveBtn?.addEventListener('click', save);
@@ -435,11 +610,22 @@ import StudioLayout from '@layouts/StudioLayout.astro';
     }
   });
 
-  // 快捷键：Ctrl/Cmd + S 保存
+  // 快捷键：Ctrl/Cmd + S 保存；+ B/I 加粗/斜体（编辑器内生效）
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
       event.preventDefault();
       save();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && document.activeElement === bodyEl) {
+      const key = event.key.toLowerCase();
+      if (key === 'b') {
+        event.preventDefault();
+        applyAction('bold');
+      } else if (key === 'i') {
+        event.preventDefault();
+        applyAction('italic');
+      }
     }
   });
 

@@ -31,15 +31,13 @@ import '@styles/index.css';
     <title>{title}</title>
     <script is:inline>
       (function () {
-        function getTheme() {
-          if (localStorage.theme === 'light') return 'light';
-          if (localStorage.theme === 'dark') return 'dark';
-          return 'dark';
-        }
+        // 恬谧版唯一主题：与主站 Layout 保持一致，锁定浅色并清掉历史深色偏好
         var root = document.documentElement;
-        var theme = getTheme();
-        root.classList.toggle('dark', theme === 'dark');
-        root.dataset.theme = theme;
+        root.classList.remove('dark');
+        root.dataset.theme = 'light';
+        try {
+          delete localStorage.theme;
+        } catch (e) {}
       })();
     </script>
     <style is:global>
@@ -50,8 +48,12 @@ import '@styles/index.css';
 
       body {
         margin: 0;
-        background: var(--gradient-bg-start, #f5f5f5);
-        color: var(--color-text-primary, #1a1a1a);
+        /* 恬谧主界面：暖奶油 → 雾紫对角渐变，与主站一致 */
+        background:
+          linear-gradient(160deg, #ffffd0 0%, #f4efff 55%, #d2cdff 100%) fixed,
+          var(--gradient-bg-start, #ffffd0);
+        background-attachment: fixed;
+        color: var(--color-text-primary, #2c2a3e);
         font-family: var(--font-sans, system-ui, -apple-system, 'Segoe UI', sans-serif);
         font-size: 14px;
         line-height: 1.6;
@@ -61,7 +63,7 @@ import '@styles/index.css';
         color-scheme: dark;
       }
 
-      /* ---- 组件样式（design-spec.md §6）---- */
+      /* ---- 组件样式（恬谧版）---- */
 
       /* 基础按钮（次要） */
       .studio-btn {
@@ -72,19 +74,25 @@ import '@styles/index.css';
         padding: 8px 14px;
         /* 触控目标 ≥44px（design-spec.md §7.2） */
         min-height: 44px;
-        border-radius: 8px;
-        border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
-        background: var(--color-background-primary, #fff);
+        border-radius: 12px;
+        border: 1px solid rgba(122, 111, 214, 0.22);
+        background: var(--color-background-primary, rgba(255, 255, 255, 0.85));
         color: inherit;
         font-family: inherit;
         font-size: 13px;
         font-weight: 500;
         cursor: pointer;
-        transition: opacity 0.15s ease;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease,
+          opacity 0.15s ease;
       }
 
       .studio-btn:hover:not(:disabled) {
-        opacity: 0.75;
+        transform: translateY(-1px);
+        border-color: rgba(122, 111, 214, 0.4);
+        box-shadow: 0 6px 18px rgba(122, 111, 214, 0.14);
       }
 
       .studio-btn:disabled {
@@ -92,17 +100,17 @@ import '@styles/index.css';
         cursor: not-allowed;
       }
 
-      /* 主要按钮（登录、保存、写新文章） */
+      /* 主要按钮（登录、保存、写新文章）—— 雾紫实底 */
       .studio-btn-primary {
-        background: var(--color-text-primary, #1a1a1a);
-        color: var(--color-background-primary, #fff);
+        background: linear-gradient(135deg, #8d84e8, #7a6fd6);
+        color: #fff;
         border-color: transparent;
       }
 
       /* 危险按钮（删除） */
       .studio-btn-danger {
-        color: var(--color-text-danger, #a32d2d);
-        border-color: var(--color-border-danger, rgba(163, 45, 45, 0.4));
+        color: var(--color-text-danger, #a8433f);
+        border-color: rgba(168, 67, 63, 0.35);
       }
 
       /* 文本输入、textarea 通用 */
@@ -112,18 +120,21 @@ import '@styles/index.css';
         padding: 8px 12px;
         /* 触控目标 ≥44px（design-spec.md §7.2） */
         min-height: 44px;
-        border-radius: 8px;
-        border: 0.5px solid var(--color-border-secondary, rgba(0, 0, 0, 0.2));
-        background: var(--color-background-primary, #fff);
+        border-radius: 12px;
+        border: 1px solid rgba(122, 111, 214, 0.22);
+        background: var(--color-background-primary, rgba(255, 255, 255, 0.85));
         color: inherit;
         font-family: inherit;
         font-size: 14px;
         outline: none;
-        transition: border-color 0.15s ease;
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
       }
 
       .studio-input:focus {
-        border-color: var(--color-border-info, #378add);
+        border-color: rgba(122, 111, 214, 0.55);
+        box-shadow: 0 0 0 3px rgba(122, 111, 214, 0.12);
       }
 
       /* Markdown 编辑区（等宽、可拉伸） */
@@ -147,7 +158,7 @@ import '@styles/index.css';
       .studio-checkbox input[type='checkbox'] {
         width: 16px;
         height: 16px;
-        accent-color: var(--color-border-info, #378add);
+        accent-color: #7a6fd6;
       }
 
       /* 文件上传按钮（包裹隐藏 input） */
@@ -173,7 +184,7 @@ import '@styles/index.css';
       }
 
       .studio-badge-saving {
-        color: var(--color-border-info, #378add);
+        color: #7a6fd6;
       }
 
       .studio-badge-saved {
@@ -181,48 +192,51 @@ import '@styles/index.css';
       }
 
       .studio-badge-error {
-        color: var(--color-text-danger, #a32d2d);
+        color: var(--color-text-danger, #a8433f);
       }
 
       .studio-badge-uploading {
-        color: var(--color-border-info, #378add);
+        color: #7a6fd6;
       }
 
       /* 登录卡 */
       .studio-card-login {
-        background: var(--color-background-primary, #fff);
-        border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(122, 111, 214, 0.18);
+        border-radius: 16px;
         padding: 32px;
-        box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+        box-shadow: 0 18px 48px rgba(122, 111, 214, 0.16);
         max-width: 380px;
       }
 
       /* 文章列表行 / 通用卡片 */
       .studio-card {
-        background: var(--color-background-primary, #fff);
-        border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(122, 111, 214, 0.16);
+        border-radius: 14px;
         padding: 14px;
-        transition: background 0.15s ease;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
       }
 
       .studio-card:hover {
-        background: rgba(55, 138, 221, 0.04);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(122, 111, 214, 0.12);
       }
 
       /* 编辑器面板 */
       .studio-panel {
-        background: var(--color-background-primary, #fff);
-        border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(122, 111, 214, 0.16);
+        border-radius: 14px;
       }
 
       /* 错误横幅 */
       .studio-banner-error {
-        background: var(--color-background-danger, rgba(163, 45, 45, 0.08));
-        color: var(--color-text-danger, #a32d2d);
-        border-radius: 8px;
+        background: rgba(168, 67, 63, 0.08);
+        color: var(--color-text-danger, #a8433f);
+        border-radius: 12px;
         padding: 12px;
         font-size: 13px;
         margin: 12px 16px 0;
@@ -230,11 +244,57 @@ import '@styles/index.css';
 
       /* 信息横幅 */
       .studio-banner-info {
-        background: var(--color-background-primary, #fff);
-        border: 0.5px solid var(--color-border-info, rgba(55, 138, 221, 0.4));
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(122, 111, 214, 0.3);
+        border-radius: 12px;
         padding: 12px;
         font-size: 13px;
+      }
+
+      /* ---- Markdown 工具栏（编辑器）---- */
+      .studio-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .studio-tb-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 8px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: inherit;
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        opacity: 0.75;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease,
+          opacity 0.15s ease;
+      }
+
+      .studio-tb-btn:hover {
+        background: rgba(122, 111, 214, 0.12);
+        color: #6a5fd0;
+        opacity: 1;
+      }
+
+      .studio-tb-btn:focus-visible {
+        outline: 2px solid #7a6fd6;
+        outline-offset: 2px;
+      }
+
+      .studio-tb-btn svg {
+        width: 17px;
+        height: 17px;
       }
 
       /* 顶部栏（编辑器） */
@@ -258,7 +318,7 @@ import '@styles/index.css';
       .studio-btn:focus-visible,
       .studio-input:focus-visible,
       .studio-checkbox input:focus-visible {
-        outline: 2px solid var(--color-border-info, #378add);
+        outline: 2px solid #7a6fd6;
         outline-offset: 2px;
       }
     </style>
