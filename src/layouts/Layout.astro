@@ -79,7 +79,7 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
 ---
 
 <!doctype html>
-<html transition:name="root" lang={htmlLang} class="vertical-scrollbar dark">
+<html transition:name="root" lang={htmlLang} class="vertical-scrollbar">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -102,7 +102,7 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     )}
 
     <ClientRouter />
-    <LoadingIndicator color="#1ae8ff" />
+    <LoadingIndicator color="#7a6fd6" />
     <Tooltips />
 
     <!-- SEO 元数据由 astro-seo 管理 -->
@@ -144,14 +144,14 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
 
     <script is:inline lang="ts">
       // 主题系统 - 立即执行以防止 FOUC（无样式内容闪烁）
-      // 优先级：1. 用户手动选择 > 2. 默认暗色
+      // 优先级：1. 用户手动选择 > 2. 默认浅色（恬谧版）
       (function() {
         function getTheme() {
           // 用户明确选择了主题
           if (localStorage.theme === 'dark') return 'dark';
           if (localStorage.theme === 'light') return 'light';
-          // 未设置，默认暗色
-          return 'dark';
+          // 未设置，默认浅色
+          return 'light';
         }
 
         function applyTheme(theme) {

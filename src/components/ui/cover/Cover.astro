@@ -45,8 +45,8 @@ const variant = data ? 'post' : title ? 'title' : 'home';
   data-variant={variant}
   transition:name="page-cover-banner"
 >
-  <!-- 背景层 1：深空底 -->
-  <div class="absolute inset-0 bg-[hsl(222_30%_7%)]" aria-hidden="true"></div>
+  <!-- 背景层 1：恬谧渐变（浅色 #FFFFD0→#D2CDFF / 暗色保持深空，走 --hero-bg） -->
+  <div class="absolute inset-0" style="background: var(--hero-bg);" aria-hidden="true"></div>
 
   <!-- 背景层 2：双色光晕 -->
   <div class="cyber-glow-field pointer-events-none absolute inset-0" aria-hidden="true"></div>
@@ -61,7 +61,7 @@ const variant = data ? 'post' : title ? 'title' : 'home';
       <img
         src={withBase('/img/top-poster.jpg')}
         alt=""
-        class="h-full w-full object-cover opacity-[0.12] grayscale contrast-[1.15] mix-blend-luminosity"
+        class="h-full w-full object-cover opacity-[0.08] grayscale contrast-[1.15] mix-blend-luminosity"
         fetchpriority="low"
         decoding="async"
         loading="eager"
@@ -187,7 +187,7 @@ const variant = data ? 'post' : title ? 'title' : 'home';
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(90deg, transparent 24%, rgba(11, 14, 20, 0.72) 100%);
+    background: var(--hero-poster-fade);
   }
 
   @media (max-width: 1479px) {
@@ -235,11 +235,12 @@ const variant = data ? 'post' : title ? 'title' : 'home';
     }
   }
 
-  /* 装饰同心圆：整体缓慢旋转，无闪烁（§7.4 允许的循环动画之一） */
+  /* 装饰同心圆：恬谧版改为 7s 呼吸（缩放微动，无旋转无闪烁） */
   .hero-orbit {
-    border: 1px solid hsl(var(--primary) / 0.1);
+    border: 1.5px solid hsl(var(--primary) / 0.16);
     border-radius: 9999px;
-    animation: hero-orbit-rotate 90s linear infinite;
+    box-shadow: inset 0 0 0 52px rgba(255, 255, 255, 0.28);
+    animation: hero-orbit-breathe 7s ease-in-out infinite;
   }
 
   .orbit-ring {
@@ -247,16 +248,19 @@ const variant = data ? 'post' : title ? 'title' : 'home';
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border: 1px solid hsl(var(--primary) / 0.1);
+    border: 1.5px solid hsl(var(--primary) / 0.1);
     border-radius: 9999px;
   }
 
-  @keyframes hero-orbit-rotate {
-    from {
-      transform: translateY(-50%) rotate(0deg);
+  @keyframes hero-orbit-breathe {
+    0%,
+    100% {
+      transform: translateY(-50%) scale(1);
+      opacity: 0.8;
     }
-    to {
-      transform: translateY(-50%) rotate(360deg);
+    50% {
+      transform: translateY(-50%) scale(1.035);
+      opacity: 1;
     }
   }
 

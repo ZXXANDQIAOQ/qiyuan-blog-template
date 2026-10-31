@@ -228,10 +228,10 @@ export const shadows = {
   inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
 
   // Custom shadows from project
-  card: '0 0.625rem 1.875rem rgba(90, 97, 105, 0.12)',
-  'card-darker': '0 0.625rem 1.875rem rgba(90, 97, 105, 0.2)',
-  // 原粉色实心外扩已废弃（§10-13/45），改为克制的青光 = --glow-cyan-sm
-  'shoka-button': '0 0 12px hsl(var(--primary) / 0.18)',
+  // 恬谧版：紫调柔和投影替代黑灰投影；原粉色实心外扩已废弃（§10-13/45）
+  card: '0 10px 32px rgba(124, 108, 200, 0.10), 0 2px 8px rgba(124, 108, 200, 0.05)',
+  'card-darker': '0 16px 40px rgba(124, 108, 200, 0.16), 0 4px 12px rgba(124, 108, 200, 0.07)',
+  'shoka-button': '0 8px 20px hsl(var(--primary) / 0.24)',
 } as const;
 
 /**
@@ -386,10 +386,10 @@ export const zIndex = {
  * Color Palettes
  *
  * Multi-color arrays for gradients and backgrounds.
- * 赛博霓虹：青 → 蓝 → 灰阶（原来是粉→白，见 §2.4）
+ * 恬谧：雾紫 → 奶油灰阶（浅色）/ 深空霓虹（暗色保持不变）
  */
 export const gridBackground = {
-  light: ['#0b7f9e', '#1aa5c4', '#7ed4e4', '#eef2f6', '#dddddd', '#b4b4b4'],
+  light: ['#6c5fc7', '#a79df0', '#d2cdff', '#ffffe8', '#f2eedd', '#e0dbca'],
   dark: ['#0b0e14', '#11151d', '#1ae8ff', '#6fecf9', '#161a22', '#242833'],
 } as const;
 

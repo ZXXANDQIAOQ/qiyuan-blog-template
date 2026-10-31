@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>qiyuan-blog-template · 恬谧版优化预览</title>
+<style>
+  /* ============ 恬谧设计令牌 ============
+     底色：#FFFFD0（暖奶油）→ #D2CDFF（雾紫） 渐变
+     原则：无发光、低对比噪音、大面积留白、柔和投影 */
+  :root {
+    --cream: #FFFFD0;
+    --lavender: #D2CDFF;
+    --bg-gradient: linear-gradient(168deg, #FFFFD0 0%, #FFFCD8 34%, #EAE4FF 72%, #D2CDFF 100%);
+    --ink: #4A4560;            /* 正文墨色 */
+    --ink-strong: #3B3752;     /* 标题 */
+    --ink-muted: #8A84A3;      /* 次级文字 */
+    --accent: #7A6FD6;         /* 主强调：雾紫 */
+    --accent-deep: #6C5FC7;
+    --peach: #F2B879;          /* 辅助点缀：杏色（置顶/温度感） */
+    --sage: #8FBFA8;           /* 状态绿（降饱和） */
+    --card: rgba(255, 255, 255, 0.58);
+    --card-solid: #FDFCF6;
+    --border: rgba(122, 111, 214, 0.16);
+    --shadow-soft: 0 10px 32px rgba(124, 108, 200, 0.10), 0 2px 8px rgba(124, 108, 200, 0.05);
+    --shadow-lift: 0 16px 40px rgba(124, 108, 200, 0.16), 0 4px 12px rgba(124, 108, 200, 0.07);
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #F3F0E2;
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(122, 111, 214, .18); }
+  a { color: inherit; }
+
+  /* ============ 说明区 ============ */
+  .doc { max-width: 1200px; margin: 0 auto; padding: 48px 24px 24px; }
+  .doc-kicker {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .18em;
+    color: var(--accent-deep); text-transform: uppercase;
+  }
+  .doc h1 { font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -.02em; margin: 10px 0 8px; color: var(--ink-strong); font-weight: 700; }
+  .doc > p { color: var(--ink-muted); max-width: 70ch; font-size: 14px; }
+
+  .palette { display: flex; gap: 10px; margin: 20px 0 6px; flex-wrap: wrap; }
+  .swatch {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 8px 14px 8px 8px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-muted);
+  }
+  .swatch i { width: 30px; height: 30px; border-radius: 9px; display: block; border: 1px solid rgba(0,0,0,.06); }
+
+  .changes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 22px 0 36px; }
+  .change { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; font-size: 13px; }
+  .change b { display: block; font-size: 13.5px; margin-bottom: 4px; color: var(--ink-strong); }
+  .change .from { color: var(--ink-muted); }
+  .change .arrow { color: var(--accent); font-family: var(--mono); padding: 0 4px; }
+  .change .to { color: var(--accent-deep); }
+
+  .preview-label {
+    display: flex; align-items: center; gap: 12px; margin: 0 0 14px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    color: var(--ink-muted); text-transform: uppercase;
+  }
+  .preview-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  /* ============ 图标系统展示 ============ */
+  .icon-system {
+    max-width: 1200px; margin: 0 auto 40px;
+    background: var(--bg-gradient);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 32px;
+  }
+  .icon-system h2 { color: var(--ink-strong); font-size: 17px; margin-bottom: 4px; }
+  .icon-system .sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 22px; }
+  .icon-grid { display: flex; flex-wrap: wrap; gap: 18px; }
+  .icon-item { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 86px; }
+  .icon-item .nm { font-size: 11.5px; color: var(--ink-muted); }
+  .icon-item code { font-family: var(--mono); font-size: 10px; color: var(--accent-deep); opacity: .75; }
+
+  /* 图标容器三种状态 */
+  .chip {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.66);
+    border: 1px solid rgba(122,111,214,.18);
+    color: var(--accent-deep);
+    box-shadow: 0 3px 10px rgba(124,108,200,.08);
+    transition: .25s cubic-bezier(.25,1,.5,1);
+  }
+  .chip:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); border-color: rgba(122,111,214,.34); }
+  .chip.is-active {
+    background: linear-gradient(140deg, #9D92E8, #7A6FD6);
+    color: #FFFEF4; border-color: transparent;
+    box-shadow: 0 8px 20px rgba(108,95,199,.32);
+  }
+  .chip.is-warm { color: #C88A4A; }
+  .chip svg { width: 22px; height: 22px; }
+
+  /* ============ 博客本体预览 ============ */
+  .site {
+    max-width: 1200px; margin: 0 auto 72px;
+    border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
+    background: var(--bg-gradient);
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* ---- 顶栏 ---- */
+  .nav {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 20px;
+    padding: 0 32px; height: 64px;
+    background: rgba(255, 255, 240, .72);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 15.5px; color: var(--ink-strong); }
+  .nav-logo .mark {
+    width: 32px; height: 32px; border-radius: 11px;
+    background: linear-gradient(140deg, #FFFFE8 0%, #D2CDFF 100%);
+    border: 1px solid rgba(122,111,214,.22);
+    display: grid; place-items: center;
+    color: var(--accent-deep);
+    box-shadow: 0 4px 12px rgba(124,108,200,.14);
+  }
+  .nav-logo .mark svg { width: 17px; height: 17px; }
+  .nav-links { display: flex; gap: 2px; margin-left: auto; }
+  .nav-links a {
+    display: flex; align-items: center; gap: 7px;
+    color: var(--ink-muted); text-decoration: none; font-size: 13.5px;
+    padding: 8px 13px; border-radius: 11px; transition: .22s;
+  }
+  .nav-links a svg { width: 16px; height: 16px; }
+  .nav-links a:hover { color: var(--ink-strong); background: rgba(255,255,255,.7); }
+  .nav-links a.active { color: var(--accent-deep); background: rgba(255,255,255,.82); box-shadow: 0 3px 10px rgba(124,108,200,.12); }
+  .nav-search {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: var(--ink-muted);
+    background: rgba(255,255,255,.66);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 7px 12px; min-width: 160px;
+  }
+  .nav-search svg { width: 15px; height: 15px; color: var(--accent); }
+  .nav-search kbd {
+    font-family: var(--mono); font-size: 10.5px;
+    background: rgba(255,255,255,.8); border: 1px solid var(--border);
+    border-radius: 5px; padding: 1px 6px; margin-left: auto; color: var(--ink-muted);
+  }
+  .nav-theme {
+    width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.66); color: var(--accent-deep);
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .nav-theme svg { width: 17px; height: 17px; }
+
+  /* ---- Hero ---- */
+  .hero { position: relative; overflow: hidden; padding: 64px 40px 52px; }
+  .hero::before { /* 柔和光斑代替网格 */
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(480px 260px at 82% 18%, rgba(255,255,255,.55), transparent 68%),
+      radial-gradient(360px 240px at 12% 90%, rgba(210,205,255,.5), transparent 70%);
+  }
+  .hero::after { /* 恬谧装饰：一枚缓慢的呼吸圆环 */
+    content: ""; position: absolute; right: 4%; top: 50%;
+    width: 300px; height: 300px; transform: translateY(-50%);
+    border: 1.5px solid rgba(122,111,214,.16); border-radius: 50%;
+    box-shadow: inset 0 0 0 52px rgba(255,255,255,.28);
+    animation: breathe 7s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: translateY(-50%) scale(1); opacity: .8; }
+    50% { transform: translateY(-50%) scale(1.035); opacity: 1; }
+  }
+  .hero-inner { position: relative; z-index: 1; max-width: 660px; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .15em;
+    color: var(--accent-deep); text-transform: uppercase;
+    background: rgba(255,255,255,.55);
+    border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 999px;
+  }
+  .hero-eyebrow .count { color: var(--ink-muted); text-transform: none; letter-spacing: .03em; }
+  .hero h1 {
+    font-size: clamp(30px, 4.2vw, 44px);
+    letter-spacing: -.02em; line-height: 1.2; margin: 18px 0 12px;
+    color: var(--ink-strong); font-weight: 700;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent-deep); }
+  .hero-sub { color: var(--ink-muted); font-size: 15px; max-width: 50ch; }
+  .hero-status {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-top: 24px; padding: 9px 16px;
+    background: rgba(255,255,255,.66);
+    border: 1px solid var(--border); border-radius: 999px;
+    font-size: 12.5px; color: var(--ink-muted);
+    box-shadow: 0 3px 12px rgba(124,108,200,.08);
+  }
+  .hero-status .pulse {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--sage);
+    animation: pulse 2.6s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(143,191,168,.5); }
+    70% { box-shadow: 0 0 0 8px rgba(143,191,168,0); }
+    100% { box-shadow: 0 0 0 0 rgba(143,191,168,0); }
+  }
+  .hero-status b { color: var(--ink-strong); font-weight: 500; }
+  .hero-cta { display: flex; gap: 12px; margin-top: 26px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13.5px; font-weight: 500; text-decoration: none;
+    padding: 11px 22px; border-radius: 13px; transition: .25s cubic-bezier(.25,1,.5,1);
+  }
+  .btn svg { width: 16px; height: 16px; }
+  .btn-primary {
+    color: #FFFEF4; background: linear-gradient(140deg, #9D92E8, #7A6FD6);
+    box-shadow: 0 10px 24px rgba(108,95,199,.28);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(108,95,199,.34); }
+  .btn-ghost { color: var(--accent-deep); background: rgba(255,255,255,.62); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,.9); transform: translateY(-2px); }
+
+  /* ---- 主体两栏 ---- */
+  .main { display: grid; grid-template-columns: 1fr 300px; gap: 30px; padding: 34px 40px; }
+  @media (max-width: 960px) { .main { grid-template-columns: 1fr; } .hero::after { display: none; } }
+
+  .sec { margin-bottom: 40px; }
+  .sec-head { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; }
+  .sec-head .ico-chip {
+    width: 30px; height: 30px; border-radius: 10px;
+    background: rgba(255,255,255,.7); border: 1px solid var(--border);
+    display: grid; place-items: center; color: var(--accent-deep);
+  }
+  .sec-head .ico-chip svg { width: 15px; height: 15px; }
+  .sec-head h2 { font-size: 16.5px; color: var(--ink-strong); letter-spacing: -.01em; }
+  .sec-head .n { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: .08em; }
+  .sec-head .more { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--ink-muted); text-decoration: none; transition: .2s; }
+  .sec-head .more svg { width: 14px; height: 14px; transition: transform .2s; }
+  .sec-head .more:hover { color: var(--accent-deep); }
+  .sec-head .more:hover svg { transform: translateX(3px); }
+
+  /* ---- 置顶 Feature 卡 ---- */
+  .feature {
+    display: grid; grid-template-columns: 1.08fr 1fr;
+    background: var(--card); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
+    text-decoration: none; transition: .28s cubic-bezier(.25,1,.5,1);
+    box-shadow: var(--shadow-soft);
+  }
+  .feature:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); border-color: rgba(122,111,214,.3); }
+  .feature-body { padding: 26px 28px; display: flex; flex-direction: column; }
+  .pin {
+    display: inline-flex; align-items: center; gap: 7px; align-self: flex-start;
+    font-size: 11.5px; font-weight: 500; letter-spacing: .06em;
+    color: #C88A4A; background: rgba(242,184,121,.18);
+    border: 1px solid rgba(242,184,121,.35);
+    padding: 4px 12px; border-radius: 999px; margin-bottom: 14px;
+  }
+  .pin svg { width: 12px; height: 12px; }
+  .meta {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-muted);
+  }
+  .meta .cat { display: inline-flex; align-items: center; gap: 5px; color: var(--accent-deep); }
+  .meta .cat svg { width: 12px; height: 12px; }
+  .meta .vline { width: 1px; height: 11px; background: var(--border); }
+  .feature h3 { font-size: 21px; letter-spacing: -.015em; line-height: 1.4; margin: 12px 0; color: var(--ink-strong); transition: .22s; }
+  .feature:hover h3 { color: var(--accent-deep); }
+  .feature p { font-size: 13.5px; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .feature .meta-row2 { margin-top: auto; padding-top: 18px; display: flex; gap: 8px; }
+  .tag {
+    font-size: 11.5px; color: var(--ink-muted); text-decoration: none;
+    background: rgba(255,255,255,.6);
+    border: 1px solid var(--border); border-radius: 999px; padding: 3.5px 12px; transition: .2s;
+  }
+  .tag:hover { color: var(--accent-deep); border-color: rgba(122,111,214,.35); }
+  .feature-cover {
+    position: relative; min-height: 230px;
+    background:
+      radial-gradient(360px 220px at 72% 28%, rgba(255,255,255,.75), transparent 66%),
+      radial-gradient(320px 220px at 24% 82%, rgba(210,205,255,.65), transparent 64%),
+      linear-gradient(150deg, #FBF7E4, #E3DDFB);
+  }
+  .feature-cover .glyph {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    color: rgba(122,111,214,.5);
+  }
+  .feature-cover .glyph svg { width: 84px; height: 84px; stroke-width: 1; }
+
+  /* ---- 列表卡 ---- */
+  .cards { display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    position: relative;
+    display: grid; grid-template-columns: 218px 1fr; gap: 18px;
+    background: var(--card); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 16px; padding: 14px;
+    text-decoration: none; transition: .26s cubic-bezier(.25,1,.5,1);
+    box-shadow: 0 4px 14px rgba(124,108,200,.06);
+  }
+  .card:hover { transform: translateY(-2px); background: rgba(255,255,255,.78); box-shadow: var(--shadow-lift); border-color: rgba(122,111,214,.3); }
+  .card-cover {
+    border-radius: 12px; overflow: hidden; aspect-ratio: 16/10;
+    position: relative;
+    background: linear-gradient(140deg, #FBF7E4, #E6E0FC);
+  }
+  .card-cover .fake-img {
+    position: absolute; inset: 0;
+    background: radial-gradient(200px 120px at 62% 36%, rgba(255,255,255,.8), transparent 64%);
+    transition: transform .35s cubic-bezier(.25,1,.5,1);
+  }
+  .card:hover .fake-img { transform: scale(1.05); }
+  .card-cover .cover-ico { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(122,111,214,.42); }
+  .card-cover .cover-ico svg { width: 34px; height: 34px; stroke-width: 1.2; }
+  .card-body { display: flex; flex-direction: column; padding: 5px 8px 5px 0; min-width: 0; }
+  .card h3 { font-size: 16.5px; letter-spacing: -.01em; line-height: 1.45; margin: 9px 0 6px; color: var(--ink-strong); transition: .2s; }
+  .card:hover h3 { color: var(--accent-deep); }
+  .card p { font-size: 13px; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-foot { margin-top: auto; padding-top: 12px; display: flex; align-items: center; gap: 8px; }
+  .card-foot .spacer { flex: 1; }
+  .card-foot .go { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--accent-deep); opacity: 0; transform: translateX(-4px); transition: .22s; }
+  .card-foot .go svg { width: 13px; height: 13px; }
+  .card:hover .go { opacity: 1; transform: translateX(0); }
+  .seq {
+    position: absolute; top: 16px; right: 18px;
+    font-family: var(--mono); font-size: 21px; font-weight: 600;
+    color: rgba(122,111,214,.22); letter-spacing: .05em; transition: .25s;
+  }
+  .card:hover .seq { color: rgba(122,111,214,.5); }
+
+  /* ---- 侧栏 ---- */
+  .sider { display: flex; flex-direction: column; gap: 18px; align-self: start; position: sticky; top: 88px; }
+  .panel {
+    background: var(--card); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 18px; padding: 24px;
+    box-shadow: 0 4px 14px rgba(124,108,200,.06);
+  }
+  .profile { text-align: center; }
+  .avatar-wrap { position: relative; width: 92px; height: 92px; margin: 0 auto; }
+  .avatar {
+    width: 92px; height: 92px; border-radius: 28px;
+    background: linear-gradient(140deg, #FFFFE8, #D2CDFF);
+    border: 1.5px solid rgba(255,255,255,.9);
+    box-shadow: 0 10px 26px rgba(124,108,200,.18);
+    display: grid; place-items: center;
+    font-size: 32px; font-weight: 700; color: var(--accent-deep);
+  }
+  .avatar-wrap .status {
+    position: absolute; right: -1px; bottom: -1px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--sage); border: 3px solid #FDFCF6;
+  }
+  .profile .name { margin-top: 15px; font-weight: 700; font-size: 17px; color: var(--ink-strong); }
+  .profile .bio { margin-top: 3px; font-size: 12.5px; color: var(--ink-muted); }
+  .socials { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
+  .socials a {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: rgba(255,255,255,.66); border: 1px solid var(--border);
+    display: grid; place-items: center; color: var(--accent-deep); transition: .22s;
+  }
+  .socials a:hover { transform: translateY(-2px); background: #fff; box-shadow: 0 6px 16px rgba(124,108,200,.14); }
+  .socials a svg { width: 16px; height: 16px; }
+  .stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    border-top: 1px solid var(--border); margin-top: 20px; padding-top: 18px;
+  }
+  .stats a { text-decoration: none; text-align: center; transition: .2s; border-radius: 10px; padding: 5px 0; }
+  .stats a:hover { background: rgba(255,255,255,.6); }
+  .stats a + a { border-left: 1px solid var(--border); }
+  .stats .num {
+    display: block; font-family: var(--mono); font-size: 19px; font-weight: 700;
+    color: var(--accent-deep); font-variant-numeric: tabular-nums;
+  }
+  .stats .lbl { font-size: 10.5px; letter-spacing: .12em; color: var(--ink-muted); text-transform: uppercase; }
+  .sider-nav { padding: 12px; display: flex; flex-direction: column; gap: 3px; }
+  .sider-nav a {
+    display: flex; align-items: center; gap: 12px;
+    height: 44px; padding: 0 10px; border-radius: 13px;
+    font-size: 13.5px; color: var(--ink-muted); text-decoration: none; transition: .22s;
+  }
+  .sider-nav a .chip-sm {
+    width: 30px; height: 30px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.5); color: var(--ink-muted);
+    transition: .22s;
+  }
+  .sider-nav a .chip-sm svg { width: 15px; height: 15px; }
+  .sider-nav a:hover { color: var(--ink-strong); background: rgba(255,255,255,.55); }
+  .sider-nav a:hover .chip-sm { color: var(--accent-deep); }
+  .sider-nav a.active { color: var(--accent-deep); font-weight: 600; background: rgba(255,255,255,.8); box-shadow: 0 4px 12px rgba(124,108,200,.12); }
+  .sider-nav a.active .chip-sm { background: linear-gradient(140deg, #9D92E8, #7A6FD6); color: #FFFEF4; box-shadow: 0 4px 10px rgba(108,95,199,.28); }
+  .sider-nav a .cnt { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-muted); opacity: .7; }
+
+  /* 精选分类 */
+  .cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 720px) { .cats { grid-template-columns: 1fr; } }
+  .cat-card {
+    position: relative; border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; background: var(--card); backdrop-filter: blur(8px);
+    text-decoration: none; overflow: hidden; transition: .26s cubic-bezier(.25,1,.5,1);
+    box-shadow: 0 4px 14px rgba(124,108,200,.06);
+  }
+  .cat-card .chip {
+    width: 40px; height: 40px; border-radius: 13px; margin-bottom: 14px;
+  }
+  .cat-card .cname { font-size: 15px; font-weight: 600; color: var(--ink-strong); }
+  .cat-card .cdesc { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+  .cat-card .ccount { font-family: var(--mono); font-size: 11px; color: var(--accent-deep); margin-top: 12px; display: flex; align-items: center; gap: 5px; }
+  .cat-card .ccount svg { width: 12px; height: 12px; transition: transform .22s; }
+  .cat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); border-color: rgba(122,111,214,.3); }
+  .cat-card:hover .ccount svg { transform: translateX(3px); }
+
+  /* ---- 页脚 ---- */
+  .foot {
+    border-top: 1px solid var(--border);
+    padding: 24px 40px; display: flex; align-items: center; gap: 16px;
+    font-size: 12.5px; color: var(--ink-muted);
+    background: rgba(255, 255, 245, .55);
+  }
+  .foot .links { margin-left: auto; display: flex; gap: 8px; }
+  .foot .links a {
+    width: 34px; height: 34px; border-radius: 11px;
+    display: grid; place-items: center; color: var(--ink-muted);
+    background: rgba(255,255,255,.55); border: 1px solid var(--border); transition: .2s;
+  }
+  .foot .links a:hover { color: var(--accent-deep); background: #fff; }
+  .foot .links a svg { width: 15px; height: 15px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 通用 SVG 图标集（圆润线性 · stroke 1.7 · 圆头圆角） ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="i-home"><path d="M4.2 11.4 12 4.6l7.8 6.8M6.6 10.2v7.9a1.4 1.4 0 0 0 1.4 1.4h8a1.4 1.4 0 0 0 1.4-1.4v-7.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19.5v-4.2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-grid"><rect x="3.6" y="3.6" width="7" height="7" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.4" y="3.6" width="7" height="7" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="3.6" y="13.4" width="7" height="7" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="13.4" y="13.4" width="7" height="7" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/></g>
+    <g id="i-tag"><path d="M3.8 12.3V5.8a2 2 0 0 1 2-2h6.5a2 2 0 0 1 1.4.6l6.3 6.3a2 2 0 0 1 0 2.8l-6.3 6.3a2 2 0 0 1-2.8 0l-6.5-6.5a2 2 0 0 1-.6-1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="8.2" cy="8.2" r="1.4" fill="currentColor"/></g>
+    <g id="i-archive"><rect x="3.6" y="4.2" width="16.8" height="4.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 8.6v8.9a1.9 1.9 0 0 0 1.9 1.9h9.4a1.9 1.9 0 0 0 1.9-1.9V8.6M10 12.6h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-user"><circle cx="12" cy="8.1" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.2 19.6c1.3-3.1 3.8-4.8 6.8-4.8s5.5 1.7 6.8 4.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-search"><circle cx="11" cy="11" r="6.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m15.6 15.6 4.4 4.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-rss"><path d="M5 11.2a7.8 7.8 0 0 1 7.8 7.8M5 5.2A13.8 13.8 0 0 1 18.8 19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="6.4" cy="17.6" r="1.7" fill="currentColor"/></g>
+    <g id="i-github"><path d="M12 3.2a8.8 8.8 0 0 0-2.8 17.2c.4.1.6-.2.6-.5v-1.8c-2.4.5-3-1-3-1-.4-1-1-1.3-1-1.3-.8-.6 0-.6 0-.6.9.1 1.4 1 1.4 1 .8 1.4 2.2 1 2.7.8.1-.6.3-1 .6-1.2-2-.2-4-1-4-4.4 0-1 .3-1.8.9-2.4-.1-.2-.4-1.2.1-2.4 0 0 .7-.2 2.5.9a8.6 8.6 0 0 1 4.4 0c1.7-1.1 2.5-.9 2.5-.9.5 1.2.2 2.2.1 2.4.6.6.9 1.4.9 2.4 0 3.4-2.1 4.2-4 4.4.3.3.6.8.6 1.6v2.4c0 .3.2.6.6.5A8.8 8.8 0 0 0 12 3.2z" fill="currentColor" stroke="none"/></g>
+    <g id="i-moon"><path d="M19.8 13.8A7.8 7.8 0 1 1 10.2 4.2a6.2 6.2 0 0 0 9.6 9.6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></g>
+    <g id="i-pin"><path d="M9 4.5h6M12 4.5v4.2M7.5 8.7h9l-1.2 3.4a2 2 0 0 1-1.9 1.3h-2.8a2 2 0 0 1-1.9-1.3zM12 13.4v6.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-pen"><path d="m4.5 19.5.9-3.6L16.2 5.1a2.1 2.1 0 0 1 3 3L8.4 18.9zM14.7 6.6l2.7 2.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-arrow"><path d="M4.5 12h14M13 6.5l5.5 5.5-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-feather"><path d="M17.8 4.8c2 2 2.2 5 .4 7L12 18.2l-5.4 1.2 1.2-5.4 6.4-6.4M6.6 13.6l3.8 3.8M4 20l.9-.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-leaf"><path d="M5 19C5 9 11 4.5 19.5 4.5 19.5 14 14 19 5 19zM5 19c2.5-5 6-8.5 10-11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g id="i-book"><path d="M4.5 5.5A2 2 0 0 1 6.5 3.5H19v14.6H6.5a2 2 0 0 0-2 2zM4.5 5.5v15.1M19 18.1a2.3 2.3 0 0 1 0 .1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 18.2a2 2 0 0 1 2-2H19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+    <g id="i-tool"><path d="M14.3 6.3a4.2 4.2 0 0 1 5.6-5.4l-3 3 .8 2.4 2.4.8 3-3" transform="translate(-2.5 3.5) scale(.82)" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.4 10.6 5 19a1.9 1.9 0 0 1-2.7-2.7l8.4-8.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></g>
+  </defs>
+</svg>
+
+<div class="doc">
+  <p class="doc-kicker">UI Optimization Preview · Vol.2 恬谧 Tranquil</p>
+  <h1>恬谧版 · 主界面渐变 + 图标重设计</h1>
+  <p>主界面底色整体换成 #FFFFD0 → #D2CDFF 的暖奶油-雾紫渐变：去掉赛博霓虹的发光与深色底，改用毛玻璃白卡、柔和投影和降饱和点缀色，营造安静、透气、想久待的阅读氛围。图标整套重画。</p>
+
+  <div class="palette">
+    <span class="swatch"><i style="background:#FFFFD0"></i>#FFFFD0 暖奶油</span>
+    <span class="swatch"><i style="background:#D2CDFF"></i>#D2CDFF 雾紫</span>
+    <span class="swatch"><i style="background:#7A6FD6"></i>#7A6FD6 主强调</span>
+    <span class="swatch"><i style="background:#F2B879"></i>#F2B879 杏色点缀</span>
+    <span class="swatch"><i style="background:#8FBFA8"></i>#8FBFA8 状态绿</span>
+    <span class="swatch"><i style="background:#4A4560"></i>#4A4560 墨色文字</span>
+  </div>
+
+  <div class="changes">
+    <div class="change"><b>① 底色渐变</b><span class="from">深空黑 #0b0e14</span><span class="arrow">→</span><span class="to">#FFFFD0 → #D2CDFF 对角渐变，页面自上而下由暖入凉</span></div>
+    <div class="change"><b>② 卡片语言</b><span class="from">深色实底卡 + 青色发光</span><span class="arrow">→</span><span class="to">半透明白毛玻璃卡 + 大模糊淡紫投影，hover 只上浮不变色</span></div>
+    <div class="change"><b>③ 图标整套重画</b><span class="from">Iconify 混搭线性图标，风格不一</span><span class="arrow">→</span><span class="to">统一手绘线性图标：1.7 描边、圆头圆角、白瓷 chip 容器、激活态雾紫渐变</span></div>
+    <div class="change"><b>④ 发光归零</b><span class="from">多处 cyan glow</span><span class="arrow">→</span><span class="to">全站无发光；唯一动效是 Hero 的 7s 呼吸圆环，可随系统减弱</span></div>
+    <div class="change"><b>⑤ 点缀色降温</b><span class="from">琥珀警示 + 荧光青</span><span class="arrow">→</span><span class="to">杏色（置顶/温度）+ 降饱和苔绿（在线状态），对比柔和</span></div>
+    <div class="change"><b>⑥ 封面占位重绘</b><span class="from">深色赛博渐变封面</span><span class="arrow">→</span><span class="to">奶油-雾紫柔光渐变 + 大尺寸细线图标水印，方便后续替换真实封面</span></div>
+  </div>
+
+  <div class="preview-label">图标系统 · 重设计后</div>
+</div>
+
+<!-- ============ 图标系统展示 ============ -->
+<div class="icon-system">
+  <h2>手绘线性图标 · 12 枚</h2>
+  <p class="sub">统一规格：24 viewBox · 1.7 描边 · 圆头圆角 · 白瓷 chip 容器（44px / 圆角 14）。三种状态：默认 / hover 上浮 / 激活雾紫渐变。</p>
+  <div class="icon-grid">
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span><span class="nm">首页</span><code>home</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-grid"/></svg></span><span class="nm">分类</span><code>grid</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-tag"/></svg></span><span class="nm">标签</span><code>tag</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-archive"/></svg></span><span class="nm">归档</span><code>archive</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg></span><span class="nm">关于</span><code>user</code></div>
+    <div class="icon-item"><span class="chip is-active"><svg viewBox="0 0 24 24"><use href="#i-pen"/></svg></span><span class="nm">写作中</span><code>pen</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg></span><span class="nm">搜索</span><code>search</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-rss"/></svg></span><span class="nm">订阅</span><code>rss</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-github"/></svg></span><span class="nm">GitHub</span><code>github</code></div>
+    <div class="icon-item"><span class="chip is-warm"><svg viewBox="0 0 24 24"><use href="#i-pin"/></svg></span><span class="nm">置顶</span><code>pin</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-feather"/></svg></span><span class="nm">随笔</span><code>feather</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg></span><span class="nm">笔记</span><code>book</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-tool"/></svg></span><span class="nm">工具</span><code>tool</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span><span class="nm">自然</span><code>leaf</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></span><span class="nm">夜间模式</span><code>moon</code></div>
+    <div class="icon-item"><span class="chip"><svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></span><span class="nm">箭头</span><code>arrow</code></div>
+  </div>
+</div>
+
+<div class="doc"><div class="preview-label">优化后首页 · 恬谧版 After</div></div>
+
+<!-- ==================== 博客本体 mockup ==================== -->
+<div class="site">
+
+  <nav class="nav">
+    <span class="nav-logo">
+      <span class="mark"><svg viewBox="0 0 24 24"><use href="#i-feather"/></svg></span>
+      烁烁
+    </span>
+    <div class="nav-links">
+      <a class="active" href="#"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg>首页</a>
+      <a href="#"><svg viewBox="0 0 24 24"><use href="#i-grid"/></svg>分类</a>
+      <a href="#"><svg viewBox="0 0 24 24"><use href="#i-tag"/></svg>标签</a>
+      <a href="#"><svg viewBox="0 0 24 24"><use href="#i-archive"/></svg>归档</a>
+      <a href="#"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg>关于</a>
+    </div>
+    <div class="nav-search"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg>搜索文章…<kbd>⌘K</kbd></div>
+    <button class="nav-theme" aria-label="切换主题"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></button>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">SSS <span>·</span> <span class="count">42 篇文章</span></p>
+      <h1>烁烁<em>.</em> 记录自己的一切</h1>
+      <p class="hero-sub">写作与日常灵感。技术笔记、工具分享，以及一些不值得写进文档但值得留下来的想法。</p>
+      <div class="hero-status">
+        <span class="pulse"></span>
+        最近更新 <b>《Tailwind v4 迁移实录》</b> · 3 天前
+      </div>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#">开始阅读 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-ghost" href="#"><svg viewBox="0 0 24 24"><use href="#i-rss"/></svg>订阅 RSS</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- 主栏 -->
+    <div>
+      <section class="sec">
+        <div class="sec-head">
+          <span class="ico-chip"><svg viewBox="0 0 24 24"><use href="#i-pin"/></svg></span>
+          <h2>置顶</h2><span class="n">PINNED · 1</span>
+        </div>
+        <a class="feature" href="#">
+          <div class="feature-body">
+            <span class="pin"><svg viewBox="0 0 24 24"><use href="#i-pin"/></svg>置顶</span>
+            <div class="meta">
+              <span class="cat"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg>笔记</span><span class="vline"></span>
+              <span>2026-10-18</span><span class="vline"></span>
+              <span>8.2k 字</span><span class="vline"></span>
+              <span>约 25 分钟</span>
+            </div>
+            <h3>Astro 博客重构：从主题魔改到设计系统</h3>
+            <p>这次重构把散落在十几处的色值、圆角、动画时长全部收进了 design-tokens.ts。本文记录整个过程里踩过的坑：Tailwind v4 的反向断点、CSS 变量在三套主题下的映射，以及为什么最后决定换成这套奶油雾紫……</p>
+            <div class="meta-row2">
+              <span class="tag">Astro</span><span class="tag">设计系统</span><span class="tag">重构</span>
+            </div>
+          </div>
+          <div class="feature-cover">
+            <span class="glyph"><svg viewBox="0 0 24 24"><use href="#i-leaf"/></svg></span>
+          </div>
+        </a>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="ico-chip"><svg viewBox="0 0 24 24"><use href="#i-feather"/></svg></span>
+          <h2>文章列表</h2><span class="n">POSTS · 42</span>
+          <a class="more" href="#">查看全部 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></a>
+        </div>
+        <div class="cards">
+          <a class="card" href="#">
+            <div class="card-cover"><div class="fake-img"></div><span class="cover-ico"><svg viewBox="0 0 24 24"><use href="#i-tool"/></svg></span></div>
+            <div class="card-body">
+              <div class="meta">
+                <span class="cat"><svg viewBox="0 0 24 24"><use href="#i-tool"/></svg>工具</span><span class="vline"></span>
+                <span>2026-10-28</span>
+                <span class="spacer"></span>
+                <span>2.1k 字 · 7 min</span>
+              </div>
+              <h3>我的 2026 工具箱：二十个真正每天在用的东西</h3>
+              <p>一年过去，工具箱大换血。留下来的标准只有一个：打开频率。这篇不列「神器」，只列每天真的会打开的东西……</p>
+              <div class="card-foot">
+                <span class="tag">效率</span><span class="tag">工具</span>
+                <span class="spacer"></span>
+                <span class="go">阅读全文 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></span>
+              </div>
+            </div>
+            <span class="seq">01</span>
+          </a>
+          <a class="card" href="#">
+            <div class="card-cover"><div class="fake-img"></div><span class="cover-ico"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></span></div>
+            <div class="card-body">
+              <div class="meta">
+                <span class="cat"><svg viewBox="0 0 24 24"><use href="#i-feather"/></svg>随笔</span><span class="vline"></span>
+                <span>2026-10-21</span>
+                <span class="spacer"></span>
+                <span>1.4k 字 · 5 min</span>
+              </div>
+              <h3>深夜写作的一点点仪式感</h3>
+              <p>为什么总在半夜十二点后才有表达欲？聊聊夜间写作时的灯光、声音和一杯放凉了也不在乎的茶……</p>
+              <div class="card-foot">
+                <span class="tag">生活</span>
+                <span class="spacer"></span>
+                <span class="go">阅读全文 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></span>
+              </div>
+            </div>
+            <span class="seq">02</span>
+          </a>
+          <a class="card" href="#">
+            <div class="card-cover"><div class="fake-img"></div><span class="cover-ico"><svg viewBox="0 0 24 24"><use href="#i-pen"/></svg></span></div>
+            <div class="card-body">
+              <div class="meta">
+                <span class="cat"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg>笔记</span><span class="vline"></span>
+                <span>2026-10-12</span>
+                <span class="spacer"></span>
+                <span>3.6k 字 · 11 min</span>
+              </div>
+              <h3>把博客做成一件安静的东西</h3>
+              <p>霓虹和噪点堆在一起就是廉价赛博风。真正让页面「贵」起来的是留白、呼吸感和一条用心的渐变……</p>
+              <div class="card-foot">
+                <span class="tag">设计</span><span class="tag">CSS</span>
+                <span class="spacer"></span>
+                <span class="go">阅读全文 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></span>
+              </div>
+            </div>
+            <span class="seq">03</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="ico-chip"><svg viewBox="0 0 24 24"><use href="#i-grid"/></svg></span>
+          <h2>精选分类</h2><span class="n">CATEGORIES · 3</span>
+        </div>
+        <div class="cats">
+          <a class="cat-card" href="#">
+            <span class="chip"><svg viewBox="0 0 24 24"><use href="#i-feather"/></svg></span>
+            <div class="cname">随笔</div>
+            <div class="cdesc">生活记录、随想随笔</div>
+            <div class="ccount">18 篇 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></div>
+          </a>
+          <a class="cat-card" href="#">
+            <span class="chip"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg></span>
+            <div class="cname">笔记</div>
+            <div class="cdesc">技术笔记、学习笔记</div>
+            <div class="ccount">15 篇 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></div>
+          </a>
+          <a class="cat-card" href="#">
+            <span class="chip"><svg viewBox="0 0 24 24"><use href="#i-tool"/></svg></span>
+            <div class="cname">工具</div>
+            <div class="cdesc">工具使用、效率提升</div>
+            <div class="ccount">9 篇 <svg viewBox="0 0 24 24"><use href="#i-arrow"/></svg></div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <!-- 侧栏 -->
+    <aside class="sider">
+      <div class="panel profile">
+        <div class="avatar-wrap">
+          <div class="avatar">烁</div>
+          <span class="status" title="最近活跃"></span>
+        </div>
+        <p class="name">烁</p>
+        <p class="bio">写作与日常灵感</p>
+        <div class="socials">
+          <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24"><use href="#i-github"/></svg></a>
+          <a href="#" aria-label="RSS"><svg viewBox="0 0 24 24"><use href="#i-rss"/></svg></a>
+        </div>
+        <div class="stats">
+          <a href="#"><span class="num">42</span><span class="lbl">文章</span></a>
+          <a href="#"><span class="num">3</span><span class="lbl">分类</span></a>
+          <a href="#"><span class="num">27</span><span class="lbl">标签</span></a>
+        </div>
+      </div>
+      <nav class="panel sider-nav">
+        <a class="active" href="#"><span class="chip-sm"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span>首页</a>
+        <a href="#"><span class="chip-sm"><svg viewBox="0 0 24 24"><use href="#i-grid"/></svg></span>分类<span class="cnt">3</span></a>
+        <a href="#"><span class="chip-sm"><svg viewBox="0 0 24 24"><use href="#i-tag"/></svg></span>标签<span class="cnt">27</span></a>
+        <a href="#"><span class="chip-sm"><svg viewBox="0 0 24 24"><use href="#i-archive"/></svg></span>归档</a>
+        <a href="#"><span class="chip-sm"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg></span>关于</a>
+      </nav>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <span>© 2026 烁烁 · Powered by Astro</span>
+    <div class="links">
+      <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24"><use href="#i-github"/></svg></a>
+      <a href="#" aria-label="RSS"><svg viewBox="0 0 24 24"><use href="#i-rss"/></svg></a>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

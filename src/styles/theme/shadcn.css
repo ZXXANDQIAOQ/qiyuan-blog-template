@@ -6,70 +6,77 @@
  */
 @layer base {
   :root {
-    /* ---- 底色三阶 ---- */
-    --background: 210 30% 98%; /* #f8fafb */
-    --surface-1: 210 24% 96%;
-    --surface-2: 0 0% 100%;
-    --surface-3: 210 22% 94%;
+    /* ---- 底色三阶（恬谧：暖奶油 → 雾紫） ---- */
+    --background: 60 100% 91%; /* #FFFFD0 页面底 */
+    --surface-1: 58 85% 93%; /* 暖奶油浅一分区底 */
+    --surface-2: 0 0% 100%; /* 卡片白 */
+    --surface-3: 250 50% 94%; /* 雾紫悬浮层/输入框 */
 
     /* ---- 文字 ---- */
-    --foreground: 222 26% 14%; /* #1a202d 对底 15.57:1 */
-    --muted-foreground: 220 10% 44%; /* #656c7b 对 surface-3 4.82:1 */
+    --foreground: 249 20% 27%; /* #3b3752 对底 10.9:1 */
+    --muted-foreground: 249 16% 49%; /* #6e6890 对底 5.0:1 */
 
-    /* ---- 霓虹 ---- */
-    --primary: 194 100% 30%; /* #007599 对底 5.01:1 */
-    --primary-foreground: 0 0% 100%;
-    --neon-cyan: 194 100% 34%; /* 浅色下青必须压深，否则对比度不达标 */
-    --neon-cyan-soft: 194 90% 42%;
-    --neon-violet: 282 80% 42%; /* #8d15c1 对底 6.66:1 */
-    --neon-violet-soft: 282 70% 52%;
-    --neon-amber: 30 90% 38%;
+    /* ---- 主强调（雾紫 #6c5fc7，对底 4.98:1） ---- */
+    --primary: 248 48% 58%;
+    --primary-foreground: 60 100% 97%;
+    --neon-cyan: 248 48% 58%; /* 主强调：深雾紫（原青，恬谧版换紫） */
+    --neon-cyan-soft: 250 55% 68%; /* #a79df0 浅紫 */
+    --neon-violet: 268 45% 55%; /* 辅助：梅紫，仅 ≥16px */
+    --neon-violet-soft: 268 40% 66%; /* 梅紫浅调可做小字 */
+    --neon-amber: 32 58% 46%; /* 杏色 #cf8d43（警示/置顶点缀） */
 
     /* ---- shadcn 语义槽 ---- */
-    --card: 0 0% 100%;
-    --card-foreground: 222 26% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 26% 14%;
+    --card: 60 100% 98%; /* #fffef6 暖白卡 */
+    --card-foreground: 249 20% 27%;
+    --popover: 60 100% 98%;
+    --popover-foreground: 249 20% 27%;
 
-    --secondary: 210 24% 94%;
-    --secondary-foreground: 222 26% 14%;
+    --secondary: 250 45% 93%;
+    --secondary-foreground: 249 20% 27%;
 
-    --muted: 210 24% 94%;
-    --accent: 210 24% 94%;
-    --accent-foreground: 222 26% 14%;
+    --muted: 250 40% 93%;
+    --accent: 250 40% 93%;
+    --accent-foreground: 249 20% 30%;
 
     --destructive: 0 74% 46%;
     --destructive-foreground: 0 0% 100%;
-    --success: 158 84% 32%;
-    --warning: 30 90% 38%;
+    --success: 150 30% 38%; /* 苔绿 #4c8a6b（在线状态，降饱和） */
+    --warning: 32 58% 46%;
 
-    --border: 210 18% 86%;
-    --input: 207 14% 52%; /* 对底 3.60:1 */
-    --ring: 194 100% 34%;
+    --border: 250 30% 84%;
+    --input: 249 16% 55%; /* 对卡 3.2:1 */
+    --ring: 248 48% 58%;
 
-    --badge-primary: 194 100% 30%;
+    --badge-primary: 248 48% 58%;
 
     --radius: 0.5rem; /* 圆角收敛到 8px */
 
-    /* ---- 玻璃拟态 ---- */
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-bg-strong: rgba(255, 255, 255, 0.92);
-    --glass-border-top: rgba(255, 255, 255, 0.9);
-    --glass-border-bottom: rgba(20, 30, 45, 0.06);
-    --glass-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+    /* ---- 玻璃拟态（白瓷毛玻璃） ---- */
+    --glass-bg: rgba(255, 255, 255, 0.58);
+    --glass-bg-strong: rgba(255, 255, 255, 0.88);
+    --glass-border-top: rgba(255, 255, 255, 0.95);
+    --glass-border-bottom: rgba(108, 95, 199, 0.1);
+    --glass-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
 
-    /* ---- 纹理 ---- */
-    --grid-line: rgba(30, 90, 120, 0.05);
-    --dot-line: rgba(30, 90, 120, 0.08);
+    /* ---- 纹理（紫调细线，恬谧版保留极淡网格） ---- */
+    --grid-line: rgba(122, 111, 214, 0.07);
+    --dot-line: rgba(122, 111, 214, 0.1);
     --noise-opacity: 0.02;
 
-    /* ---- 发光（组件只引用这三档，禁止手写） ---- */
-    --glow-cyan-sm: 0 0 12px hsl(var(--neon-cyan) / 0.14);
-    --glow-cyan-md: 0 0 24px hsl(var(--neon-cyan) / 0.16);
-    --glow-cyan-lg: 0 0 40px hsl(var(--neon-cyan) / 0.2);
-    --glow-violet-md: 0 0 28px hsl(var(--neon-violet) / 0.16);
-    --shadow-card: 0 10px 28px rgba(22, 34, 48, 0.1);
-    --shadow-pop: 0 24px 56px rgba(22, 34, 48, 0.16);
+    /* ---- 柔和投影（恬谧：紫调大模糊，无发光硬光） ---- */
+    --glow-cyan-sm: 0 8px 20px hsl(var(--neon-cyan) / 0.14);
+    --glow-cyan-md: 0 12px 28px hsl(var(--neon-cyan) / 0.16);
+    --glow-cyan-lg: 0 16px 40px hsl(var(--neon-cyan) / 0.18);
+    --glow-violet-md: 0 12px 28px hsl(var(--neon-violet) / 0.14);
+    --shadow-card: 0 10px 32px rgba(124, 108, 200, 0.1), 0 2px 8px rgba(124, 108, 200, 0.05);
+    --shadow-pop: 0 24px 56px rgba(124, 108, 200, 0.16), 0 4px 12px rgba(124, 108, 200, 0.07);
+
+    /* ---- Hero 背景（恬谧版：奶油→雾紫渐变 + 柔光斑） ---- */
+    --hero-bg:
+      radial-gradient(480px 260px at 82% 18%, rgba(255, 255, 255, 0.6), transparent 68%),
+      radial-gradient(360px 240px at 12% 90%, hsl(250 70% 90% / 0.8), transparent 70%),
+      linear-gradient(168deg, #ffffd0 0%, #fffcd8 30%, #eae4ff 74%, #d2cdff 100%);
+    --hero-poster-fade: linear-gradient(90deg, transparent 24%, rgba(255, 253, 235, 0.78) 100%);
   }
 
   .dark {
@@ -137,5 +144,12 @@
     --glow-violet-md: 0 0 28px hsl(var(--neon-violet) / 0.22);
     --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.45);
     --shadow-pop: 0 24px 64px rgba(0, 0, 0, 0.55);
+
+    /* ---- Hero 背景（暗色保持原深空霓虹） ---- */
+    --hero-bg:
+      radial-gradient(680px 380px at 22% 42%, hsl(var(--neon-cyan) / 0.14), transparent 70%),
+      radial-gradient(560px 420px at 78% 62%, hsl(var(--neon-violet) / 0.12), transparent 72%),
+      linear-gradient(180deg, #0b0e14 0%, #070910 100%);
+    --hero-poster-fade: linear-gradient(90deg, transparent 24%, rgba(11, 14, 20, 0.72) 100%);
   }
 }
