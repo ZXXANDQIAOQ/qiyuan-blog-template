@@ -24,7 +24,7 @@
  * 叶子分类不渲染任何导航 —— 这是 §5.4 对详情页的描述（描述 → 文章列表），
  * 也避免出现一个只有标题、点不动的空区块。
  */
-import PostList from '@components/post/PostList.astro';
+import PostIndexList from '@components/post/PostIndexList.astro';
 import type { Category } from '@lib/content';
 import type { PostCardData } from 'types/blog';
 import { getLocaleFromUrl, t } from '@/i18n';
@@ -63,4 +63,4 @@ const children = category?.children ?? [];
   )
 }
 
-<PostList posts={posts} variant="list" showPaginator={false} emptyVariant="category" />
+<PostIndexList posts={posts} locale={locale} />

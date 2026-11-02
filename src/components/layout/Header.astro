@@ -2,9 +2,12 @@
 import logoSrc from '@assets/svg/logo.svg?url';
 import { MobilePostHeader } from '@components/layout/MobilePostHeader';
 import { MenuIcon } from '@components/ui/MenuIcon';
-import { siteConfig } from 'constants/site-config';
-import { getLocaleFromUrl, localizedPath } from '@/i18n';
-import Navigator from './Navigator';
+import { RESERVED_ROUTES } from '@constants/router';
+import { configuredSeriesSlugs, enabledSeriesSlugs, routers, siteConfig } from '@constants/site-config';
+import { filterNavItems } from '@lib/utils';
+import { getLocaleFromUrl, isI18nEnabled, localeEntries, localizedPath, resolveNavName, stripLocaleFromPath } from '@/i18n';
+import LanguageSwitcher from './LanguageSwitcher';
+import { SearchTrigger } from './SearchDialog';
 
 interface Props {
   isPostPage?: boolean;
@@ -17,47 +20,59 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
 // 首页链接需带上 locale 与部署 base 前缀（GitHub Pages 子路径部署时必需）
 const homeHref = localizedPath('/', locale);
 const brand = alternate || title;
+
+/*
+ * 导航扁平化（ljj 规格 §1.1：首页/文章/分类/标签/归档/关于 一行平铺，无下拉）。
+ * 站点配置里「文章」是只有 children 的父级（分类/标签/归档），自身无 path——
+ * 按规格给它指向 /posts（路由结构保持，见规格 §7），子项照常平铺。
+ */
+interface NavItem {
+  href: string;
+  label: string;
+  /** 供 aria-current 判定的归一化路径 */
+  matchPath: string;
+}
+
+function normalizePath(p: string): string {
+  const s = p.replace(/\/+$/, '');
+  return s === '' ? '/' : s;
+}
+
+const navItems: NavItem[] = [];
+for (const item of filterNavItems(routers, configuredSeriesSlugs, enabledSeriesSlugs, RESERVED_ROUTES)) {
+  const children = item.children ?? [];
+  let href = item.path ?? null;
+  if (!href && children.length > 0) href = '/posts'; // 「文章」父级 → /posts
+  if (href) {
+    const label = resolveNavName(item.nameKey, item.name, locale);
+    if (label) navItems.push({ href: localizedPath(href, locale), label, matchPath: normalizePath(href) });
+  }
+  for (const child of children) {
+    if (!child.path) continue;
+    const label = resolveNavName(child.nameKey, child.name, locale);
+    if (label) navItems.push({ href: localizedPath(child.path, locale), label, matchPath: normalizePath(child.path) });
+  }
+}
+
+const currentPath = normalizePath(stripLocaleFromPath(Astro.url.pathname));
 ---
 
 <!--
-  顶部导航（design-spec §6.1）
-  · 高 60px（≤992 为 56px，由 --nav-h 控制），fixed 吸顶
-  · 初始透明浮在 Hero 上；滚动后 .with-background 切成玻璃拟态
-  · 三段 flex：logo / 菜单 / 右侧图标组
+  页头（ljj-clone-spec §1.1）
+  · sticky 吸顶 z-60，1px 墨线底线，背景 --header-bg（#f3f4f1e0 / #121210f0）
+  · .nav-shell 三段 flex：brand（1.35rem/620+红点）/ desktop-nav（绝对居中 gap 44px
+    scaleX 下划线，aria-current 红色常显）/ nav-actions（搜索/语言/明暗/Menu）
+  · 高 80px（≤992 为 64px，--nav-h），全局缓动 cubic-bezier(.16,1,.3,1)
 -->
-<div id="site-header" class="fixed inset-x-0 top-0 z-30 select-none overflow-visible" transition:name="site-header">
-  <div class="cyber-shell flex h-full items-center gap-8">
-    <!-- Desktop logo：符号 + 文字（§6.2） -->
-    <a
-      transition:persist="page-header-avatar"
-      class="logo-link tablet:hidden flex shrink-0 items-center gap-2.5 whitespace-nowrap"
-      href={homeHref}
-      target="_self"
-      title={brand}
-      aria-label={brand}
-    >
-      <span class="logo-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" focusable="false">
-          <!-- 注意：reset.css 有全局 `svg { fill: currentColor }`，
-               子元素必须显式写 fill="none"，否则描边方块会被填成实心青块 -->
-          <rect x="1" y="1" width="22" height="22" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"></rect>
-          <line
-            x1="6.5"
-            y1="17.5"
-            x2="13.5"
-            y2="10.5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"></line>
-          <rect x="14.5" y="7" width="2" height="2" fill="currentColor" rx="0.5"></rect>
-        </svg>
-      </span>
-      <span class="logo-text">{brand}</span>
+<header id="site-header" class="site-header" transition:name="site-header">
+  <div class="nav-shell">
+    <!-- Desktop brand：站点名 + 红点（参考 .brand:after 5px accent 方点） -->
+    <a class="brand" href={homeHref} target="_self" title={brand} aria-label={brand}>
+      <span class="brand-name">{brand}</span><i class="brand-dot" aria-hidden="true"></i>
     </a>
     <!-- Mobile: MobilePostHeader（文章页显示标题，其他页显示 logo）
          用 client:load 而非 client:only：SSR 阶段就能输出 logo，JS 失败时移动端导航仍有品牌标识 -->
-    <div class="tablet:flex tablet:grow hidden min-w-0 items-center justify-center">
+    <div class="mobile-brand" transition:persist="page-header-avatar">
       <MobilePostHeader
         client:load
         isPostPage={isPostPage}
@@ -68,45 +83,303 @@ const brand = alternate || title;
         homeHref={homeHref}
       />
     </div>
-    <Navigator client:load currentPath={Astro.url.pathname} locale={locale} />
+    <!-- Desktop nav：绝对居中，hover scaleX 下划线，激活项红色常显下划线 -->
+    <nav class="desktop-nav" aria-label="主导航">
+      {
+        navItems.map((item) => (
+          <a href={item.href} aria-current={item.matchPath === currentPath ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <!-- 右侧操作区：搜索 / 语言切换 / 明暗切换 / 移动端菜单 -->
+    <div class="nav-actions">
+      <span class="nav-act">
+        <SearchTrigger client:load />
+      </span>
+      {
+        isI18nEnabled && localeEntries.length > 1 && (
+          <span class="nav-act">
+            <LanguageSwitcher client:load locale={locale} />
+          </span>
+        )
+      }
+      <button id="theme-switch" class="theme-switch" type="button" role="switch" aria-checked="false" aria-label="切换明暗主题">
+        <span class="theme-switch-track"><span class="theme-switch-knob"></span></span>
+      </button>
+      <MenuIcon client:load className="menu-toggle-slot hidden tablet:flex" id="mobile-menu-container" />
+    </div>
   </div>
-</div>
+</header>
 
-<!-- 移动端菜单按钮：同样用 client:load 保证 SSR 出骨架（触控可点区域 56×56） -->
-<MenuIcon
-  client:load
-  className="tablet:flex fixed top-0 left-3 z-52 hidden h-14 items-center transition-transform"
-  id="mobile-menu-container"
-/>
-
-<style>
-  /*
-   * Logo 符号（§6.2）：24×24 / 圆角 6 / 1.5px 青描边 + 45° 短线 + 中心 3×3 青点
-   * 默认描边 0.75 透明度 + --glow-cyan-sm；hover 全亮 + 18px 青光。
-   * 这是全站唯一允许常驻发光的非内容元素（每屏 ≤3 处的配额之一）。
+<script>
+  /**
+   * 明暗切换（ljj 规格 §1.1 直角滑块开关）
+   * 切 .dark + 写 localStorage（'light' | 'dark'），与 Layout 的防 FOUC 脚本同一份存储约定。
+   * Astro 模块脚本整站只执行一次，用 astro:page-load 在视图过渡后重新绑定新节点。
    */
-  .logo-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: hsl(var(--primary) / 0.75);
-    border-radius: 0;
-    box-shadow: var(--glow-cyan-sm);
-    transition:
-      color var(--dur-base) var(--ease-in-out),
-      box-shadow var(--dur-base) var(--ease-in-out);
+  function bindThemeSwitch() {
+    const root = document.documentElement;
+    const btn = document.getElementById('theme-switch');
+    if (!btn || btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+
+    const sync = () => btn.setAttribute('aria-checked', root.classList.contains('dark') ? 'true' : 'false');
+    sync();
+
+    btn.addEventListener('click', () => {
+      const dark = !root.classList.contains('dark');
+      root.classList.toggle('dark', dark);
+      root.dataset.theme = dark ? 'dark' : 'light'; // astro-mermaid autoTheme
+      try {
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
+      } catch {
+        /* 隐私模式等场景静默失败 */
+      }
+      sync();
+    });
+
+    document.addEventListener('astro:after-swap', sync);
   }
 
-  .logo-link:hover .logo-mark,
-  .logo-link:focus-visible .logo-mark {
-    color: hsl(var(--primary));
-    box-shadow: var(--glow-cyan-md);
+  bindThemeSwitch();
+  document.addEventListener('astro:page-load', bindThemeSwitch);
+</script>
+
+<style>
+  /* ---- 页头壳：sticky + 1px 墨线 + 半透明底 ---- */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    border-bottom: 1px solid var(--line);
+    background: var(--header-bg);
+    color: hsl(var(--foreground));
+    transition:
+      color 0.72s var(--ease-in-out),
+      border-color 0.72s var(--ease-in-out),
+      background-color 0.72s var(--ease-in-out);
+  }
+
+  .nav-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    width: min(100% - 112px, 1440px);
+    height: var(--nav-h);
+    margin-inline: auto;
   }
 
   @media (max-width: 992px) {
-    .logo-mark svg {
-      width: 20px;
-      height: 20px;
+    .nav-shell {
+      width: min(100% - 40px, 1440px);
+    }
+  }
+
+  /* ---- brand：1.35rem / 620 / 红点结尾 ---- */
+  .brand {
+    display: inline-flex;
+    align-items: baseline;
+    width: max-content;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 620;
+    line-height: 1;
+    color: hsl(var(--foreground));
+  }
+
+  .brand-dot {
+    width: 5px;
+    height: 5px;
+    margin-left: 4px;
+    background: hsl(var(--primary));
+  }
+
+  .mobile-brand {
+    display: none;
+    min-width: 0;
+  }
+
+  /* ---- desktop-nav：绝对居中 / gap 44px / scaleX 下划线 ---- */
+  .desktop-nav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 44px;
+    white-space: nowrap;
+    font-size: 0.92rem;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .desktop-nav a {
+    position: relative;
+    padding-block: 10px;
+    transition: color 0.18s var(--ease-in-out);
+  }
+
+  .desktop-nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: 100%;
+    transition: transform 0.22s var(--ease-in-out);
+  }
+
+  .desktop-nav a:hover {
+    color: hsl(var(--foreground));
+  }
+
+  .desktop-nav a:hover::after {
+    transform: scaleX(1);
+    transform-origin: 0;
+  }
+
+  /* 激活项：常显下划线，颜色为 accent（参考首页红下划线） */
+  .desktop-nav a[aria-current='page'] {
+    color: hsl(var(--primary));
+  }
+
+  .desktop-nav a[aria-current='page']::after {
+    transform: scaleX(1);
+    background: hsl(var(--primary));
+  }
+
+  /* ---- nav-actions：右侧操作组 ---- */
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-act {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    aspect-ratio: 1;
+    color: hsl(var(--muted-foreground));
+    transition: color 0.18s var(--ease-in-out);
+  }
+
+  .nav-act:hover {
+    color: hsl(var(--primary));
+  }
+
+  .nav-act :global(button) {
+    transform: none !important; /* SearchTrigger 自带 hover:scale-125，直角风格不要缩放 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-act :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ---- 明暗切换：直角滑块开关（参考 .theme-switch 78×34 / 轨道 26×14） ---- */
+  .theme-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 34px;
+    padding-inline: 8px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: hsl(var(--muted-foreground));
+    transition:
+      color 0.18s var(--ease-in-out),
+      border-color 0.18s var(--ease-in-out),
+      background 0.18s var(--ease-in-out);
+  }
+
+  .theme-switch:hover {
+    border-color: var(--line-strong);
+    color: hsl(var(--foreground));
+  }
+
+  .theme-switch:active {
+    transform: translateY(1px);
+  }
+
+  .theme-switch-track {
+    position: relative;
+    flex: none;
+    width: 26px;
+    height: 14px;
+    background: hsl(var(--surface-3));
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    transition:
+      background 0.18s var(--ease-in-out),
+      border-color 0.18s var(--ease-in-out);
+  }
+
+  .theme-switch-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 8px;
+    height: 8px;
+    background: hsl(var(--foreground));
+    border-radius: 50%;
+    transition:
+      transform 0.18s var(--ease-in-out),
+      background 0.18s var(--ease-in-out);
+  }
+
+  .theme-switch[aria-checked='true'] .theme-switch-track {
+    background: hsl(var(--foreground));
+    border-color: hsl(var(--foreground));
+  }
+
+  .theme-switch[aria-checked='true'] .theme-switch-knob {
+    background: hsl(var(--background));
+    transform: translate(12px);
+  }
+
+  /* ---- Menu 按钮（移动端）：压掉 MenuIcon 内置的深色玻璃底，对齐直角风格 ---- */
+  .nav-actions :global(#mobile-menu-container button) {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    color: hsl(var(--foreground));
+    backdrop-filter: none;
+  }
+
+  .nav-actions :global(#mobile-menu-container button:hover) {
+    border-color: var(--line-strong);
+    color: hsl(var(--primary));
+  }
+
+  /* ---- 响应式：≤992 导航进抽屉，brand 让位 MobilePostHeader ---- */
+  @media (max-width: 992px) {
+    .brand {
+      display: none;
+    }
+
+    .mobile-brand {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-switch {
+      display: none;
     }
   }
 </style>

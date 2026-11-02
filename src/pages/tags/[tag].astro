@@ -1,31 +1,24 @@
 ---
 /**
- * 单个标签下的文章 —— design-spec §5.5「/tags/[tag]」
+ * 单个标签下的文章 —— ljj-clone-spec §5（/tags/[tag]）
  *
- * 「结构与文章列表一致」这件事只有一种正确的实现方式：复用 <PostList>。
- * 旧版本在这里手写了一遍列表（虚线圆圈装饰 + 下划线标题 / 固定 60px 的日期窄列 /
- * 分类名重复出现在每行），那套视觉与 PostItemCard（缩略图 248×156 + 标题 20px +
- * 摘要 2 行 clamp + 最多 3 个芯片）完全不是一套东西 —— 用户在 /posts 和
- * /tags/xxx 之间跳转，等于换了个网站。
+ * ljj 子页同构：topline（`04 / TAG —— 虚线 —— N 篇`）+ 标题行（`#标签`）
+ * + 三列行式索引列表（PostIndexList，行内第三列显示分类）。
  *
- * 因此这里整块删除手写列表，改为 toPostCardDataList(→PostCardData) + PostList。
- *
- * 两点实现细节：
- *   1. variant="list" 必须显式传。PostList 的默认推断是「只有 1 篇且无分页器 →
- *      渲染成首页置顶的 Feature 卡」，而只有 1 篇文章的标签是常态，不显式声明会
- *      让这些页面突然变成全宽 Feature 卡。
- *   2. showPaginator={false}：标签页不分页，5 篇文章一次列完。
+ * 与旧版的差异：不再复用 <PostList> 横向卡 —— ljj 子页统一行式索引；
+ * 标签页不分页，一次列完（showPaginator 语义保留为「不渲染分页器」）。
+ * 数据获取逻辑照旧。
  */
-import HomeSider from '@components/layout/HomeSider.astro';
-import PostList from '@components/post/PostList.astro';
-import Cover from '@components/ui/cover/Cover.astro';
+import PostIndexList from '@components/post/PostIndexList.astro';
 import { siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { getSortedPosts, normalizeTag } from '@lib/content';
 import { toPostCardDataList } from '@lib/content/transforms';
-import Breadcrumb from '@/components/ui/Breadcrumb.astro';
 import { defaultLocale, getLocaleFromUrl, localizedPath, t } from '@/i18n';
+import '@styles/components/console-pages.css';
+
+/** 「← 全部」回链 */
+const tBackHref = (loc: string) => localizedPath('/tags', loc);
 
 export async function getStaticPaths() {
   const posts = await getSortedPosts(defaultLocale);
@@ -49,28 +42,94 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
 const allPosts = await getSortedPosts(locale);
 const posts = allPosts.filter((post) => post.data.tags?.some((tg) => normalizeTag(tg) === tag));
 
-/** PostList 吃的是轻量 PostCardData，不是完整 BlogPost —— 在这里一次性转好 */
+/** PostIndexList 吃轻量 PostCardData，在这里一次性转好 */
 const postCardData = toPostCardDataList(posts, locale);
 ---
 
 <Layout title={`${t(locale, 'tag.postsWithTag', { name: tag })} | ${siteConfig.title}`} description={t(locale, 'tag.postsWithTag', { name: tag })}>
-  <TwoColumnLayout>
-    {/* Hero 用 title 模式（220px）。§5.5 要求 `#` 用 --neon-violet、字号 0.8em，
-        但 Cover 的标题是纯文本、且归卡片层所有（不在本次改动范围），所以这里整串
-        `#标签名` 同色 —— 已知妥协，不改 Cover。 */}
-    <Cover slot="cover" title={`#${tag}`} />
-    <HomeSider slot="sider" />
-    <div class="cyber-stack">
-      <Breadcrumb
-        items={[
-          { label: t(locale, 'tag.all'), href: localizedPath('/tags', locale) },
-          { label: `#${tag}` },
-        ]}
-      />
+  <section class="tag-console">
+    <div class="section-shell">
+      <header class="console-topline">
+        <span class="console-topline-index">04 / TAG</span>
+        <span class="console-topline-rule"></span>
+        <span class="console-topline-copy">TOPIC</span>
+        <span class="console-topline-status"><i></i>{t(locale, 'tag.postCount', { count: posts.length })}</span>
+      </header>
 
-      <section class="cyber-section">
-        <PostList posts={postCardData} variant="list" showPaginator={false} emptyVariant="tag" />
-      </section>
+      <div class="console-heading tag-heading">
+        <h1><span class="tag-hash" aria-hidden="true">#</span>{tag}</h1>
+        <span class="console-count"><b>{posts.length}</b></span>
+      </div>
+
+      <PostIndexList posts={postCardData} locale={locale} />
+
+      <p class="tag-back">
+        <a href={tBackHref(locale)}>← {t(locale, 'tag.all')}</a>
+      </p>
     </div>
-  </TwoColumnLayout>
+  </section>
 </Layout>
+
+<style>
+  .tag-console {
+    padding-block: 22px 72px;
+  }
+
+  .console-topline {
+    margin-bottom: clamp(36px, 6vh, 64px);
+  }
+
+  .tag-heading {
+    margin-bottom: 20px;
+  }
+
+  .tag-heading h1 {
+    font-size: 1.6rem;
+    font-weight: 650;
+  }
+
+  .tag-hash {
+    margin-right: 4px;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+  }
+
+  .tag-back {
+    margin: 26px 0 0;
+  }
+
+  .tag-back a {
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 650;
+    text-decoration: none;
+    transition: color 0.18s var(--c-ease);
+  }
+
+  .tag-back a:hover,
+  .tag-back a:focus-visible {
+    color: var(--c-accent);
+  }
+
+  @media (max-width: 760px) {
+    .tag-console {
+      padding-block: 20px 56px;
+    }
+
+    .console-topline {
+      gap: 10px;
+      font-size: 0.52rem;
+    }
+
+    .console-topline-copy {
+      display: none;
+    }
+
+    .console-topline-rule {
+      flex: 1;
+      width: auto;
+    }
+  }
+</style>

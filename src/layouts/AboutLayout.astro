@@ -1,0 +1,551 @@
+---
+/**
+ * 关于页专用布局 —— ljj-clone-spec §4（三栏 console，照 dom_about.html / page_about.png）
+ *
+ * 只被 about.md / about.en.md / about.ja.md 引用（privacy 等其余 Markdown 页
+ * 仍走 PageLayout，互不影响）。
+ *
+ * 结构（ljj about-console 同构）：
+ *   ├─ topline：`06 / ABOUT —— 虚线 —— PERSONAL OPERATING SYSTEM ——— <i/> ONLINE / 年份`
+ *   ├─ 三栏 grid：
+ *   │   左  intro：红 mono kicker + 超大「关于我」+ lead + summary + story 底线块
+ *   │   中  visual：1px 墨线直角照片（头像）+ signal 装饰轨
+ *   │   右  detail：「我现在都做些什么」状态卡（1px 线内部分节）+ 2×2 icon 直角格子
+ *   └─ 正文：Markdown 内容在 console 下方以 .prose 全宽渲染，直角、无阴影
+ *
+ * 入场动画只做 opacity/transform 且不做隐藏 —— SSR 直出内容始终可见（规格 §6）。
+ */
+import { seoConfig, siteConfig, socialConfig } from '@constants/site-config';
+import { getLocaleFromUrl, localizedPath, withBase } from '@/i18n';
+import Layout from './Layout.astro';
+import '@styles/components/console-pages.css';
+
+export interface Props {
+  frontmatter: {
+    title: string;
+    description?: string;
+    coverTitle?: string;
+    /** 三栏左栏的红 mono kicker 文案，不传则退回站点副标题 */
+    kicker?: string;
+  };
+}
+
+const { frontmatter } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url.pathname);
+const title = frontmatter.coverTitle ?? frontmatter.title;
+const description = frontmatter.description ?? siteConfig.description;
+const kicker = frontmatter.kicker ?? siteConfig.subtitle;
+const year = new Date().getFullYear();
+
+const githubUrl = socialConfig.github?.url;
+const rssUrl = withBase(socialConfig.rss?.url ?? '/rss.xml');
+const avatarSrc = withBase(siteConfig.avatar);
+
+/** icon 网格：GitHub / RSS / 文章 / 归档（2×2 直角格子，Feather 描边图标） */
+const gridLinks = [
+  {
+    label: 'GITHUB',
+    href: githubUrl,
+    external: true,
+    icon: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
+  },
+  {
+    label: 'RSS',
+    href: rssUrl,
+    external: false,
+    icon: '<path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/>',
+  },
+  {
+    label: 'POSTS',
+    href: localizedPath('/posts', locale),
+    external: false,
+    icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  },
+  {
+    label: 'ARCHIVE',
+    href: localizedPath('/archives', locale),
+    external: false,
+    icon: '<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
+  },
+].filter((l) => Boolean(l.href));
+---
+
+<Layout title={`${title} | ${seoConfig.title}`} description={description}>
+  <section class="about-console-wrap">
+    <div class="about-console section-shell">
+      <div class="console-field" aria-hidden="true">
+        <span class="console-field-track console-field-track-top"></span>
+        <span class="console-field-track console-field-track-bottom"></span>
+        <span class="console-field-pulse console-field-pulse-top"></span>
+        <span class="console-field-pulse console-field-pulse-bottom"></span>
+      </div>
+
+      <header class="about-console-topline console-topline">
+        <span class="console-topline-index">06 / ABOUT</span>
+        <span class="console-topline-rule"></span>
+        <span class="console-topline-copy">PERSONAL OPERATING SYSTEM</span>
+        <span class="console-topline-status"><i></i>ONLINE / {year}</span>
+      </header>
+
+      <div class="about-console-intro">
+        <p class="about-console-kicker">{kicker}</p>
+        <h1 id="page-title">{title}</h1>
+        <p class="about-console-lead">{description}</p>
+        <div class="about-console-story">
+          <strong>{siteConfig.subtitle}</strong>
+          <p>{siteConfig.description}</p>
+        </div>
+      </div>
+
+      <div class="about-console-visual">
+        <figure class="about-console-portrait">
+          <img src={avatarSrc} alt={siteConfig.title} width="520" height="520" loading="eager" decoding="async" />
+        </figure>
+        <div class="about-console-signal" aria-hidden="true">
+          <span class="about-signal-rail about-signal-rail-top"></span>
+          <span class="about-signal-rail about-signal-rail-middle"></span>
+          <span class="about-signal-rail about-signal-rail-bottom"></span>
+          <span class="about-signal-pulse about-signal-pulse-a"></span>
+          <span class="about-signal-node about-signal-node-center"></span>
+          <span class="about-signal-node about-signal-node-left"></span>
+          <span class="about-signal-node about-signal-node-right"></span>
+        </div>
+      </div>
+
+      <div class="about-console-detail">
+        <section class="about-status-card" aria-label={siteConfig.subtitle}>
+          <p class="about-status-row">
+            <i class="about-status-dot" aria-hidden="true"></i>
+            <span class="about-status-label">{siteConfig.title}</span>
+            <span class="about-status-text">{siteConfig.description}</span>
+          </p>
+          <p class="about-status-links">
+            {
+              githubUrl && (
+                <a href={githubUrl} target="_blank" rel="noreferrer">
+                  GITHUB ↗
+                </a>
+              )
+            }
+            <a href={rssUrl}>RSS</a>
+          </p>
+        </section>
+
+        <div class="about-icon-grid" aria-label="快捷入口">
+          {
+            gridLinks.map((link) => (
+              <a
+                href={link.href}
+                {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+                class="about-icon-cell"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <Fragment set:html={link.icon} />
+                </svg>
+                <span>{link.label}</span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-shell about-body">
+    <div class="prose md:prose-sm" data-pagefind-body>
+      <slot />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .about-console-wrap {
+    padding-block: 22px;
+  }
+
+  .about-console {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(280px, 0.85fr) minmax(300px, 0.95fr);
+    gap: clamp(28px, 3.5vw, 56px);
+    align-items: stretch;
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* topline 在 ljj 官方是横跨三栏的绝对定位；这里保持文档流 + 三栏上沿对齐 */
+  .about-console-topline {
+    grid-column: 1 / -1;
+  }
+
+  /* ---- 左栏 intro ---- */
+  .about-console-intro {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    padding-block: clamp(28px, 6vh, 72px);
+  }
+
+  .about-console-kicker {
+    margin: 0 0 15px;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 650;
+  }
+
+  .about-console-intro h1 {
+    margin: 0;
+    color: var(--c-text);
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 4vw, 3.6rem);
+    font-weight: 650;
+    line-height: 0.98;
+  }
+
+  .about-console-lead {
+    max-width: 17em;
+    margin: 24px 0 0;
+    color: var(--c-text);
+    font-family: var(--font-display);
+    font-size: 1.18rem;
+    font-weight: 620;
+    line-height: 1.42;
+  }
+
+  .about-console-story {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--c-line-strong);
+  }
+
+  .about-console-story strong {
+    display: block;
+    max-width: 24em;
+    font-size: 0.88rem;
+    line-height: 1.48;
+  }
+
+  .about-console-story p {
+    max-width: 35rem;
+    margin: 8px 0 0;
+    color: var(--c-muted);
+    font-size: 0.74rem;
+    line-height: 1.55;
+  }
+
+  /* ---- 中栏 photo：直角 1px 边框 + signal 轨 ---- */
+  .about-console-visual {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 64px;
+    gap: 12px;
+    align-items: center;
+    min-width: 0;
+    padding-block: clamp(28px, 6vh, 72px);
+    border-inline: 1px solid var(--c-line);
+    padding-inline: clamp(20px, 2.4vw, 40px);
+  }
+
+  .about-console-portrait {
+    position: relative;
+    justify-self: center;
+    overflow: hidden;
+    width: min(100%, 420px);
+    margin: 0;
+    aspect-ratio: 1;
+    border: 1px solid var(--c-line);
+    background: var(--c-deep);
+  }
+
+  /* 官方的框角扫描装饰：上缘横杠 + 右缘竖杠 */
+  .about-console-portrait::before,
+  .about-console-portrait::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    background: var(--c-accent);
+    pointer-events: none;
+  }
+
+  .about-console-portrait::before {
+    top: 0;
+    left: -22%;
+    width: 22%;
+    height: 2px;
+  }
+
+  .about-console-portrait::after {
+    top: -18%;
+    right: 0;
+    width: 2px;
+    height: 18%;
+  }
+
+  .about-console-portrait img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(0.1) saturate(0.92);
+  }
+
+  .about-console-signal {
+    position: relative;
+    justify-self: center;
+    overflow: hidden;
+    width: min(100%, 420px);
+    height: 64px;
+    border-block: 1px solid var(--c-line);
+  }
+
+  .about-signal-rail {
+    position: absolute;
+    left: -14%;
+    width: 128%;
+    height: 1px;
+    opacity: 0.68;
+    background: repeating-linear-gradient(90deg, var(--c-line-strong) 0 28px, transparent 28px 40px);
+  }
+
+  .about-signal-rail-top {
+    top: 18px;
+  }
+
+  .about-signal-rail-middle {
+    top: 32px;
+    opacity: 0.3;
+  }
+
+  .about-signal-rail-bottom {
+    top: 46px;
+  }
+
+  .about-signal-pulse {
+    position: absolute;
+    left: -92px;
+    top: 17px;
+    width: 92px;
+    height: 2px;
+    background: var(--c-accent);
+    box-shadow: 18px 0 0 -0.5px var(--c-accent);
+    animation: about-signal-sweep 4.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+
+  @keyframes about-signal-sweep {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(calc(100% + 60vw));
+    }
+  }
+
+  .about-signal-node {
+    position: absolute;
+    top: 28px;
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--c-accent);
+    background: var(--c-surface-raised);
+    transform: rotate(45deg);
+  }
+
+  .about-signal-node-left {
+    left: calc(24% - 4px);
+  }
+
+  .about-signal-node-center {
+    top: 27px;
+    left: calc(50% - 5px);
+    width: 11px;
+    height: 11px;
+    background: var(--c-accent);
+  }
+
+  .about-signal-node-right {
+    right: calc(24% - 4px);
+  }
+
+  /* ---- 右栏：状态卡 + icon 直角格子 ---- */
+  .about-console-detail {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+    min-width: 0;
+    padding-block: clamp(28px, 6vh, 72px);
+  }
+
+  .about-status-card {
+    border: 1px solid var(--c-line);
+  }
+
+  .about-status-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    margin: 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .about-status-dot {
+    flex: none;
+    align-self: center;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c-accent);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+  }
+
+  .about-status-label {
+    flex: none;
+    color: var(--c-text);
+    font-weight: 650;
+    font-size: 0.8rem;
+  }
+
+  .about-status-text {
+    color: var(--c-muted);
+    font-size: 0.74rem;
+    line-height: 1.55;
+  }
+
+  .about-status-links {
+    display: flex;
+    gap: 18px;
+    margin: 0;
+    padding: 12px 16px;
+  }
+
+  .about-status-links a {
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    transition: color 0.18s var(--c-ease);
+  }
+
+  .about-status-links a:hover,
+  .about-status-links a:focus-visible {
+    color: var(--c-accent);
+  }
+
+  .about-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid var(--c-line);
+  }
+
+  /* 直角格子：右/下格补线，拼出 2×2 分隔 */
+  .about-icon-cell {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 62px;
+    padding: 0 16px;
+    color: var(--c-muted);
+    text-decoration: none;
+    transition:
+      background-color 0.18s var(--c-ease),
+      color 0.18s var(--c-ease);
+  }
+
+  .about-icon-cell:nth-child(odd) {
+    border-right: 1px solid var(--c-line);
+  }
+
+  .about-icon-cell:nth-child(n + 3) {
+    border-top: 1px solid var(--c-line);
+  }
+
+  .about-icon-cell span {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+  }
+
+  .about-icon-cell:hover,
+  .about-icon-cell:focus-visible {
+    background: var(--c-surface);
+    color: var(--c-accent);
+  }
+
+  /* ---- 正文 ---- */
+  .about-body {
+    padding-block: 20px 88px;
+  }
+
+  /* ---- 响应式 ---- */
+  @media (max-width: 1080px) {
+    .about-console {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .about-console-intro {
+      grid-column: 1 / -1;
+      padding-block: 48px 8px;
+    }
+
+    .about-console-visual {
+      grid-column: 1;
+      border-left: 0;
+      padding-inline: 0 20px;
+    }
+
+    .about-console-detail {
+      grid-column: 2;
+      padding-block: 24px 0;
+      padding-left: 20px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .about-console {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding-block: 36px 0;
+    }
+
+    .about-console-topline {
+      gap: 10px;
+      font-size: 0.52rem;
+    }
+
+    .console-topline-copy {
+      display: none;
+    }
+
+    .console-topline-rule {
+      flex: 1;
+      width: auto;
+    }
+
+    .about-console-intro,
+    .about-console-visual,
+    .about-console-detail {
+      padding: 0;
+      border: 0;
+    }
+
+    .about-signal-pulse {
+      animation: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about-signal-pulse,
+    .about-icon-cell,
+    .about-status-links a {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

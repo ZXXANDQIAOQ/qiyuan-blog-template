@@ -1,35 +1,27 @@
 ---
 /**
- * 归档页 —— design-spec §5.6
+ * 归档页 —— ljj-clone-spec §5（/archives）
  *
- * 结构：.cyber-stack（主栏唯一外壳）→ 面包屑 → 时间线
+ * ljj 子页同构：topline（`05 / ARCHIVE —— 虚线 —— 共 N 篇`）+ 标题行 +
+ * 按年份分组的行式索引列表（time / 标题两列，行间 1px 线，直角无发光）。
  *
- * 时间线的两个关键做法，都是为了「看起来是一条线」而不是一堆段落：
- *   1. 竖线画在容器 .tl 的 ::before 上，不是每个年份各画一段。
- *      分段画会在年份之间留出 gap，视觉上断成一条条短线。
- *   2. 年份节点用 ::before 绝对定位在标题行上，top: 50% 让它永远落在
- *      标题中线；标题行固定 40px 高，所以竖线起点 top: 20px 能精确接上
- *      第一个节点，不会冒出一截「无头线」。
- *
- * 移动端（≤768）轨道整体让位给吸顶年份条：竖线和节点都隐藏，
- * 否则在窄屏上那 8px 的缩进会把标题挤得太窄。
+ * 时间线实现要点保留：
+ *   1. 竖线画在容器 .tl 的 ::before 上（一条通线，不按年份分段）；
+ *   2. 年份节点是 1px 描边的直角小方块（ljj 无圆形节点、无发光）；
+ * 旧的青色发光节点 / hover 青点换成本规格的锈红 + surface 行背景。
  */
-import HomeSider from '@components/layout/HomeSider.astro';
-import Breadcrumb from '@components/ui/Breadcrumb.astro';
-import Cover from '@components/ui/cover/Cover.astro';
 import { siteConfig } from '@constants/site-config';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
+import Layout from '@layouts/Layout.astro';
 import { getPostSlug, getSortedPosts } from '@lib/content';
 import { displayDate } from '@lib/date';
 import { encodeSlug } from '@lib/route';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
-import Layout from '../layouts/Layout.astro';
+import '@styles/components/console-pages.css';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const posts = await getSortedPosts(locale);
 
-// 按年份分组。getSortedPosts 已按日期倒序，这里保持原顺序即可，
-// 所以「同一年内」的条目也是新的在上。
+// 按年份分组。getSortedPosts 已按日期倒序，同一年内新的在上。
 const postsByYear = posts.reduce(
   (acc, post) => {
     const year = new Date(post.data.date).getFullYear();
@@ -46,17 +38,19 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
 ---
 
 <Layout title={`${t(locale, 'archives.title')} | ${siteConfig.title}`} description={t(locale, 'archives.title')}>
-  <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'archives.title')} />
-    <HomeSider slot="sider" />
+  <section class="arch-console">
+    <div class="section-shell">
+      <header class="console-topline">
+        <span class="console-topline-index">05 / ARCHIVE</span>
+        <span class="console-topline-rule"></span>
+        <span class="console-topline-copy">EVERYTHING SO FAR</span>
+        <span class="console-topline-status"><i></i>{t(locale, 'archives.totalPosts', { count: posts.length })}</span>
+      </header>
 
-    <div class="cyber-stack">
-      <Breadcrumb
-        items={[
-          { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
-          { label: t(locale, 'post.totalPosts', { count: posts.length }) },
-        ]}
-      />
+      <div class="console-heading arch-heading">
+        <h1>{t(locale, 'archives.title')}</h1>
+        <span class="console-count"><b>{posts.length}</b></span>
+      </div>
 
       <ol class="tl">
         {
@@ -64,9 +58,7 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
             <li class="tl__year">
               <div class="tl__year-head">
                 <h2 class="tl__year-title">{year}</h2>
-                <span class="tl__year-count">
-                  {t(locale, 'post.yearPosts', { count: postsByYear[Number(year)].length })}
-                </span>
+                <span class="tl__year-count">{t(locale, 'archives.totalPosts', { count: postsByYear[Number(year)].length })}</span>
               </div>
 
               <ol class="tl__entries">
@@ -74,7 +66,7 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
                   <li class="tl__entry">
                     <a class="tl__link" href={localizedPath(`/post/${encodeSlug(getPostSlug(post))}`, locale)} data-astro-prefetch="hover">
                       <time class="tl__date" datetime={post.data.date.toISOString()}>
-                        {displayDate.monthDay(post.data.date)}
+                        {displayDate.date(post.data.date).slice(5).replace('-', '.')}
                       </time>
                       <span class="tl__title">{post.data.title}</span>
                     </a>
@@ -86,28 +78,42 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
         }
       </ol>
     </div>
-  </TwoColumnLayout>
+  </section>
 </Layout>
 
 <style>
-  /* ---- 轨道与缩进（两处共用，改成变量避免出现对不齐的魔法数字） ---- */
+  .arch-console {
+    padding-block: 22px 88px;
+  }
+
+  .console-topline {
+    margin-bottom: clamp(36px, 6vh, 64px);
+  }
+
+  .arch-heading {
+    margin-bottom: 32px;
+  }
+
+  .arch-heading h1 {
+    font-size: 1.6rem;
+    font-weight: 650;
+  }
+
+  /* ---- 轨道与缩进 ---- */
   .tl {
     --tl-rail: 8px; /* 竖线的水平中心 */
-    --tl-indent: 28px; /* 标题与条目相对轨道的内缩 = 节点半径 6 + 14 间隙 + 8 */
+    --tl-indent: 28px; /* 标题与条目相对轨道的内缩 */
 
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: 36px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  /*
-    一条线贯穿所有年份：挂在容器上、top: 20px 对齐第一个节点中心。
-    年份之间只有 gap 没有断点，所以它是一条连续的线。
-  */
+  /* 一条线贯穿所有年份：挂在容器上，与第一个节点中心对齐 */
   .tl::before {
     content: '';
     position: absolute;
@@ -115,7 +121,7 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
     bottom: 0;
     left: calc(var(--tl-rail) - 0.5px);
     width: 1px;
-    background: hsl(var(--border));
+    background: var(--c-line);
     pointer-events: none;
   }
 
@@ -123,7 +129,7 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
     position: relative;
   }
 
-  /* ---- 年份标题行：节点垂直对齐靠这里固定的 40px ---- */
+  /* 年份标题行：节点垂直对齐靠这里固定的 40px */
   .tl__year-head {
     position: relative;
     display: flex;
@@ -133,42 +139,40 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
     padding-left: var(--tl-indent);
   }
 
-  /* 年份节点 12×12：§2.5 白名单内的发光位置，一屏最多同时看到 2 个 */
+  /* 年份节点：1px 描边直角小方块，节点中心 8×8 */
   .tl__year-head::before {
     content: '';
     position: absolute;
     top: 50%;
     left: var(--tl-rail);
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: hsl(var(--primary));
-    box-shadow: var(--glow-cyan-sm);
-    transform: translate(-50%, -50%);
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--c-accent);
+    background: var(--c-surface-raised);
+    transform: translate(-50%, -50%) rotate(45deg);
     z-index: 1;
   }
 
   .tl__year-title {
     margin: 0;
-    color: hsl(var(--foreground));
+    color: var(--c-text);
     font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: -0.02em;
+    font-size: 1.18rem;
+    font-weight: 650;
+    line-height: 1.1;
     font-variant-numeric: tabular-nums;
   }
 
   .tl__year-count {
-    color: hsl(var(--primary));
+    color: var(--c-muted);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 0.62rem;
     font-weight: 500;
     line-height: 1;
     letter-spacing: 0.04em;
   }
 
-  /* ---- 条目 ---- */
+  /* ---- 条目：time + 标题两列，行底 1px 线，hover 行背景 surface ---- */
   .tl__entries {
     margin: 0;
     padding: 0;
@@ -177,60 +181,51 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
 
   .tl__entry {
     margin: 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .tl__entry:last-child {
+    border-bottom: 0;
   }
 
   .tl__link {
     position: relative;
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 16px;
-    height: 36px;
     margin-left: var(--tl-indent);
-    padding-inline: 8px 12px;
-    border-radius: 0;
+    padding: 12px 12px 12px 8px;
     text-decoration: none;
     transition:
-      background-color var(--dur-base) var(--ease-out-expo),
-      color var(--dur-base) var(--ease-out-expo);
+      background-color 0.18s var(--c-ease),
+      color 0.18s var(--c-ease);
   }
 
-  .tl__link:hover {
-    background: hsl(var(--primary) / 0.06);
+  .tl__link:hover,
+  .tl__link:focus-visible {
+    background: hsl(var(--surface-2) / 0.7);
+    box-shadow: inset 2px 0 0 var(--c-accent);
   }
 
-  /*
-    hover 时在轨道上补一个 3×3 青点：位置换算成「轨道中心 - 链接左缩进」，
-    这样它会精确落回那条竖线上，而不是飘在行的左边缘。
-  */
-  .tl__link::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: calc(var(--tl-rail) - var(--tl-indent) - 1.5px);
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: hsl(var(--primary));
-    opacity: 0;
-    transform: translateY(-50%);
-    transition: opacity var(--dur-base) var(--ease-out-expo);
-    pointer-events: none;
-  }
-
-  .tl__link:hover::before {
-    opacity: 1;
+  .tl__link:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: -2px;
   }
 
   .tl__date {
-    flex: 0 0 88px;
-    width: 88px;
-    color: hsl(var(--muted-foreground));
+    flex: 0 0 52px;
+    width: 52px;
+    color: var(--c-muted);
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 0.72rem;
     font-weight: 500;
     line-height: 1.5;
     letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
+  }
+
+  .tl__link:hover .tl__date {
+    color: var(--c-accent);
   }
 
   .tl__title {
@@ -238,27 +233,40 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
-    color: hsl(var(--foreground));
-    font-size: 15px;
-    font-weight: 400;
+    color: var(--c-text);
+    font-size: 0.95rem;
+    font-weight: 620;
     line-height: 1.5;
     white-space: nowrap;
     text-overflow: ellipsis;
-    transition: color var(--dur-base) var(--ease-out-expo);
+    transition: color 0.18s var(--c-ease);
   }
 
-  .tl__link:hover .tl__title {
-    color: hsl(var(--primary));
-  }
-
-  /* 焦点环画在链接上，圆角与 hover 底色一致 */
-  .tl__link:focus-visible {
-    outline: 2px solid hsl(var(--ring));
-    outline-offset: 2px;
+  .tl__link:hover .tl__title,
+  .tl__link:focus-visible .tl__title {
+    color: var(--c-accent);
   }
 
   /* ---- 移动端：轨道让位给吸顶年份条 ---- */
-  @media (max-width: 768px) {
+  @media (max-width: 760px) {
+    .arch-console {
+      padding-block: 20px 56px;
+    }
+
+    .console-topline {
+      gap: 10px;
+      font-size: 0.52rem;
+    }
+
+    .console-topline-copy {
+      display: none;
+    }
+
+    .console-topline-rule {
+      flex: 1;
+      width: auto;
+    }
+
     .tl {
       --tl-indent: 0px;
       gap: 24px;
@@ -272,19 +280,15 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
 
     .tl__year-head {
       position: sticky;
-      /* 顶部导航是 fixed，吸顶条要让开它的高度 */
-      top: var(--nav-h);
+      /* 顶部导航是 fixed，吸顶条要让开它的高度（--nav-h 由 effects.css 提供） */
+      top: var(--nav-h, 80px);
       z-index: 2;
       align-items: center;
       height: 40px;
-      margin-inline: calc(var(--page-pad-x) * -1);
-      padding-inline: var(--page-pad-x);
+      margin-inline: 0;
+      padding-inline: 0;
       background: hsl(var(--background));
-      border-bottom: 1px solid hsl(var(--border));
-    }
-
-    .tl__year-title {
-      font-size: 18px;
+      border-bottom: 1px solid var(--c-line);
     }
 
     .tl__link {
@@ -293,24 +297,18 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
       gap: 12px;
     }
 
-    .tl__link::before {
-      display: none;
-    }
-
     .tl__date {
-      flex: 0 0 64px;
-      width: 64px;
+      flex: 0 0 44px;
+      width: 44px;
     }
 
     .tl__title {
-      font-size: 14px;
+      font-size: 0.88rem;
     }
   }
 
-  /* 位移类动效降级后本来就没有，这里只关掉过渡，避免 hove r颜色闪现 */
   @media (prefers-reduced-motion: reduce) {
-    .tl__link,
-    .tl__link::before {
+    .tl__link {
       transition: none;
     }
   }

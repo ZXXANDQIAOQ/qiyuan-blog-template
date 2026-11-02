@@ -15,7 +15,7 @@
 
     /* ---- 文字 ---- */
     --foreground: 80 7% 8%; /* #151613 暖墨黑 */
-    --muted-foreground: 75 3% 40%; /* #696b64 */
+    --muted-foreground: 75 3% 41%; /* #696b64 */
 
     /* ---- 主强调（铁锈红 #b93b28，对底 5.4:1） ---- */
     --primary: 8 64% 44%;
@@ -59,6 +59,10 @@
     --glass-border-bottom: rgba(21, 22, 19, 0.06);
     --glass-inner-glow: inset 0 0 0 0 transparent;
 
+    /* ---- 墨线（1px 行线体系：16% 细线 / 46% 强线，ljj 规格 §0） ---- */
+    --line: rgba(21, 22, 19, 0.16); /* #15161329 精神 */
+    --line-strong: rgba(21, 22, 19, 0.46); /* #15161375 精神 */
+
     /* ---- 纹理（墨色细线/点阵，极淡） ---- */
     --grid-line: rgba(21, 22, 19, 0.05);
     --dot-line: rgba(21, 22, 19, 0.08);
@@ -88,61 +92,65 @@
   }
 
   .dark {
-    /* ---- 底色三阶 ---- */
-    --background: 75 6% 8%; /* #171815 页面底 */
-    --surface-1: 75 5% 12%; /* #20211e 分区底 */
-    --surface-2: 75 5% 14%; /* #242622 卡片底 */
-    --surface-3: 75 5% 19%; /* #30322d 悬浮层/输入框 */
+    /* ---- 底色三阶（ljj 规格 §0 深色：#121210 系） ---- */
+    --background: 75 6% 7%; /* #121210 页面底 */
+    --surface-1: 75 6% 10%; /* #1c1c19 分区底 */
+    --surface-2: 75 6% 14%; /* #252520 卡片底 */
+    --surface-3: 75 7% 18%; /* #30302a 悬浮层/输入框 */
 
     /* ---- 文字 ---- */
-    --foreground: 75 12% 94%; /* #f0f1ed */
-    --muted-foreground: 75 4% 64%; /* #a5a79f */
+    --foreground: 51 21% 94%; /* #f2f1eb */
+    --muted-foreground: 51 7% 64%; /* #aaa89d */
 
-    /* ---- 霓虹（橙红主强调） ---- */
-    --primary: 9 85% 61%; /* #f06449 */
-    --primary-foreground: 75 6% 8%;
-    --neon-cyan: 9 85% 61%; /* 变量名保留，值换橙红 */
-    --neon-cyan-soft: 10 100% 69%; /* #ff7a60 */
-    --neon-violet: 9 39% 22%; /* #4b2922 暗锈红底 */
+    /* ---- 霓虹（橙红主强调 #f06449） ---- */
+    --primary: 10 85% 61%; /* #f06449 */
+    --primary-foreground: 75 6% 7%; /* #121210 橙红底上用深字 */
+    --neon-cyan: 10 85% 61%; /* 变量名保留，值换橙红 */
+    --neon-cyan-soft: 11 100% 72%; /* #ff8a70（accent-hover） */
+    --neon-violet: 13 49% 15%; /* #3a1c14 暗锈红底 */
     --neon-violet-soft: 14 45% 70%;
     --neon-amber: 38 90% 60%;
 
     /* ---- shadcn 语义槽 ---- */
-    --card: 75 5% 12%;
-    --card-foreground: 75 12% 94%;
-    --popover: 75 5% 13%;
-    --popover-foreground: 75 12% 94%;
+    --card: 75 6% 14%;
+    --card-foreground: 51 21% 94%;
+    --popover: 75 6% 14%;
+    --popover-foreground: 51 21% 94%;
 
-    --secondary: 75 5% 18%;
-    --secondary-foreground: 75 12% 94%;
+    --secondary: 75 6% 12%;
+    --secondary-foreground: 51 21% 94%;
 
-    --muted: 75 5% 16%;
-    --accent: 75 5% 16%; /* hover 底色 */
-    --accent-foreground: 75 12% 94%;
+    --muted: 75 6% 12%;
+    --accent: 75 6% 12%; /* hover 底色 */
+    --accent-foreground: 51 21% 94%;
 
     --destructive: 352 90% 62%;
-    --destructive-foreground: 75 6% 8%;
+    --destructive-foreground: 75 6% 7%;
     --success: 158 60% 48%;
     --warning: 38 90% 60%;
 
-    --border: 75 4% 23%; /* 等效 #f0f1ed29 细线 */
+    --border: 75 4% 23%; /* 等效 #f2f1eb2b 细线（不透明近似） */
     --input: 75 4% 40%;
-    --ring: 9 85% 61%;
+    --ring: 10 85% 61%;
 
-    --badge-primary: 10 100% 69%;
+    --badge-primary: 11 100% 72%;
 
     --radius: 0rem;
 
+    /* ---- 墨线（深色：米白 17% / 44%） ---- */
+    --line: rgba(242, 241, 235, 0.17); /* #f2f1eb2b */
+    --line-strong: rgba(242, 241, 235, 0.44); /* #f2f1eb70 精神 */
+
     /* ---- 玻璃拟态 ---- */
-    --glass-bg: rgba(23, 24, 21, 0.85);
-    --glass-bg-strong: rgba(23, 24, 21, 0.96);
-    --glass-border-top: rgba(240, 241, 237, 0.12);
-    --glass-border-bottom: rgba(240, 241, 237, 0.05);
+    --glass-bg: rgba(18, 18, 16, 0.9);
+    --glass-bg-strong: rgba(18, 18, 16, 0.97);
+    --glass-border-top: rgba(242, 241, 235, 0.12);
+    --glass-border-bottom: rgba(242, 241, 235, 0.05);
     --glass-inner-glow: inset 0 0 0 0 transparent;
 
     /* ---- 纹理 ---- */
-    --grid-line: rgba(240, 241, 237, 0.05);
-    --dot-line: rgba(240, 241, 237, 0.08);
+    --grid-line: rgba(242, 241, 235, 0.05);
+    --dot-line: rgba(242, 241, 235, 0.08);
     --noise-opacity: 0.03;
 
     /* ---- 投影（深色下墨影自然更深） ---- */
@@ -153,8 +161,8 @@
     --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4);
     --shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.55);
 
-    /* ---- 全局页面背景（暗色纯色深暖灰） ---- */
-    --page-bg: #171815;
+    /* ---- 全局页面背景（暗色纯色深暖灰 #121210） ---- */
+    --page-bg: #121210;
     --page-glow-1: radial-gradient(900px 620px at 12% -8%, rgba(240, 100, 73, 0.05), transparent 70%);
     --page-glow-2: transparent;
 
@@ -162,9 +170,9 @@
     --hero-bg:
       radial-gradient(480px 260px at 82% 18%, rgba(240, 100, 73, 0.07), transparent 68%),
       radial-gradient(360px 240px at 12% 90%, rgba(240, 100, 73, 0.04), transparent 70%);
-    --hero-poster-fade: linear-gradient(90deg, transparent 24%, rgba(23, 24, 21, 0.72) 100%);
+    --hero-poster-fade: linear-gradient(90deg, transparent 24%, rgba(18, 18, 16, 0.72) 100%);
 
-    /* ---- 页头玻璃底 ---- */
-    --header-bg: rgba(23, 24, 21, 0.88);
+    /* ---- 页头底（#121210f0） ---- */
+    --header-bg: rgba(18, 18, 16, 0.94);
   }
 }

@@ -1,9 +1,10 @@
 ---
-layout: ../layouts/PageLayout.astro
+layout: ../layouts/AboutLayout.astro
 title: "ブログについて"
 coverTitle: "ブログについて"
 date: 2026-05-10
 description: "フロントエンドエンジニアによる記録。実際に壊したコードの話、デザインと働き方の考え、今も使っている道具について。"
+kicker: "昼は業務フロントエンド、夜は自分のプロジェクト"
 ---
 
 私は烁（シュオ）、フロントエンドエンジニアです。昼は TypeScript と CSS、夜は自分の小さなプロジェクトを書いています。

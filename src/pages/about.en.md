@@ -1,9 +1,10 @@
 ---
-layout: ../layouts/PageLayout.astro
+layout: ../layouts/AboutLayout.astro
 title: "About"
 coverTitle: "About me"
 date: 2026-05-10
 description: "A frontend developer's notebook: notes on code that actually broke, essays on design, and the tools that stayed."
+kicker: "Business frontend by day, side projects by night"
 ---
 
 I'm 烁 (Shuo), a frontend developer. TypeScript and CSS by day, unfinished side projects at night.

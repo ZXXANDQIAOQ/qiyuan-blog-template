@@ -1,0 +1,368 @@
+/* =============================================================================
+ * 内容页 console 专属样式 —— ljj-clone-spec §3 / §4 / §5
+ *
+ * 只被内容页（/posts /categories /tags /archives /about）及其组件引用，
+ * 各页面在 frontmatter 里 `import '@styles/components/console-pages.css'`。
+ * 全局层（Layout/Header/令牌）不碰；这里消费 shadcn HSL 三元组令牌。
+ *
+ * 类名前缀约定：
+ *   .console-*  —— 页面顶部 topline / 通用标题行
+ *   .post-index-list —— 三列行式索引列表（§3.4）
+ *   .console-pager   —— mono 数字分页
+ * ========================================================================== */
+
+/* ---- 壳：min(100% - 112px, 1440px)，移动端 gutter 收窄 ---- */
+.section-shell {
+  width: min(100% - 112px, 1440px);
+  margin-inline: auto;
+}
+
+@media (max-width: 768px) {
+  .section-shell {
+    width: min(100% - 40px, 1440px);
+  }
+}
+
+/* ---- 内容页局部色彩别名：把 HSL 三元组折算成直用色值 ---- */
+.blog-index,
+.about-console,
+.cat-console,
+.tag-console,
+.arch-console {
+  --c-line: hsl(var(--border));
+  --c-line-strong: hsl(var(--foreground) / 0.4);
+  --c-accent: hsl(var(--primary));
+  --c-accent-ink: hsl(var(--primary-foreground));
+  --c-surface: hsl(var(--surface-1));
+  --c-surface-raised: hsl(var(--surface-2));
+  --c-deep: hsl(var(--surface-3));
+  --c-text: hsl(var(--foreground));
+  --c-muted: hsl(var(--muted-foreground));
+  --c-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================================
+ * 1. topline：`0X / XXX —— 虚线 —— copy ——— <i/> 状态`（§3.1）
+ * ========================================================================== */
+.console-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.console-field-track {
+  position: absolute;
+  left: -8%;
+  width: 116%;
+  height: 1px;
+  opacity: 0.46;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-line-strong) 0 34px,
+    transparent 34px 48px
+  );
+}
+
+.console-field-track-top {
+  top: 8px;
+}
+
+.console-field-track-bottom {
+  bottom: 8px;
+}
+
+.console-field-pulse {
+  position: absolute;
+  left: -120px;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--c-accent) 38%, var(--c-accent));
+}
+
+.console-field-pulse-top {
+  top: 7px;
+  animation: console-field-sweep 7.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.console-field-pulse-bottom {
+  top: auto;
+  right: -120px;
+  bottom: 7px;
+  left: auto;
+  background: linear-gradient(90deg, var(--c-accent), var(--c-accent) 62%, transparent);
+  animation: console-field-sweep-rev 8.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes console-field-sweep {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(100vw + 240px));
+  }
+}
+
+@keyframes console-field-sweep-rev {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(calc(-100vw - 240px));
+  }
+}
+
+.console-topline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  min-height: 26px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--c-line-strong);
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+
+.console-topline-index {
+  color: var(--c-accent);
+  font-weight: 700;
+}
+
+.console-topline-rule {
+  width: min(15vw, 190px);
+  height: 1px;
+  opacity: 0.72;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--c-accent) 0 24px,
+    transparent 24px 34px
+  );
+}
+
+.console-topline-copy {
+  color: hsl(var(--foreground) / 0.72);
+}
+
+.console-topline-status {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  margin-left: auto;
+  color: var(--c-muted);
+}
+
+.console-topline-status i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+}
+
+/* ============================================================================
+ * 2. 通用标题行（detail/heading 同构）：左 h1/h2 + 右 mono 计数
+ * ========================================================================== */
+.console-heading {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--c-line-strong);
+}
+
+.console-heading h1,
+.console-heading h2 {
+  margin: 0;
+  color: var(--c-text);
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  font-style: normal;
+  font-weight: 640;
+  line-height: 1.15;
+}
+
+.console-heading > span,
+.console-count {
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+}
+
+.console-count b {
+  color: var(--c-accent);
+  font-weight: 700;
+}
+
+/* ============================================================================
+ * 3. 三列行式索引列表（§3.4）：1px 线分隔 / time 标题 分类
+ * ========================================================================== */
+.post-index-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-index-list li {
+  border-bottom: 1px solid var(--c-line);
+}
+
+.post-index-list li:first-child {
+  border-top: 0;
+}
+
+.post-index-list a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  min-height: 56px;
+  padding: 12px 8px 12px 0;
+  text-decoration: none;
+  transition:
+    background-color 0.18s var(--c-ease),
+    color 0.18s var(--c-ease);
+}
+
+/* hover：标题变锈红 + 行背景 surface + 左缘 2px accent 短线 */
+.post-index-list a:hover,
+.post-index-list a:focus-visible {
+  background: hsl(var(--surface-2) / 0.7);
+  box-shadow: inset 2px 0 0 var(--c-accent);
+}
+
+.post-index-list a:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+
+.post-index-list a:active {
+  transform: translateY(1px);
+}
+
+.post-index-list time {
+  padding-top: 2px;
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.post-index-list a:hover time {
+  color: var(--c-accent);
+}
+
+.post-index-list strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--c-text);
+  font-size: 0.95rem;
+  font-weight: 620;
+  line-height: 1.35;
+  transition: color 0.18s var(--c-ease);
+}
+
+.post-index-list a:hover strong,
+.post-index-list a:focus-visible strong {
+  color: var(--c-accent);
+}
+
+.post-index-list a > span {
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-align: right;
+}
+
+/* 空状态：一行 mono 注记 */
+.post-index-empty {
+  padding: 26px 0;
+  border-bottom: 1px solid var(--c-line);
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 768px) {
+  .post-index-list a {
+    grid-template-columns: 44px minmax(0, 1fr);
+    min-height: 52px;
+    padding-block: 10px;
+  }
+
+  /* 窄屏分类挪到标题下一行，右对齐改左对齐 */
+  .post-index-list a > span {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+
+/* ============================================================================
+ * 4. mono 数字分页（直角、1px 边框）
+ * ========================================================================== */
+.console-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 22px;
+}
+
+.console-pager a,
+.console-pager span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--c-line);
+  color: var(--c-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-decoration: none;
+  transition:
+    color 0.18s var(--c-ease),
+    border-color 0.18s var(--c-ease),
+    background-color 0.18s var(--c-ease);
+}
+
+.console-pager a:hover,
+.console-pager a:focus-visible {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.console-pager .is-current {
+  border-color: var(--c-accent);
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
+}
+
+.console-pager .is-disabled {
+  border-color: transparent;
+  color: hsl(var(--muted-foreground) / 0.5);
+  pointer-events: none;
+}
+
+/* 动效降级 */
+@media (prefers-reduced-motion: reduce) {
+  .console-field-pulse {
+    animation: none !important;
+  }
+
+  .post-index-list a,
+  .console-pager a {
+    transition: none;
+  }
+}

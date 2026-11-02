@@ -1,13 +1,13 @@
 ---
-import InteractiveBg from '@components/effects/InteractiveBg.astro';
-import { siteConfig } from '@constants/site-config';
-import { getPostCount } from '@lib/content';
 import { getPostReadingTime } from '@lib/content/posts';
 import { displayDate } from '@lib/date';
 import { Icon } from 'astro-icon/components';
 import type { BlogPost } from 'types/blog';
-import { getLocaleFromUrl, t, withBase } from '@/i18n';
-import { getContentSiteField } from '@/i18n/content';
+import { getLocaleFromUrl, t, withBase, localizedPath } from '@/i18n';
+import BlurText from '@components/effects/BlurText';
+import DecryptedText from '@components/effects/DecryptedText';
+import HeroPortrait from '@components/effects/HeroPortrait.astro';
+import HeroSignalInstrument from '@components/effects/HeroSignalInstrument.astro';
 
 export interface CoverProps {
   data?: BlogPost;
@@ -23,190 +23,140 @@ const isDraft = import.meta.env.DEV && draft === true;
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 
-const siteSubtitle = getContentSiteField(locale, 'subtitle') ?? siteConfig?.subtitle;
-const postCount = await getPostCount(locale);
-
 /**
- * 三种变体（design-spec §6.3 / §5.1 / §5.2 / §5.3）
+ * 三种变体（ljj-clone-spec §2 / §3）
  * - post：文章详情页，160px，面包屑 + 40px 标题 + 元信息 + 复制链接
  * - title：列表/归档/分类/标签页，220px，单标题
- * - home：首页，320px，eyebrow + 超大主标（编辑部风 clamp 3–5rem）+ 副标 + 1px 分隔线
+ * - home：首页，ljj.world 单屏 Hero（hero-axis 竖线 + identity 乱码解密 +
+ *   statement 逐词模糊浮现 + 右下立绘 + 左下信号仪表）
+ *
+ * 旧背景层（海报纹理 / 噪点 / FluidNoiseBackground / InteractiveDotGrid /
+ * 同心圆光晕）已全部移除 —— 页面底色与细网格由 body 承担（ljj-clone-spec §2）。
  */
 const variant = data ? 'post' : title ? 'title' : 'home';
+
+// 主按钮 / 次按钮目标（ljj-clone-spec §2 hero-actions）
+const postsHref = withBase(localizedPath('/posts', locale));
+const aboutHref = withBase(localizedPath('/about', locale));
+
+// 官方同款箭头（Phosphor arrow-right，dom_home.html hero-actions 内）
+const arrowSvg =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256"><path d="M224.49,136.49l-72,72a12,12,0,0,1-17-17L187,140H40a12,12,0,0,1,0-24H187L135.51,64.48a12,12,0,0,1,17-17l72,72A12,12,0,0,1,224.49,136.49Z"></path></svg>';
 ---
 
 <!--
-  Hero Banner（编辑部极简风，参考 ljj.world）
-  三层背景：暖灰纯色底（--hero-bg）/ 海报纹理（opacity .08 + 灰阶）/ 噪点 / 交互背景
-  · 双色光晕层与 32px 网格层已随「编辑部风」移除（纯色底 + 1px 细线，不要网格底纹）
-  · 全站不允许「文字发光」，H1 已去除 glow
+  首页 Hero（ljj-clone-spec §2，结构照抄 dom_home.html #top）
+  grid：文案列 minmax(0,1.18fr) / 竖线轨道 clamp(20px,2.2vw,32px) / 右列 minmax(420px,.82fr)
+  hero-axis = 两列之间全高锈红竖线（轨道列内 1px 居中，入场自上而下生长）
 -->
-<header
-  class="cyber-hero relative z-0 flex w-full overflow-hidden"
-  data-variant={variant}
-  transition:name="page-cover-banner"
->
-  <!-- 背景层 1：暖灰纯色底（编辑部风，走 --hero-bg） -->
-  <div class="absolute inset-0" style="background: var(--hero-bg);" aria-hidden="true"></div>
+{
+  variant === 'home' ? (
+    <section id="top" class="hero hero-intro ljj-hero" aria-labelledby="hero-title">
+      <HeroSignalInstrument />
+      <HeroPortrait />
+      <div class="hero-copy">
+        <h1 id="hero-title">
+          <span class="identity">
+            <DecryptedText client:load text="luminoussss.xyz / 独立开发者" />
+          </span>
+          <span class="hero-statement">
+            <BlurText className="hero-line" text="你好，我是烁烁。" />
+            <BlurText className="hero-line" text="把想法做成跑得起来的产品。" delay={260} />
+          </span>
+        </h1>
+        <p class="hero-summary">
+          写代码、折腾工具、记录日常。这里是我放文章、笔记和想法的地方。
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href={postsHref}>
+            <span>查看文章</span>
+            <span class="button-arrow" set:html={arrowSvg} />
+          </a>
+          <a class="button button-secondary" href={aboutHref}>
+            <span>了解我</span>
+            <span class="button-secondary-arrow" set:html={arrowSvg} />
+          </a>
+        </div>
+      </div>
+      <div class="hero-axis" aria-hidden="true"></div>
+    </section>
+  ) : (
+    <header
+      class="cyber-hero relative z-0 flex w-full overflow-hidden"
+      data-variant={variant}
+      transition:name="page-cover-banner"
+    >
+      <!-- 背景层：暖灰纯色底（body 负责网格与底色，这里只留纯色兜底） -->
+      <div class="absolute inset-0" style="background: var(--hero-bg);" aria-hidden="true"></div>
 
-  <!-- 背景层 2：海报降级为纹理（opacity .08 + grayscale + luminosity），≤768 整层隐藏 -->
-  <div class="hero-poster pointer-events-none absolute inset-0" aria-hidden="true">
-    <picture>
-      <source srcset={withBase('/img/top-poster.webp')} type="image/webp" />
-      <img
-        src={withBase('/img/top-poster.jpg')}
-        alt=""
-        class="h-full w-full object-cover opacity-[0.08] grayscale contrast-[1.15] mix-blend-luminosity"
-        fetchpriority="low"
-        decoding="async"
-        loading="eager"
-      />
-    </picture>
-  </div>
-
-  <!-- 背景层 3：噪点 -->
-  <div class="cyber-noise absolute inset-0" aria-hidden="true"></div>
-
-  <!-- 背景层 4：交互式流体噪声 + 点阵格子 -->
-  <div class="pointer-events-none absolute inset-0" aria-hidden="true">
-    <InteractiveBg />
-  </div>
-
-  <!--
-    右侧装饰同心圆：允许循环发光/旋转的三处之一（rotate 90s，无闪烁）
-
-    ⚠️ 断点是**反的**，改之前先看这里：本项目 Tailwind v4 的 tablet/md/xs 是
-    max-width 语义（tablet = ≤992），不是常见的 min-width。原来写 `hidden
-    ... tablet:block` 的本意是「桌面才显示」，实际效果恰好相反——1440 下隐藏，
-    390 下反而挂一个 300px 的大圆在右边（实测右边缘越界到 395）。
-    改成 `block ... tablet:hidden`：>992 显示，≤992 收起。
-    它只是装饰，移动端本来也没有空间承载 300px 圆环。
-  -->
-  <div class="hero-orbit pointer-events-none absolute top-1/2 right-[6%] block size-[300px] -translate-y-1/2 tablet:hidden" aria-hidden="true">
-    <span class="orbit-ring" style="width:100%;height:100%"></span>
-    <span class="orbit-ring" style="width:75%;height:75%"></span>
-    <span class="orbit-ring" style="width:50%;height:50%"></span>
-    <span class="orbit-ring" style="width:25%;height:25%"></span>
-  </div>
-
-  <!-- 内容：左对齐，与主栏标题形成同一条阅读轴线（padding-top 让出吸顶导航的高度） -->
-  <div class="hero-inner relative z-10 flex w-full items-center">
-    <div class="cyber-shell flex w-full flex-col items-start">
-      {
-        variant === 'post' ? (
-          <>
-            <h1 class="word-break max-w-[min(100%,26ch)] text-[clamp(26px,3.4vw+12px,40px)] leading-[1.1] font-bold tracking-[-0.015em] text-foreground">
-              {dataTitle ?? title}
+      <div class="hero-inner relative z-10 flex w-full items-center">
+        <div class="cyber-shell flex w-full flex-col items-start">
+          {variant === 'post' ? (
+            <>
+              <h1 class="word-break max-w-[min(100%,26ch)] text-[clamp(26px,3.4vw+12px,40px)] leading-[1.1] font-bold tracking-[-0.015em] text-foreground">
+                {dataTitle ?? title}
+              </h1>
+              <div class="mt-3 flex flex-wrap items-center gap-3 font-mono text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
+                {date && <span>{t(locale, 'post.publishedAt', { date: displayDate.datetime(date)! })}</span>}
+                {updated && (
+                  <>
+                    <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
+                    <span>{t(locale, 'post.updatedAt', { date: displayDate.datetime(updated)! })}</span>
+                  </>
+                )}
+                <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
+                <span>{t(locale, 'post.wordCount', { count: readState?.words ?? 0 })}</span>
+                <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
+                <span>{readState?.text}</span>
+                {isDraft && (
+                  <span class="inline-flex items-center gap-1 border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.08)] px-2 py-0.5 text-[11px] text-[hsl(var(--primary))] normal-case">
+                    <Icon name="ri:file-edit-line" class="size-3" />
+                    {t(locale, 'post.draft')}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                class="copy-link-btn absolute right-[var(--page-pad-x)] bottom-6 hidden items-center gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-primary tablet:flex"
+                aria-label={t(locale, 'cover.copyLink')}
+                title={t(locale, 'cover.copyLink')}
+                onclick="navigator.clipboard.writeText(window.location.href)"
+              >
+                <Icon name="ri:link" class="size-[18px]" />
+              </button>
+            </>
+          ) : (
+            <h1 class="word-break max-w-[min(100%,30ch)] text-[clamp(2.25rem,4vw+8px,3.5rem)] leading-[1.05] font-bold tracking-[-0.015em] text-foreground">
+              {title}
             </h1>
-            <div class="mt-3 flex flex-wrap items-center gap-3 font-mono text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
-              {date && <span>{t(locale, 'post.publishedAt', { date: displayDate.datetime(date)! })}</span>}
-              {updated && (
-                <>
-                  <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
-                  <span>{t(locale, 'post.updatedAt', { date: displayDate.datetime(updated)! })}</span>
-                </>
-              )}
-              <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
-              <span>{t(locale, 'post.wordCount', { count: readState?.words ?? 0 })}</span>
-              <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
-              <span>{readState?.text}</span>
-              {isDraft && (
-                <span class="inline-flex items-center gap-1 border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.08)] px-2 py-0.5 text-[11px] text-[hsl(var(--primary))] normal-case">
-                  <Icon name="ri:file-edit-line" class="size-3" />
-                  {t(locale, 'post.draft')}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              class="copy-link-btn absolute right-[var(--page-pad-x)] bottom-6 hidden items-center gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-primary tablet:flex"
-              aria-label={t(locale, 'cover.copyLink')}
-              title={t(locale, 'cover.copyLink')}
-              onclick="navigator.clipboard.writeText(window.location.href)"
-            >
-              <Icon name="ri:link" class="size-[18px]" />
-            </button>
-          </>
-        ) : variant === 'title' ? (
-          <h1 class="word-break max-w-[min(100%,30ch)] text-[clamp(2.25rem,4vw+8px,3.5rem)] leading-[1.05] font-bold tracking-[-0.015em] text-foreground">
-            {title}
-          </h1>
-        ) : (
-          <>
-            <p class="flex items-center gap-2 font-mono text-xs font-medium tracking-[0.18em] text-primary uppercase">
-              <span>{siteConfig?.alternate}</span>
-              <span aria-hidden="true" class="text-muted-foreground/50">│</span>
-              <span class="text-muted-foreground normal-case">
-                {postCount} {t(locale, 'footer.postUnit')}
-              </span>
-            </p>
-            <h1 class="mt-4 max-w-[min(100%,16ch)] text-[clamp(3rem,5vw,5rem)] leading-[0.95] font-bold tracking-[-0.01em] text-foreground [font-weight:730]">
-              {siteConfig?.title}
-            </h1>
-            {siteSubtitle && (
-              <p class="hero-subtitle mt-4 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground">{siteSubtitle}</p>
-            )}
-            <hr class="hero-rule mt-6" aria-hidden="true" />
-          </>
-        )
-      }
-    </div>
-  </div>
+          )}
+        </div>
+      </div>
 
-  <!-- 底边 1px 细线（编辑部网格感：纯色细线，不用渐变） -->
-  <div
-    class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-    style="background: hsl(var(--border));"
-    aria-hidden="true">
-  </div>
-</header>
+      <!-- 底边 1px 细线 -->
+      <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+        style="background: hsl(var(--border));"
+        aria-hidden="true">
+      </div>
+    </header>
+  )
+}
 
 <style>
-  /* 高度五档（§6.3 / §8） */
+  /* ============================================================
+   * post / title 变体（子页沿用旧结构，背景层已按 ljj-clone-spec 移除）
+   * ============================================================ */
   .cyber-hero {
-    height: 320px;
+    height: 220px;
   }
 
-  /* 吸顶导航是透明浮层，内容必须让出 --nav-h，否则移动端会与汉堡按钮打架 */
+  /* 吸顶导航是透明浮层，内容必须让出 --nav-h */
   .hero-inner {
     padding-top: var(--nav-h);
   }
 
-  @media (max-width: 480px) {
-    /* 152px 的 Hero 里 56px 占掉 37%，标题会与 eyebrow 贴死，压到 44px */
-    .hero-inner {
-      padding-top: 44px;
-    }
-  }
-
-  /*
-   * 编辑部风 1px 分隔线：home 变体标题区下方的细线，配合底边 1px 细线形成网格感
-   */
-  .hero-rule {
-    width: 100%;
-    border: none;
-    border-bottom: 1px solid hsl(var(--border));
-  }
-
-  /*
-   * 海报只当纹理：右侧压掉插画主体（人物轮廓/发丝/翼状结构一清晰就不像纹理了），
-   * 左侧保留可见的网格与噪点质感。数值（0.12 / grayscale / luminosity）不动，只调分布。
-   */
-  .hero-poster::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: var(--hero-poster-fade);
-  }
-
   @media (max-width: 1479px) {
-    .cyber-hero {
-      height: 280px;
-    }
-  }
-
-  @media (max-width: 992px) {
     .cyber-hero {
       height: 220px;
     }
@@ -215,23 +165,6 @@ const variant = data ? 'post' : title ? 'title' : 'home';
   @media (max-width: 768px) {
     .cyber-hero {
       height: 180px;
-    }
-
-    /* 移动端只保留底 + 噪点（省流量） */
-    .hero-poster {
-      display: none;
-    }
-
-    /* 180px 装不下 eyebrow + 标题 + 副标，副标让位给标题 */
-    .hero-subtitle,
-    .hero-rule {
-      display: none;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .cyber-hero {
-      height: 152px;
     }
   }
 
@@ -245,39 +178,304 @@ const variant = data ? 'post' : title ? 'title' : 'home';
       height: 152px;
     }
   }
+</style>
 
-  /* 装饰同心圆：恬谧版改为 7s 呼吸（缩放微动，无旋转无闪烁） */
-  .hero-orbit {
-    border: 1.5px solid hsl(var(--primary) / 0.16);
-    border-radius: 0;
-    box-shadow: inset 0 0 0 52px rgba(255, 255, 255, 0.28);
-    animation: hero-orbit-breathe 7s ease-in-out infinite;
+<!--
+  首页 Hero 样式（is:global 的原因：BlurText / DecryptedText 是 React 渲染的
+  子节点，拿不到 Astro scoped 属性；类名均已按官方 DOM 命名且与现有站点无冲突）
+  · --lj-* 局部令牌：ljj-clone-spec §0 的精确值。全局令牌落地后可整体替换为
+    var(--accent) / var(--muted) 等（当前站点 shadcn 的 --accent/--muted 语义
+    不同，不能直接复用，故先局部定义避免冲突）。
+-->
+<style is:global>
+  .ljj-hero {
+    --lj-accent: #b93b28;
+    --lj-accent-hover: #9f2f1f;
+    --lj-accent-ink: #f8f9f6;
+    --lj-bg: #f3f4f1;
+    --lj-text: #151613;
+    --lj-muted: #696b64;
+    --lj-line: #15161329;
+    --lj-line-strong: #15161375;
+    --lj-surface: #e9eae6;
+    --lj-surface-deep: #d9dad5;
+    --lj-ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .orbit-ring {
+  .dark .ljj-hero {
+    --lj-accent: #f06449;
+    --lj-accent-hover: #ff8a70;
+    --lj-accent-ink: #121210;
+    --lj-bg: #121210;
+    --lj-text: #f2f1eb;
+    --lj-muted: #aaa89d;
+    --lj-line: #f2f1eb2b;
+    --lj-line-strong: #f2f1eb70;
+    --lj-surface: #1c1c19;
+    --lj-surface-deep: #30302a;
+  }
+
+  /* ---- 网格骨架（spec §2 第一条） ---- */
+  .ljj-hero.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) clamp(20px, 2.2vw, 32px) minmax(420px, 0.82fr);
+    column-gap: 24px;
+    align-items: center;
+    min-height: calc(88dvh - 80px);
+    padding-block: 72px 46px;
+    position: relative;
+    isolation: isolate;
+    width: min(100% - 112px, 1440px);
+    margin-inline: auto;
+    font-family: var(--font-body, 'Geist Variable', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
+    color: var(--lj-text);
+  }
+
+  /* ---- hero-axis：两列之间全高锈红竖线（1px，轨道列内居中，自上而下生长） ---- */
+  .ljj-hero .hero-axis {
+    grid-area: 1 / 2;
+    align-self: stretch;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .ljj-hero .hero-axis::before {
+    content: '';
     position: absolute;
-    top: 50%;
+    top: 0;
+    bottom: 0;
     left: 50%;
-    transform: translate(-50%, -50%);
-    border: 1.5px solid hsl(var(--primary) / 0.1);
+    width: 1px;
+    background: var(--lj-accent);
+    transform-origin: top;
+    animation: ljj-hero-axis-grow 0.9s var(--lj-ease) 0.15s both;
+  }
+
+  @keyframes ljj-hero-axis-grow {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  /* ---- hero-copy：文案列 ---- */
+  .ljj-hero .hero-copy {
+    grid-area: 1 / 1;
+    z-index: 2;
+    min-width: 0;
+    position: relative;
+  }
+
+  .ljj-hero .hero-copy h1 {
+    font-family: var(--font-display, 'Manrope Variable', 'Geist Variable', 'Noto Sans CJK SC', sans-serif);
+    letter-spacing: 0;
+    margin: 0;
+    font-size: clamp(4.8rem, 6.9vw, 6.2rem);
+    font-weight: 650;
+    line-height: 0.94;
+  }
+
+  .ljj-hero .identity {
+    display: block;
+    color: var(--lj-accent);
+    font-family: var(--font-mono, 'Geist Mono Variable', 'SFMono-Regular', Consolas, monospace);
+    margin-bottom: 42px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .ljj-hero .hero-statement {
+    display: block;
+    max-width: 980px;
+  }
+
+  .ljj-hero .hero-statement > span {
+    display: block;
+  }
+
+  .ljj-hero .hero-summary {
+    max-width: 35rem;
+    color: var(--lj-muted);
+    margin: 26px 0 0;
+    font-size: 1rem;
+    line-height: 1.72;
+  }
+
+  .ljj-hero .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  /* ---- 按钮（spec：直角、48px、锈红实底 + 圆形箭头容器） ---- */
+  .ljj-hero .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 18px;
+    font-size: 0.9rem;
+    font-weight: 620;
+    white-space: nowrap;
+    border: 1px solid var(--lj-line-strong);
     border-radius: 0;
+    background: transparent;
+    color: var(--lj-text);
+    text-decoration: none;
+    transition:
+      color 0.18s,
+      background 0.18s,
+      border-color 0.18s,
+      transform 0.18s;
   }
 
-  @keyframes hero-orbit-breathe {
-    0%,
-    100% {
-      transform: translateY(-50%) scale(1);
-      opacity: 0.8;
+  .ljj-hero .button-primary {
+    border-color: var(--lj-accent);
+    background: var(--lj-accent);
+    color: var(--lj-accent-ink);
+  }
+
+  .ljj-hero .button-primary:hover {
+    background: var(--lj-accent-hover);
+    border-color: var(--lj-accent-hover);
+  }
+
+  /* 唯一保留圆形的元素：40px 箭头容器 */
+  .ljj-hero .button-arrow {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--lj-bg) 18%, transparent);
+  }
+
+  .ljj-hero .button-secondary {
+    gap: 10px;
+  }
+
+  .ljj-hero .button-secondary:hover {
+    border-color: var(--lj-text);
+    background: var(--lj-text);
+    color: var(--lj-bg);
+  }
+
+  /* ---- BlurText 逐字模糊浮现（SSR 直出，CSS 动画驱动） ---- */
+  .ljj-hero .blur-text {
+    display: block;
+    max-width: 100%;
+  }
+
+  .ljj-hero .blur-text-word {
+    display: inline-block;
+    white-space: pre;
+  }
+
+  .ljj-hero .blur-text-char {
+    display: inline-block;
+    animation: ljj-blur-text-in 0.64s var(--lj-ease) both;
+  }
+
+  @keyframes ljj-blur-text-in {
+    from {
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(0.08em);
     }
-    50% {
-      transform: translateY(-50%) scale(1.035);
+    to {
       opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
     }
   }
 
+  /* ---- DecryptedText（identity 行乱码解密：SSR 直出最终文本） ---- */
+  .ljj-hero .decrypted-text {
+    display: inline-block;
+  }
+
+  /* ---- 动效关闭：直接显示最终态 ---- */
   @media (prefers-reduced-motion: reduce) {
-    .hero-orbit {
+    .ljj-hero .blur-text-char {
       animation: none;
+    }
+
+    .ljj-hero .hero-axis::before {
+      animation: none;
+    }
+  }
+
+  /* ---- 响应式（对齐官方断点行为） ---- */
+  @media (max-width: 1280px) and (min-width: 1081px) {
+    .ljj-hero .hero-copy h1 {
+      font-size: clamp(4.4rem, 6.5vw, 5.3rem);
+    }
+  }
+
+  @media (max-width: 1080px) {
+    .ljj-hero.hero {
+      grid-template-columns: 1fr;
+      row-gap: 72px;
+      min-height: 0;
+      padding-block: 70px 54px;
+      width: min(100% - 48px, 1440px);
+    }
+
+    .ljj-hero .hero-axis {
+      display: none;
+    }
+
+    .ljj-hero .hero-copy h1 {
+      max-width: 820px;
+      font-size: clamp(3.1rem, 7vw, 4.4rem);
+    }
+
+    .ljj-hero .hero-copy {
+      max-width: 840px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .ljj-hero .hero-copy {
+      padding-right: 0;
+    }
+
+    .ljj-hero .hero-copy h1 {
+      font-size: clamp(2.85rem, 11vw, 3.4rem);
+      line-height: 0.96;
+    }
+
+    .ljj-hero .identity {
+      margin-bottom: 30px;
+      font-size: 0.67rem;
+    }
+
+    .ljj-hero .hero-summary {
+      margin-top: 22px;
+      font-size: 0.92rem;
+      line-height: 1.68;
+    }
+
+    .ljj-hero .hero-actions {
+      margin-top: 26px;
+    }
+
+    .ljj-hero .button {
+      min-height: 44px;
+      padding-inline: 14px;
+      font-size: 0.82rem;
+    }
+
+    .ljj-hero .button-arrow {
+      width: 36px;
     }
   }
 </style>

@@ -1,42 +1,23 @@
 ---
 /**
- * 所有分类 —— design-spec §5.4（/categories）
+ * 所有分类 —— ljj-clone-spec §5（/categories）
  *
- * 结构：Hero 220（title 模式）→ 主栏 .cyber-stack 里「面包屑 + 两列分组卡」。
- *
- * 删掉的东西（旧版三件套）：
- *   · `shadow-box` —— 一圈软阴影。深色底上 rgba(0,0,0,.45) 根本看不见，
- *     只会让主栏看起来脏；
- *   · `bg-gradient-start` —— 主栏一整块底色。§2.1 的分层原则是「页面主体永远
- *     是最暗一档，浮起来的才变亮」，主栏铺底色等于把内容整体抬亮一级；
- *   · `CONTENT_PADDING.standard` —— 40px 内距。它和 .cyber-layout 的
- *     --page-pad-x 是同一份 gutter，叠起来主栏会白吃 80px（§4.2 明确禁止
- *     页面层再包内边距）。
- *
- * 现在间距全部交给 .cyber-stack（区块 48/64px）与 .cyber-section（标题↔内容 20px），
- * 页面层不写任何 padding / 背景 / gap。
- *
- * 面包屑最后一项带「共 N 个分类」而不是「所有分类」：Hero 标题已经是「所有分类」，
- * 重复一次没有信息量；数量才是这一页真正想告诉用户的事，也是 §5.2 给 /posts
- * 定下的写法（首页 / 共 N 篇文章）。
+ * ljj 子页同构：topline（`03 / CATEGORY —— 虚线 —— 统计`）+ 标题行 + 行式索引列表。
+ * 旧的 Cover / TwoColumnLayout / HomeSider / Breadcrumb 组合退役 —— ljj 没有
+ * 右侧栏，也不需要 220px Hero；CategoryList 本身已是 1px 线分隔的行式列表，
+ * 直保留，只把外层壳换成 console。
  */
 import CategoryList from '@components/category/CategoryList.astro';
-import HomeSider from '@components/layout/HomeSider.astro';
-import Breadcrumb from '@components/ui/Breadcrumb.astro';
-import Cover from '@components/ui/cover/Cover.astro';
 import { seoConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
 import { getCategoryLinks, getCategoryList } from '@lib/content';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+import '@styles/components/console-pages.css';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const { categories, countMap } = await getCategoryList(locale);
 
-/**
- * 分类总数含各级子分类 —— 用户点进来要的正是「这里一共有多少个入口」，
- * 只数一级分类会在有嵌套分类时少数。
- */
+/** 分类总数含各级子分类 —— 用户点进来要的正是「这里一共有多少个入口」 */
 const totalCount = getCategoryLinks(categories, '').length;
 ---
 
@@ -44,19 +25,60 @@ const totalCount = getCategoryLinks(categories, '').length;
   title={`${t(locale, 'category.allCategories')} | ${seoConfig.title}`}
   description={t(locale, 'category.allCategories')}
 >
-  <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'category.allCategories')} />
-    <HomeSider slot="sider" />
+  <section class="cat-console">
+    <div class="section-shell">
+      <header class="console-topline">
+        <span class="console-topline-index">03 / CATEGORY</span>
+        <span class="console-topline-rule"></span>
+        <span class="console-topline-copy">INDEX OF TOPICS</span>
+        <span class="console-topline-status"><i></i>{t(locale, 'category.totalCategories', { count: totalCount })}</span>
+      </header>
 
-    <div class="cyber-stack">
-      <Breadcrumb
-        items={[
-          { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
-          { label: t(locale, 'category.totalCategories', { count: totalCount }) },
-        ]}
-      />
+      <div class="console-heading cat-heading">
+        <h1>{t(locale, 'category.allCategories')}</h1>
+        <span class="console-count"><b>{String(totalCount).padStart(2, '0')}</b></span>
+      </div>
 
       <CategoryList categories={categories} countMap={countMap} totalCount={totalCount} />
     </div>
-  </TwoColumnLayout>
+  </section>
 </Layout>
+
+<style>
+  .cat-console {
+    padding-block: 22px 72px;
+  }
+
+  .cat-console :global(.console-topline) {
+    margin-bottom: clamp(36px, 6vh, 64px);
+  }
+
+  .cat-heading {
+    margin-bottom: 28px;
+  }
+
+  .cat-heading h1 {
+    font-size: 1.6rem;
+    font-weight: 650;
+  }
+
+  @media (max-width: 760px) {
+    .cat-console {
+      padding-block: 20px 56px;
+    }
+
+    .console-topline {
+      gap: 10px;
+      font-size: 0.52rem;
+    }
+
+    .cat-console :global(.console-topline-copy) {
+      display: none;
+    }
+
+    .cat-console :global(.console-topline-rule) {
+      flex: 1;
+      width: auto;
+    }
+  }
+</style>

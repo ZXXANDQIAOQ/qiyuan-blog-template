@@ -1,0 +1,79 @@
+---
+/**
+ * HeroPortrait —— 首页 Hero 右下角人物立绘
+ *
+ * 规格来源：docs/redesign/ljj-clone-spec.md §2 hero-portrait
+ * 容器：absolute inset:0 / z-index:3 / pointer-events:none / overflow:hidden
+ *
+ * ⚠️⚠️ 素材替换点 ⚠️⚠️
+ * 站点目前没有动漫立绘素材，这里临时复用站点头像 /img/avatar.svg（config/site.yaml
+ * 的 site.avatar），以「直角卡片」形态收在右下角（surface-deep 底 + 1px 墨线）。
+ * 拿到正式立绘后：
+ *   1. 把 <img> 的 src 换成立绘资源（建议 webp，宽 ≥1600）；
+ *   2. 删除 .hero-portrait-media 的 width/aspect-ratio/border 限制；
+ *   3. 把 .hero-portrait-image 的样式改为官方全出血形态：
+ *      position:absolute; inset:0; width:100%; height:100%;
+ *      object-fit:contain; object-position:right bottom;
+ *      filter:saturate(.92) contrast(1.02);
+ *   4. 视需要给 <figure> 加 inset 负值（如 inset:0 -24% 0 24%）让立绘溢出裁切。
+ */
+import { siteConfig } from '@constants/site-config';
+import { withBase } from '@/i18n';
+
+const avatarSrc = withBase(siteConfig?.avatar ?? '/img/avatar.svg');
+---
+<figure class="hero-portrait" aria-hidden="true">
+  <div class="hero-portrait-media">
+    <img
+      class="hero-portrait-image"
+      src={avatarSrc}
+      alt=""
+      width="256"
+      height="256"
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+      draggable="false"
+    />
+  </div>
+</figure>
+
+<style>
+  .hero-portrait {
+    z-index: 3;
+    pointer-events: none;
+    margin: 0;
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  /* 临时占位：头像卡片收在右下角（替换立绘时按文件头注释改回全出血） */
+  .hero-portrait-media {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: clamp(220px, 28vw, 400px);
+    aspect-ratio: 1;
+    border: 1px solid var(--lj-line-strong, #15161375);
+    background: var(--lj-surface-deep, #d9dad5);
+    overflow: hidden;
+  }
+
+  .hero-portrait-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right bottom;
+    filter: saturate(0.92) contrast(1.02);
+    display: block;
+    user-select: none;
+  }
+
+  @media (max-width: 1080px) {
+    .hero-portrait-media {
+      width: clamp(160px, 26vw, 280px);
+      opacity: 0.85;
+    }
+  }
+</style>

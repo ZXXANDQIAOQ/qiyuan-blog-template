@@ -1,31 +1,33 @@
 ---
 /**
- * 文章列表分页页 /posts/2、/posts/3… —— design-spec §5.2
+ * 文章索引页 /posts —— ljj-clone-spec §3「blog-console」
  *
- * 结构：Hero（title 形态，220 高）→ 主栏 / 侧栏 → 面包屑 + 一个 `.cyber-section`
+ * 结构照抄 docs/redesign/ljj-reference/dom_blog.html：
+ *   section.blog-index > div.blog-console.section-shell
+ *     ├─ console-field（装饰轨，aria-hidden）
+ *     ├─ topline：`02 / POSTS —— 虚线 —— WORKING NOTES ——— <i/> N / 年份`
+ *     ├─ intro：红 mono kicker + 超大 h1 + lead + summary + 最新一篇 story 块
+ *     ├─ visual：头像图 + mono caption + signal 装饰轨
+ *     └─ detail：h2「最近写下的」+ N 篇笔记 + 三列行式列表 + mono 分页
  *
- * §5.2 的三条「不做」：
- *   · 不做 2 列网格 —— 单列横向卡，阅读视线只有一个方向；
- *   · 不做封面左右交替切角；
- *   · 不删侧栏 —— HomeSider 保留（首页同款），只在 ≤992 收进抽屉。
- *
- * 与旧版的区别：删掉 `CONTENT_PADDING.standard` + `bg-gradient-start` + `shadow-box`
- * 的「主栏大卡片」外壳。横向留白现在只由 `.cyber-layout` 的 --page-pad-x 提供一次，
- * 叠两层会把卡片缩窄 80px（这也是主栏曾经只有 720 的原因）。
+ * 与旧版（Hero + TwoColumnLayout + 横向卡）的差异：
+ *   · 不再使用 Cover / HomeSider / PostList —— ljj 子页没有右侧栏，
+ *     列表是行式索引（PostIndexList），分页是 mono 数字条；
+ *   · 数据获取逻辑照旧：仍走 getNonFeaturedPosts + paginate；
+ *   · [lang] 镜像页复用本组件，无需单独修改。
  */
-import HomeSider from '@components/layout/HomeSider.astro';
-import PostList from '@components/post/PostList.astro';
-import Breadcrumb from '@components/ui/Breadcrumb.astro';
-import Cover from '@components/ui/cover/Cover.astro';
+import PostIndexList from '@components/post/PostIndexList.astro';
 import { PAGINATION } from '@constants/layout';
+import { siteConfig } from '@constants/site-config';
+import { getNonFeaturedPosts, getPostDescriptionWithSummary, getSortedPosts } from '@lib/content';
+import { displayDate } from '@lib/date';
+import { encodeSlug } from '@lib/route';
 import { seoConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
-import { getNonFeaturedPosts } from '@lib/content';
 import { toPostCardDataList } from '@lib/content/transforms';
 import type { PaginateFunction } from 'astro';
-import Divider from '@/components/ui/divider';
 import { defaultLocale, getLocaleFromUrl, localizedPath, t } from '@/i18n';
+import '@styles/components/console-pages.css';
 
 export async function getStaticPaths({ paginate }: { paginate: PaginateFunction }) {
   const postCollections = await getNonFeaturedPosts(defaultLocale);
@@ -36,26 +38,545 @@ const { page } = Astro.props;
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const postCardData = toPostCardDataList(page.data, locale);
 
-const homeUrl = localizedPath('/', locale);
+const total = page.total;
+const year = new Date().getFullYear();
+
+/** 精选块：全站最新一篇（分页页也要显示同一篇，所以单独取而不用当前页第一条） */
+const allPosts = await getSortedPosts(locale);
+const featured = allPosts[0];
+const featuredCard = featured ? toPostCardDataList([featured], locale)[0] : undefined;
+const featuredExcerpt = featured ? getPostDescriptionWithSummary(featured, locale, 80) : '';
+const featuredHref = featuredCard
+  ? localizedPath(`/post/${encodeSlug(featuredCard.link ?? featuredCard.slug)}`, locale)
+  : localizedPath('/posts', locale);
+
+/** 精选块分类：取最后一级分类名（无分类则退回站点副标题） */
+const featuredCats = (featuredCard?.categories ?? []).flat();
+const featuredCat = featuredCats.length ? String(featuredCats[featuredCats.length - 1]) : siteConfig.subtitle;
+const featuredDate = featuredCard ? displayDate.date(featuredCard.date).replaceAll('-', '.') : '';
+
+/** mono 数字分页：/posts、/posts/2…；prev/next 直接用 paginate 生成的 URL */
+const pagerItems = Array.from({ length: page.lastPage }, (_, i) => i + 1);
+
+/** 编辑部文案（i18n 字典不加新 key，按 locale 内联在此页） */
+const COPY = {
+  zh: {
+    kicker: '写给还要继续维护的自己',
+    title: '文章与笔记',
+    lead: '写代码、折腾工具、记录日常。',
+    summary: '这里是我放文章、笔记和想法的地方，只写具体的东西。',
+    recent: '最近写下的',
+    notesUnit: ' 篇笔记',
+    readMore: '阅读这篇文章',
+  },
+  en: {
+    kicker: 'Notes for the one who keeps maintaining',
+    title: 'Posts & Notes',
+    lead: 'Code, tools, and everyday records.',
+    summary: 'A place for my posts, notes and ideas — only the concrete stuff.',
+    recent: 'Recently written',
+    notesUnit: ' notes',
+    readMore: 'Read this post',
+  },
+  ja: {
+    kicker: '書き続けるための覚え書き',
+    title: '記事とノート',
+    lead: 'コードと道具と、日々の記録。',
+    summary: '記事・ノート・アイデアの置き場所です。具体的なことだけを書きます。',
+    recent: '最近の記事',
+    notesUnit: ' 件のノート',
+    readMore: '記事を読む',
+  },
+} as const;
+
+const copy = COPY[(locale as keyof typeof COPY) in COPY ? (locale as keyof typeof COPY) : 'zh'];
+
+const pageUrl = (n: number) => localizedPath(n === 1 ? '/posts' : `/posts/${n}`, locale);
+const avatarSrc = siteConfig.avatar;
 ---
 
-<Layout title={seoConfig.title}>
-  <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'post.postList')} />
-    <HomeSider slot="sider" />
-    <div class="cyber-stack">
-      {/* §6.16：末项自动渲染成当前页样式（青底 + foreground 字），这里不传 href */}
-      <Breadcrumb
-        items={[
-          { label: t(locale, 'breadcrumb.home'), href: homeUrl },
-          { label: t(locale, 'post.totalPosts', { count: page.total }) },
-        ]}
-      />
-      <section class="cyber-section">
-        <Divider>{t(locale, 'post.postList')}</Divider>
-        {/* 显式 variant="list"：分页页永远是单列横向卡，不让「1 篇时推断成 feature」生效 */}
-        <PostList posts={postCardData} page={page} variant="list" />
-      </section>
+<Layout title={`文章与笔记 | ${seoConfig.title}`}>
+  <section class="blog-index">
+    <div class="blog-console section-shell">
+      <div class="console-field" aria-hidden="true">
+        <span class="console-field-track console-field-track-top"></span>
+        <span class="console-field-track console-field-track-bottom"></span>
+        <span class="console-field-pulse console-field-pulse-top"></span>
+        <span class="console-field-pulse console-field-pulse-bottom"></span>
+      </div>
+
+      <header class="console-topline">
+        <span class="console-topline-index">02 / POSTS</span>
+        <span class="console-topline-rule"></span>
+        <span class="console-topline-copy">WORKING NOTES</span>
+        <span class="console-topline-status"><i></i>{total} / {year}</span>
+      </header>
+
+      <div class="blog-console-intro">
+        <p class="blog-console-kicker">{copy.kicker}</p>
+        <h1 id="blog-title">{copy.title}</h1>
+        <p class="blog-console-lead">{copy.lead}</p>
+        <p class="blog-console-summary">{copy.summary}</p>
+        {
+          featuredCard && (
+            <div class="blog-console-story">
+              <span>{featuredCat}</span>
+              <strong>{featuredCard.title}</strong>
+              <p>{featuredExcerpt}</p>
+              <a href={featuredHref} class="blog-console-read" data-astro-prefetch="hover">
+                <span>{copy.readMore}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true">
+                  <path d="M224.49,136.49l-72,72a12,12,0,0,1-17-17L187,140H40a12,12,0,0,1,0-24H187L135.51,64.48a12,12,0,0,1,17-17l72,72A12,12,0,0,1,224.49,136.49Z" />
+                </svg>
+              </a>
+            </div>
+          )
+        }
+      </div>
+
+      <div class="blog-console-visual">
+        <div class="blog-console-portrait">
+          <img src={avatarSrc} alt={siteConfig.title} width="480" height="480" loading="lazy" decoding="async" />
+          <p class="blog-console-caption">
+            <span>{featuredCat}</span>
+            <span aria-hidden="true">/</span>
+            <time datetime={featuredCard?.date.toISOString()}>{featuredDate}</time>
+            <span aria-hidden="true">/</span>
+            <span>{featuredCard?.readingTime ?? ''}</span>
+          </p>
+        </div>
+        <div class="blog-console-signal" aria-hidden="true">
+          <span class="blog-signal-rail blog-signal-rail-top"></span>
+          <span class="blog-signal-rail blog-signal-rail-middle"></span>
+          <span class="blog-signal-rail blog-signal-rail-bottom"></span>
+          <span class="blog-signal-pulse blog-signal-pulse-a"></span>
+          <span class="blog-signal-pulse blog-signal-pulse-b"></span>
+          <span class="blog-signal-node blog-signal-node-left"></span>
+          <span class="blog-signal-node blog-signal-node-center"></span>
+          <span class="blog-signal-node blog-signal-node-right"></span>
+        </div>
+      </div>
+
+      <div class="blog-console-detail">
+        <div class="console-heading">
+          <h2>{copy.recent}</h2>
+          <span class="console-count"><b>{total}</b>{copy.notesUnit}</span>
+        </div>
+        <PostIndexList posts={postCardData} locale={locale} />
+
+        {
+          page.lastPage > 1 && (
+            <nav class="console-pager" aria-label={t(locale, 'post.postList')}>
+              {page.url.prev ? (
+                <a href={page.url.prev} rel="prev">←</a>
+              ) : (
+                <span class="is-disabled" aria-hidden="true">←</span>
+              )}
+              {pagerItems.map((n) =>
+                n === page.currentPage ? (
+                  <span class="is-current" aria-current="page">{String(n).padStart(2, '0')}</span>
+                ) : (
+                  <a href={pageUrl(n)}>{String(n).padStart(2, '0')}</a>
+                ),
+              )}
+              {page.url.next ? (
+                <a href={page.url.next} rel="next">→</a>
+              ) : (
+                <span class="is-disabled" aria-hidden="true">→</span>
+              )}
+            </nav>
+          )
+        }
+      </div>
     </div>
-  </TwoColumnLayout>
+  </section>
 </Layout>
+
+<style>
+  /* ---- 三栏台面：intro | visual | detail（§3，照 dom_blog） ---- */
+  .blog-index {
+    padding-block: 22px 72px;
+  }
+
+  .blog-console {
+    --portrait-w: clamp(240px, 30vw, 420px);
+    display: grid;
+    grid-template-columns: minmax(300px, 0.92fr) minmax(0, 1.02fr) minmax(280px, 0.9fr);
+    gap: 0;
+    align-items: stretch;
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* topline 横跨三栏（ljj 官方是绝对定位悬浮，这里保持文档流） */
+  .blog-console .console-topline {
+    grid-column: 1 / -1;
+  }
+
+  /* ---- intro ---- */
+  .blog-console-intro {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-width: 0;
+    min-height: 0;
+    padding: 72px clamp(20px, 2.2vw, 36px) 16px 0;
+  }
+
+  .blog-console-kicker {
+    max-width: 28rem;
+    margin: 0 0 14px;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+  }
+
+  .blog-console-intro h1 {
+    max-width: 8em;
+    margin: 0;
+    color: var(--c-text);
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 5vw, 4.4rem);
+    font-weight: 650;
+    line-height: 1.02;
+    overflow-wrap: anywhere;
+  }
+
+  .blog-console-lead {
+    max-width: 18em;
+    margin: 22px 0 0;
+    color: var(--c-text);
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 1.5vw, 1.42rem);
+    font-weight: 620;
+    line-height: 1.34;
+    overflow-wrap: anywhere;
+  }
+
+  .blog-console-summary {
+    max-width: 36rem;
+    margin: 14px 0 0;
+    color: var(--c-muted);
+    font-size: 0.86rem;
+    line-height: 1.65;
+  }
+
+  .blog-console-story {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--c-line-strong);
+  }
+
+  .blog-console-story > span:first-child {
+    display: block;
+    color: var(--c-accent);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 650;
+  }
+
+  .blog-console-story strong {
+    display: block;
+    max-width: 22em;
+    margin-top: 8px;
+    font-size: 0.96rem;
+    font-weight: 620;
+    line-height: 1.35;
+  }
+
+  .blog-console-story p {
+    max-width: 36rem;
+    margin: 8px 0 0;
+    color: var(--c-muted);
+    font-size: 0.74rem;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .blog-console-read {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    width: fit-content;
+    min-height: 44px;
+    margin-top: 16px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid var(--c-accent);
+    color: var(--c-text);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 650;
+    text-decoration: none;
+    transition:
+      color 0.18s var(--c-ease),
+      border-color 0.18s var(--c-ease),
+      transform 0.12s var(--c-ease);
+  }
+
+  .blog-console-read:hover,
+  .blog-console-read:focus-visible {
+    color: var(--c-accent);
+  }
+
+  .blog-console-read:active {
+    transform: translateY(1px);
+  }
+
+  /* ---- visual：1px 边框头像 + mono caption + signal 装饰轨 ---- */
+  .blog-console-visual {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 56px;
+    gap: 10px;
+    align-items: stretch;
+    min-width: 0;
+    height: 100%;
+    padding: 72px clamp(18px, 2vw, 32px) 16px;
+    border-left: 1px solid var(--c-line);
+    border-right: 1px solid var(--c-line);
+  }
+
+  .blog-console-portrait {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    min-height: 260px;
+    border: 1px solid var(--c-line);
+    background: var(--c-deep);
+  }
+
+  .blog-console-portrait img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.9) contrast(1.02);
+  }
+
+  .blog-console-caption {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 10px;
+    background: hsl(var(--background) / 0.88);
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+  }
+
+  .blog-console-caption span:first-child {
+    color: var(--c-accent);
+  }
+
+  /* signal 装饰轨：三条虚线轨 + 两个锈红脉冲 + 三个菱形节点（ljj 同构） */
+  .blog-console-signal {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 56px;
+    border-block: 1px solid var(--c-line);
+  }
+
+  .blog-signal-rail {
+    position: absolute;
+    left: -14%;
+    width: 128%;
+    height: 1px;
+    opacity: 0.68;
+    background: repeating-linear-gradient(90deg, var(--c-line-strong) 0 28px, transparent 28px 40px);
+  }
+
+  .blog-signal-rail-top {
+    top: 14px;
+  }
+
+  .blog-signal-rail-middle {
+    top: 28px;
+    opacity: 0.3;
+  }
+
+  .blog-signal-rail-bottom {
+    top: 42px;
+  }
+
+  .blog-signal-pulse {
+    position: absolute;
+    left: -92px;
+    width: 92px;
+    height: 2px;
+    background: var(--c-accent);
+    box-shadow: 18px 0 0 -0.5px var(--c-accent);
+  }
+
+  .blog-signal-pulse-a {
+    top: 13px;
+    animation: blog-signal-sweep-r 4.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+
+  .blog-signal-pulse-b {
+    top: 41px;
+    left: auto;
+    right: -92px;
+    animation: blog-signal-sweep-l 5.6s cubic-bezier(0.65, 0, 0.35, 1) 1.2s infinite;
+  }
+
+  @keyframes blog-signal-sweep-r {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(calc(100% + 60vw));
+    }
+  }
+
+  @keyframes blog-signal-sweep-l {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(calc(-100% - 60vw));
+    }
+  }
+
+  .blog-signal-node {
+    position: absolute;
+    top: 24px;
+    width: 9px;
+    height: 9px;
+    border: 1px solid var(--c-accent);
+    background: var(--c-surface-raised);
+    transform: rotate(45deg);
+  }
+
+  .blog-signal-node-left {
+    left: calc(24% - 4px);
+  }
+
+  .blog-signal-node-center {
+    top: 23px;
+    left: calc(50% - 5px);
+    width: 11px;
+    height: 11px;
+    background: var(--c-accent);
+  }
+
+  .blog-signal-node-right {
+    right: calc(24% - 4px);
+  }
+
+  /* ---- detail：标题行 + 行式列表 + mono 分页 ---- */
+  .blog-console-detail {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-width: 0;
+    min-height: 0;
+    padding: clamp(48px, 8vh, 72px) 0 16px clamp(20px, 2.2vw, 36px);
+  }
+
+  .blog-console-detail :global(.post-index-list) {
+    margin-top: 4px;
+  }
+
+  /* ---- 响应式：1080 收两栏（intro+visual / detail 通栏），760 收单列 ---- */
+  @media (max-width: 1080px) {
+    .blog-console {
+      grid-template-rows: auto auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .blog-console-intro {
+      grid-area: 1 / 1;
+      justify-content: flex-end;
+      padding-top: 56px;
+    }
+
+    .blog-console-visual {
+      grid-area: 1 / 2;
+      border-right: 0;
+    }
+
+    .blog-console-detail {
+      grid-area: 2 / 1 / auto / -1;
+      padding: 28px 0 16px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .blog-console {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding: 42px 0 56px;
+    }
+
+    .console-topline {
+      gap: 10px;
+      font-size: 0.52rem;
+    }
+
+    .console-topline-copy {
+      display: none;
+    }
+
+    .console-topline-rule {
+      flex: 1;
+      width: auto;
+    }
+
+    .blog-console-intro,
+    .blog-console-visual,
+    .blog-console-detail {
+      padding: 0;
+    }
+
+    .blog-console-intro h1 {
+      font-size: clamp(2.4rem, 12vw, 3.1rem);
+    }
+
+    .blog-console-story {
+      margin-top: 20px;
+    }
+
+    .blog-console-visual {
+      grid-template-rows: auto 48px;
+      border-inline: 0;
+    }
+
+    .blog-console-portrait {
+      height: min(58vw, 360px);
+      min-height: 0;
+    }
+
+    .blog-signal-pulse {
+      animation: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blog-console-read,
+    .blog-signal-pulse {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

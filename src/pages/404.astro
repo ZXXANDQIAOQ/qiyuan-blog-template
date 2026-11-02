@@ -108,13 +108,13 @@ const description = t(locale, 'notFound.description');
     text-align: center;
   }
 
-  /* ---- 猫：线框青（§5.8 指定色值） ---- */
+  /* ---- 猫：线框锈红（跟随主题令牌，编辑部极简风） ---- */
   .nf__cat {
-    --c-stroke: hsl(186 100% 55% / 0.55);
-    --c-features: hsl(210 22% 80%);
-    --c-head-bg: hsl(186 100% 55% / 0.06);
-    --c-ear-fill: hsl(186 100% 55% / 0.08);
-    --c-nose: hsl(186 100% 55% / 0.5);
+    --c-stroke: hsl(var(--primary) / 0.55);
+    --c-features: hsl(var(--muted-foreground));
+    --c-head-bg: hsl(var(--primary) / 0.06);
+    --c-ear-fill: hsl(var(--primary) / 0.08);
+    --c-nose: hsl(var(--primary) / 0.5);
 
     --anim-dur: 6s;
 

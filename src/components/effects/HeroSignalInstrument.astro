@@ -1,0 +1,168 @@
+---
+/**
+ * HeroSignalInstrument —— 首页 Hero 左下角的红色线稿「仪表/电路」装饰
+ *
+ * 规格来源：docs/redesign/ljj-clone-spec.md §2 hero-signal-instrument
+ * 结构照抄官方 DOM（dom_home.html #top 内的 svg，viewBox 0 0 460 176）：
+ *   双水平虚线基线 + 圆盘（双虚线圆弧 + 十字准星）+ 虚线折线波形 +
+ *   回波短线 + 节点圆（呼吸脉冲）+ 顶部刻度
+ * 定位/配色由 Cover.astro 的全局样式控制（absolute bottom:34px left:0）。
+ */
+---
+<div class="hero-signal-instrument" aria-hidden="true">
+  <svg viewBox="0 0 460 176" focusable="false">
+    <path class="hero-signal-baseline" d="M8 148H452M8 28H452"></path>
+    <g class="hero-signal-disc">
+      <circle class="hero-signal-orbit hero-signal-orbit-outer" cx="82" cy="88" r="58"></circle>
+      <circle class="hero-signal-orbit hero-signal-orbit-inner" cx="82" cy="88" r="42"></circle>
+      <path class="hero-signal-crosshair" d="M82 18V38M82 138V158M12 88H32M132 88H152"></path>
+    </g>
+    <path
+      class="hero-signal-route"
+      d="M24 112H54L72 93H108L127 116H164L184 72H226L246 96H286L307 54H347L368 82H438"
+    ></path>
+    <path class="hero-signal-echo" d="M166 132H216L230 118H270L288 132H340"></path>
+    <g class="hero-signal-nodes">
+      <circle cx="72" cy="93" r="4"></circle>
+      <circle cx="184" cy="72" r="4"></circle>
+      <circle cx="307" cy="54" r="4"></circle>
+      <circle cx="368" cy="82" r="4"></circle>
+    </g>
+    <path
+      class="hero-signal-ticks"
+      d="M168 30V42M192 30V38M216 30V42M240 30V38M264 30V42M288 30V38M312 30V42M336 30V38M360 30V42M384 30V38M408 30V42M432 30V38"
+    ></path>
+  </svg>
+</div>
+
+<style>
+  .hero-signal-instrument {
+    z-index: 2;
+    width: min(31vw, 460px);
+    height: 176px;
+    color: var(--lj-accent, #b93b28);
+    opacity: 0.7;
+    pointer-events: none;
+    position: absolute;
+    bottom: 34px;
+    left: 0;
+  }
+
+  .hero-signal-instrument svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .hero-signal-instrument path,
+  .hero-signal-instrument circle {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .hero-signal-baseline {
+    stroke: var(--lj-line-strong, #15161375);
+    stroke-width: 1px;
+    stroke-dasharray: 2 12;
+  }
+
+  .hero-signal-disc {
+    transform-box: view-box;
+    transform-origin: 82px 88px;
+    animation: 20s linear infinite hero-signal-rotate;
+  }
+
+  .hero-signal-orbit {
+    stroke-width: 1.2px;
+  }
+
+  .hero-signal-orbit-outer {
+    stroke-dasharray: 4 10 34 14;
+  }
+
+  .hero-signal-orbit-inner {
+    stroke: color-mix(in srgb, var(--lj-text, #151613) 34%, transparent);
+    stroke-dasharray: 62 18 3 12;
+  }
+
+  .hero-signal-crosshair,
+  .hero-signal-ticks {
+    stroke: color-mix(in srgb, var(--lj-text, #151613) 36%, transparent);
+    stroke-width: 1px;
+  }
+
+  .hero-signal-route {
+    stroke-width: 1.6px;
+    stroke-dasharray: 8 7;
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--lj-accent, #b93b28) 18%, transparent));
+    animation: 2.4s linear infinite hero-signal-flow;
+  }
+
+  .hero-signal-echo {
+    stroke: color-mix(in srgb, var(--lj-text, #151613) 38%, transparent);
+    stroke-width: 1px;
+    stroke-dasharray: 2 8;
+  }
+
+  .hero-signal-nodes circle {
+    fill: var(--lj-bg, #f3f4f1);
+    stroke-width: 1.4px;
+    transform-box: fill-box;
+    transform-origin: 50%;
+    animation: 2.8s ease-in-out infinite hero-signal-pulse;
+  }
+
+  .hero-signal-nodes circle:nth-child(2) {
+    animation-delay: 0.35s;
+  }
+
+  .hero-signal-nodes circle:nth-child(3) {
+    animation-delay: 0.7s;
+  }
+
+  .hero-signal-nodes circle:nth-child(4) {
+    animation-delay: 1.05s;
+  }
+
+  @keyframes hero-signal-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes hero-signal-flow {
+    to {
+      stroke-dashoffset: -45px;
+    }
+  }
+
+  @keyframes hero-signal-pulse {
+    0%,
+    to {
+      opacity: 0.42;
+      transform: scale(0.82);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-signal-disc,
+    .hero-signal-route,
+    .hero-signal-nodes circle {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero-signal-instrument {
+      display: none;
+    }
+  }
+</style>

@@ -1,89 +1,167 @@
 ---
 /**
- * 标签总览 —— design-spec §5.5「/tags」+ §6.14「徽章 / 芯片」
+ * 标签总览 —— ljj-clone-spec §5（/tags）
  *
- * 结构：Hero 220（title 模式）→ 面包屑 → 芯片墙 → 折叠区
+ * ljj 子页同构：topline（`04 / TAG —— 虚线 —— 共 N 个标签`）+ 标题行 +
+ * 行式索引列表。旧的芯片墙（四色轮转 / 青描边分档）与折叠区退役 ——
+ * 规格要求列表统一为 1px 线分隔的行式索引：每行 mono `#标签` + 右对齐计数，
+ * hover 标签变锈红、行背景 surface。
  *
- * 三处必须改掉的老写法（都在这次重写里删掉了）：
- *   1. 旧的「主栏一整块大卡片 + 渐变底 + 大阴影」—— 新规范的边界感来自区块之间
- *      48/64px 空白（§4.3），主栏不再是一整块底色。外壳一律交给 .cyber-stack，
- *      页面层不许再包 padding / 背景 / gap（见 effects.css §1.1 的三条纪律）。
- *   2. 旧的虚线圆圈装饰标题 + 逐断点缩字号 —— 那是 Shoka 的「两侧虚线 + 居中文字」
- *      体系，§5.1 已改为「左对齐标题 + 右侧渐变细线」，这里直接用 <Divider>，
- *      字号走 clamp，不再逐断点缩。
- *   3. 旧的四色轮转（按下标取模配四种渐变）—— 12 个标签就是一道彩虹墙，与 §2.1
- *      「全站只有一个冷光源」冲突。规范只允许青 / 中性两种芯片，层次靠
- *      「前 20 个青描边」表达（见下方 PROMINENT_LIMIT）。
+ * 单次出现的标签不再折叠：行式列表一屏能扫完，折叠交互反而藏信息。
  */
-import HomeSider from '@components/layout/HomeSider.astro';
-import { CollapsibleTags } from '@components/tag/CollapsibleTags';
-import { TagItem } from '@components/tag/TagItem';
-import Cover from '@components/ui/cover/Cover.astro';
-import { siteConfig } from '@constants/site-config';
+import { seoConfig, siteConfig } from '@constants/site-config';
 import Layout from '@layouts/Layout.astro';
-import TwoColumnLayout from '@layouts/TwoColumnLayout.astro';
-import { getAllTags, getSortedPosts } from '@lib/content';
-import Breadcrumb from '@/components/ui/Breadcrumb.astro';
-import Divider from '@/components/ui/divider';
+import { buildTagPath, getAllTags, getSortedPosts } from '@lib/content';
 import { getLocaleFromUrl, localizedPath, t } from '@/i18n';
+import '@styles/components/console-pages.css';
 
 const locale = getLocaleFromUrl(Astro.url.pathname);
 const posts = await getSortedPosts(locale);
 const tags = getAllTags(posts);
 
-/**
- * 数量降序。同数量时保持标签首次出现的顺序（Object.entries 的插入序，构建期稳定），
- * 不再像旧版那样额外挂一个配色下标 —— 色调现在只由「是否落在前 20」决定。
- */
+/** 数量降序；同数量保持首次出现顺序（构建期稳定） */
 const sortedTags = Object.entries(tags)
   .sort(([, a], [, b]) => b - a)
   .map(([tag, count]) => ({ tag, count }));
 
-/**
- * 前 20 个用青描边突出（§5.5）。
- * 这个数字是「一屏能扫完的量」而不是分页单位：超过 20 个之后，青描边就不再提供
- * 区分度，只剩满屏青色，所以要硬切一刀。
- */
-const PROMINENT_LIMIT = 20;
-
-/** 多篇共用的标签进墙（按数量降序）；单次出现的标签默认折叠（§5.5） */
-const wallTags = sortedTags.filter(({ count }) => count > 1);
-const singleTags = sortedTags.filter(({ count }) => count === 1);
+const tagHref = (tag: string) => localizedPath(buildTagPath(tag), locale);
 ---
 
 <Layout title={`${t(locale, 'tag.allTags')} | ${siteConfig.title}`} description={t(locale, 'tag.allTags')}>
-  <TwoColumnLayout>
-    <Cover slot="cover" title={t(locale, 'tag.allTags')} />
-    <HomeSider slot="sider" />
-    <div class="cyber-stack">
-      <Breadcrumb
-        items={[
-          { label: t(locale, 'nav.home'), href: localizedPath('/', locale) },
-          { label: t(locale, 'tag.totalTags', { count: sortedTags.length }) },
-        ]}
-      />
+  <section class="tag-console">
+    <div class="section-shell">
+      <header class="console-topline">
+        <span class="console-topline-index">04 / TAG</span>
+        <span class="console-topline-rule"></span>
+        <span class="console-topline-copy">ALL TOPICS</span>
+        <span class="console-topline-status"><i></i>{t(locale, 'tag.totalTags', { count: sortedTags.length })}</span>
+      </header>
 
-      <section class="cyber-section">
-        <Divider>{t(locale, 'tag.allTags')}</Divider>
+      <div class="console-heading tag-heading">
+        <h1>{t(locale, 'tag.allTags')}</h1>
+        <span class="console-count"><b>{String(sortedTags.length).padStart(2, '0')}</b></span>
+      </div>
 
+      <ul class="tag-index-list">
         {
-          wallTags.length > 0 && (
-            /* 芯片墙：flex wrap + gap 8（§5.5 写死了 8，不是 tailwind 的 gap-3=12） */
-            <div class="flex flex-wrap gap-2">
-              {wallTags.map(({ tag, count }, index) => (
-                <TagItem
-                  tag={tag}
-                  count={count}
-                  tone={index < PROMINENT_LIMIT ? 'primary' : 'neutral'}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          )
+          sortedTags.map(({ tag, count }) => (
+            <li>
+              <a href={tagHref(tag)} data-astro-prefetch="hover">
+                <span class="tag-index-mark" aria-hidden="true">#</span>
+                <strong>{tag}</strong>
+                <span class="tag-index-count">{t(locale, 'tag.postCount', { count })}</span>
+              </a>
+            </li>
+          ))
         }
-
-        <CollapsibleTags tags={singleTags} locale={locale} client:only="react" />
-      </section>
+      </ul>
     </div>
-  </TwoColumnLayout>
+  </section>
 </Layout>
+
+<style>
+  .tag-console {
+    padding-block: 22px 72px;
+  }
+
+  .console-topline {
+    margin-bottom: clamp(36px, 6vh, 64px);
+  }
+
+  .tag-heading {
+    margin-bottom: 20px;
+  }
+
+  .tag-heading h1 {
+    font-size: 1.6rem;
+    font-weight: 650;
+  }
+
+  /* 行式标签索引：mono `#tag` + 右对齐计数，1px 线分隔，直角 */
+  .tag-index-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tag-index-list li {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .tag-index-list a {
+    position: relative;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: baseline;
+    min-height: 48px;
+    align-content: center;
+    padding: 10px 8px 10px 0;
+    text-decoration: none;
+    transition:
+      background-color 0.18s var(--c-ease),
+      color 0.18s var(--c-ease);
+  }
+
+  .tag-index-list a:hover,
+  .tag-index-list a:focus-visible {
+    background: hsl(var(--surface-2) / 0.7);
+    box-shadow: inset 2px 0 0 var(--c-accent);
+  }
+
+  .tag-index-list a:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: -2px;
+  }
+
+  .tag-index-mark {
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    transition: color 0.18s var(--c-ease);
+  }
+
+  .tag-index-list strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--c-text);
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    font-weight: 620;
+    line-height: 1.4;
+    transition: color 0.18s var(--c-ease);
+  }
+
+  .tag-index-list a:hover strong,
+  .tag-index-list a:hover .tag-index-mark,
+  .tag-index-list a:focus-visible strong {
+    color: var(--c-accent);
+  }
+
+  .tag-index-count {
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    text-align: right;
+  }
+
+  @media (max-width: 760px) {
+    .tag-console {
+      padding-block: 20px 56px;
+    }
+
+    .console-topline {
+      gap: 10px;
+      font-size: 0.52rem;
+    }
+
+    .console-topline-copy {
+      display: none;
+    }
+
+    .console-topline-rule {
+      flex: 1;
+      width: auto;
+    }
+  }
+</style>

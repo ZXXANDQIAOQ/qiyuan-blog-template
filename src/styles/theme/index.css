@@ -48,27 +48,27 @@
 }
 
 .dark {
-  --gradient-bg-start: #171815;
-  --gradient-bg-end: #171815;
-  --gradient-bg: linear-gradient(180deg, #171815 0%, #171815 100%);
-  --gradient-pink: linear-gradient(140deg, hsl(9 85% 61%) 0%, hsl(9 85% 61%) 100%);
-  --gradient-header: linear-gradient(180deg, rgba(23, 24, 21, 0.9) 0%, rgba(23, 24, 21, 0.75) 100%);
-  --bg-overlay: rgba(23, 24, 21, 0.9);
+  --gradient-bg-start: #121210;
+  --gradient-bg-end: #121210;
+  --gradient-bg: linear-gradient(180deg, #121210 0%, #121210 100%);
+  --gradient-pink: linear-gradient(140deg, hsl(10 85% 61%) 0%, hsl(10 85% 61%) 100%);
+  --gradient-header: linear-gradient(180deg, rgba(18, 18, 16, 0.9) 0%, rgba(18, 18, 16, 0.75) 100%);
+  --bg-overlay: rgba(18, 18, 16, 0.9);
 
   /* shoka migrate */
   --box-bg-shadow: rgba(0, 0, 0, 0.5);
-  --grey-1-a5: rgba(23, 24, 21, 0.5);
+  --grey-1-a5: rgba(18, 18, 16, 0.5);
 
-  --gradient-shoka-button-start: hsl(9 85% 61%);
+  --gradient-shoka-button-start: hsl(10 85% 61%);
   --gradient-shoka-button-end: hsl(10 90% 55%);
   --gradient-shoka-button: linear-gradient(
     to right,
     var(--gradient-shoka-button-start) 0,
     var(--gradient-shoka-button-end) 100%
   );
-  --shoka-blue: 9 85% 61%;
+  --shoka-blue: 10 85% 61%;
   --grey-4: 75 4% 55%;
-  --color-pink: hsl(9 85% 61%);
+  --color-pink: hsl(10 85% 61%);
   --color-pink-a3: rgba(240, 100, 73, 0.2);
 
   /* Shoka container/effect colors (dark mode) */

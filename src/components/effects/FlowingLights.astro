@@ -1,0 +1,134 @@
+---
+// 四边流动光轨（ljj-clone-spec §1.3）
+// 纯 CSS 动画：四条 1px 轨道各挂一段锈红渐变亮段循环平移，
+// 周期 7~12s、负 delay 错开；fixed z-52，位于页头(z-60)之下、内容之上。
+---
+
+<div class="global-flowing-lights" aria-hidden="true">
+  <span class="global-flow-light-rail is-horizontal is-top"><span class="global-flow-light-runner"></span></span>
+  <span class="global-flow-light-rail is-horizontal is-bottom"><span class="global-flow-light-runner"></span></span>
+  <span class="global-flow-light-rail is-vertical is-left"><span class="global-flow-light-runner"></span></span>
+  <span class="global-flow-light-rail is-vertical is-right"><span class="global-flow-light-runner"></span></span>
+</div>
+
+<style is:global>
+  /* ==========================================================================
+   * 全局鼠标像素轨迹（§1.2）
+   * ========================================================================== */
+  .global-pixel-trail {
+    position: fixed;
+    inset: var(--header-h, 80px) 0 0;
+    z-index: 0;
+    width: 100%;
+    height: calc(100dvh - var(--header-h, 80px));
+    pointer-events: none;
+  }
+
+  /* ==========================================================================
+   * 四边流动光轨（§1.3）
+   * ========================================================================== */
+  .global-flowing-lights {
+    position: fixed;
+    inset: var(--header-h, 80px) 0 0;
+    z-index: 52;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .global-flow-light-rail {
+    position: absolute;
+    overflow: hidden;
+    opacity: 0.68;
+    background: var(--line);
+  }
+
+  /* 四条轨道：top/bottom 横贯，left/right 纵贯，粗细 1px */
+  .global-flow-light-rail.is-horizontal.is-top {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+  }
+
+  .global-flow-light-rail.is-horizontal.is-bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+  }
+
+  .global-flow-light-rail.is-vertical.is-left {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+  }
+
+  .global-flow-light-rail.is-vertical.is-right {
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+  }
+
+  /* 亮段：60~120px 锈红渐变，1px 高/宽 */
+  .global-flow-light-runner {
+    position: absolute;
+    width: 110px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary)) 35% 65%, transparent);
+    transform: translateX(-120px);
+  }
+
+  .is-vertical .global-flow-light-runner {
+    width: 1px;
+    height: 110px;
+    background: linear-gradient(180deg, transparent, hsl(var(--primary)) 35% 65%, transparent);
+    transform: translateY(-120px);
+  }
+
+  /* top：左→右；bottom：右→左（reverse）；left：上→下；right：下→上（reverse） */
+  .is-top .global-flow-light-runner {
+    animation: flow-light-x 7.6s linear infinite;
+  }
+
+  .is-bottom .global-flow-light-runner {
+    animation: flow-light-x 11.2s linear infinite reverse;
+    animation-delay: -3.4s;
+  }
+
+  .is-left .global-flow-light-runner {
+    animation: flow-light-y 9.4s linear infinite;
+    animation-delay: -1.8s;
+  }
+
+  .is-right .global-flow-light-runner {
+    animation: flow-light-y 8.6s linear infinite reverse;
+    animation-delay: -5.2s;
+  }
+
+  @keyframes flow-light-x {
+    from {
+      transform: translateX(-120px);
+    }
+    to {
+      transform: translateX(calc(100vw + 120px));
+    }
+  }
+
+  @keyframes flow-light-y {
+    from {
+      transform: translateY(-120px);
+    }
+    to {
+      transform: translateY(calc(100dvh + 120px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .global-flow-light-runner {
+      animation: none !important;
+      opacity: 0;
+    }
+  }
+</style>

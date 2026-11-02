@@ -13,6 +13,8 @@ interface Props {
 }
 
 import { ClientRouter } from 'astro:transitions';
+import FlowingLights from '@components/effects/FlowingLights.astro';
+import PixelTrail from '@components/effects/PixelTrail';
 import FloatingGroup from '@components/layout/FloatingGroup';
 import Header from '@components/layout/Header.astro';
 import MobileDrawer from '@components/layout/MobileDrawer.astro';
@@ -102,7 +104,7 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     )}
 
     <ClientRouter />
-    <LoadingIndicator color="#7a6fd6" />
+    <LoadingIndicator color="#b93b28" />
     <Tooltips />
 
     <!-- SEO 元数据由 astro-seo 管理 -->
@@ -144,22 +146,23 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
 
     <script is:inline lang="ts">
       // 主题系统 - 立即执行以防止 FOUC（无样式内容闪烁）
-      // 恬谧版是唯一主题：不再提供深色赛博霓虹，历史遗留的深色偏好一并清除
+      // 明暗双主题（ljj-clone-spec §1.1 页头滑块开关）：localStorage > 系统偏好 > 浅色。
+      // 存储约定与 Header.astro 的 #theme-switch 同一份（'light' | 'dark'）。
       (function() {
         function getTheme() {
+          try {
+            var stored = localStorage.getItem('theme');
+            if (stored === 'dark' || stored === 'light') return stored;
+          } catch (e) {}
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
           return 'light';
         }
 
         function applyTheme(theme) {
           var root = document.documentElement;
-          root.classList.toggle('dark', false); // 永远浅色
+          root.classList.toggle('dark', theme === 'dark');
           root.dataset.theme = theme; // For astro-mermaid autoTheme
         }
-
-        // 老访客 localStorage 里存的 theme=dark 会让旧脚本切回深色，直接清掉
-        try {
-          if ('theme' in localStorage) localStorage.removeItem('theme');
-        } catch (e) {}
 
         // 立即应用主题
         applyTheme(getTheme());
@@ -184,6 +187,9 @@ const keywords = keywordsOverride || siteConfig.keywords || [siteConfig.title];
     </script>
   </head>
   <body>
+    <!-- 全局特效（ljj-clone-spec §1.2/§1.3）：像素轨迹 z-0 在内容之下，光轨 z-52 在页头之下 -->
+    <PixelTrail client:only="react" />
+    <FlowingLights />
     <a href="#main" class="skip-to-main">跳到正文</a>
     <div class="flex min-h-screen flex-col text-foreground">
       <Header isPostPage={isPostPage} tocNumbering={post?.data.tocNumbering ?? true} />

@@ -1,11 +1,11 @@
 ---
-layout: ../layouts/PageLayout.astro
+layout: ../layouts/AboutLayout.astro
 title: "关于"
 coverTitle: "关于我"
 date: 2026-05-10
 description: "前端开发者，写代码也写字。这里记录我做的东西、踩的坑，和一些没地方说的话。"
-# 顶部横向个人卡（§5.7）：只在关于页开。privacy 页同样走 PageLayout，不传这项就不会挂头像卡。
-showProfile: true
+# 三栏 console 左栏的红 mono kicker（AboutLayout 专用，PageLayout 不读这个字段）
+kicker: "白天写业务前端，晚上写自己的小项目"
 ---
 
 我是烁。白天写业务前端，主要跟 TypeScript 和 CSS 打交道；晚上写自己的小项目，通常做不完。

@@ -27,23 +27,17 @@
   }
 
   /* ---------------------------------------------------------------------------
-   * 全局背景（编辑部极简 v3）
-   * 「纯色暖灰底 + 极淡光斑 + 24px 点阵」多层纯 CSS 方案：0 请求、不抖、可换主题。
-   * 网格线换成极淡点阵，底色压平为纯色，光斑保留引用（值已在 shadcn.css 压淡）。
+   * 全局背景（ljj 规格 §2 背景段）
+   * 「纯色暖灰底 + 48px 细网格」：网格线取 --grid-line（≈16% 墨线的 35% 观感），
+   * 0 请求、不抖、随 .dark 自动换色。旧 24px 点阵与光斑已删除。
    * ------------------------------------------------------------------------- */
   body {
     overscroll-behavior-y: none;
     background-color: hsl(var(--background));
     background-image:
-      var(--page-glow-1),
-      var(--page-glow-2),
-      radial-gradient(var(--dot-line) 1px, transparent 1px),
-      var(--page-bg);
-    background-size:
-      auto,
-      auto,
-      24px 24px,
-      auto;
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
     background-position: center top;
     background-attachment: fixed;
     scroll-behavior: smooth;
@@ -251,47 +245,17 @@
   }
 
   /* ---------------------------------------------------------------------------
-   * 顶部导航容器（§6.1 / §10-7）
-   * 初始透明浮在 Hero 上；.with-background 由 Navigator 按滚动位置切换。
+   * 内容壳（ljj 规格 §0 布局壳）
+   * 页脚注记等全局区块统一从这里取宽度；页头 .nav-shell 自带同款宽度。
    * ------------------------------------------------------------------------- */
-  #site-header {
-    @apply relative translate-y-0 transition-transform duration-300;
-    height: var(--nav-h);
-    color: hsl(var(--foreground));
-
-    /* 玻璃拟态背景层：透明 → 深空玻璃
-       除了 Navigator 的 .with-background（JS）之外，再用 scroll() timeline 做一层
-       纯 CSS 兜底：JS 挂掉时吸顶导航依然有背景，不会出现「白字压正文」。 */
-    &::before {
-      content: "";
-      @apply pointer-events-none absolute inset-0 -z-1 opacity-0 transition-opacity duration-300 ease-out;
-      background: hsl(var(--background) / 0.72);
-      backdrop-filter: blur(16px) saturate(1.2);
-      -webkit-backdrop-filter: blur(16px) saturate(1.2);
-      border-bottom: 1px solid hsl(var(--border) / 0.6);
-    }
-
-    @supports (animation-timeline: scroll()) {
-      &::before {
-        animation: header-glass-in linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 24px 140px;
-      }
-    }
-
-    /* 导航内不再使用描边阴影视作「压图可读」手段（§10-8） */
-    button,
-    a {
-      text-shadow: none;
-    }
+  .section-shell {
+    width: min(100% - 112px, 1440px);
+    margin-inline: auto;
   }
 
-  @keyframes header-glass-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
+  @media (max-width: 992px) {
+    .section-shell {
+      width: min(100% - 40px, 1440px);
     }
   }
 

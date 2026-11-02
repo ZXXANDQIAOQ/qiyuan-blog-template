@@ -1,0 +1,58 @@
+---
+/**
+ * 三列行式索引列表 —— ljj-clone-spec §3.4（内容页专属，ljj.world blog-index-list 同构）
+ *
+ * 每行三列：mono 时间（MM.DD）/ 标题 / mono 分类右对齐；行间 1px 墨线分隔，
+ * 直角、无卡片、无阴影。hover：标题变锈红 + 行背景 surface + 左缘 2px 短线
+ * （样式在 console-pages.css 的 .post-index-list 段）。
+ *
+ * 为什么不用 <PostList>：PostItemCard 是首页同款的横向卡片（缩略图 + 摘要 +
+ * 标签芯片），而 ljj 规格要求子页全是行式索引 —— 两套视觉不能互相污染，
+ * 所以内容页统一走这个轻量组件，数据仍用轻量 PostCardData。
+ */
+import { displayDate } from '@lib/date';
+import { localizedPath, t } from '@/i18n';
+import { encodeSlug } from '@lib/route';
+import type { PostCardData } from 'types/blog';
+
+interface Props {
+  posts: PostCardData[];
+  locale: string;
+}
+
+const { posts, locale } = Astro.props;
+
+/** 分类取最后一级（与 PostItemCard 的展示口径一致），无分类留空 */
+function lastCategoryName(post: PostCardData): string {
+  const flat = (post.categories ?? []).flat();
+  return flat.length ? String(flat[flat.length - 1]) : '';
+}
+
+/** 行首 mono 时间：规格 §3.4 的 `10.25` 点分格式（用站点时区，避免 UTC 偏差） */
+function dotMonthDay(date: Date): string {
+  return displayDate.date(date).slice(5).replace('-', '.');
+}
+
+/** 文章链接：link 覆写优先，否则 transliterate 后的 slug（与 routeBuilder 同口径） */
+function postHref(post: PostCardData): string {
+  return localizedPath(`/post/${encodeSlug(post.link ?? post.slug)}`, locale);
+}
+---
+
+{
+  posts.length === 0 ? (
+    <p class="post-index-empty">{t(locale, 'post.noPostsFound')}</p>
+  ) : (
+    <ol class="post-index-list">
+      {posts.map((post) => (
+        <li>
+          <a href={postHref(post)} data-astro-prefetch="hover">
+            <time datetime={post.date.toISOString()}>{dotMonthDay(post.date)}</time>
+            <strong>{post.title}</strong>
+            <span aria-hidden="true">{lastCategoryName(post)}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  )
+}
