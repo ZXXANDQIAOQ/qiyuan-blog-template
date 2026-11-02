@@ -1,0 +1,50 @@
+---
+/**
+ * 交互式背景 —— 参考 dshdesktop.cn Hero 区效果
+ *
+ * 两层叠加：
+ *   z-0  WebGL 流体噪声（FluidNoiseBackground）—— 有机流动图案
+ *   z-5  交互点阵格子（InteractiveDotGrid）—— 鼠标推开的点阵网格
+ *
+ * 调色板自动适配「恬谧版」双主题（浅色暖奶油/深色深蓝）。
+ * CSS mask 从上到下渐隐，不干扰内容阅读。
+ * WebGL2 不可用或 prefers-reduced-motion 时降级为纯色背景。
+ */
+import FluidNoiseBackground from './FluidNoiseBackground';
+import InteractiveDotGrid from './InteractiveDotGrid';
+---
+
+<div class="interactive-bg absolute inset-0 overflow-hidden">
+  <div class="bg-fluid-layer absolute inset-0 overflow-hidden">
+    <FluidNoiseBackground client:only="react" />
+  </div>
+  <div class="bg-grid-layer absolute inset-0">
+    <InteractiveDotGrid client:only="react" />
+  </div>
+</div>
+
+<style>
+  .interactive-bg {
+    background-color: transparent;
+  }
+
+  .bg-fluid-layer {
+    mask: linear-gradient(#000000fc 0%, #000000e8 9%, transparent 100%);
+    -webkit-mask: linear-gradient(#000000fc 0%, #000000e8 9%, transparent 100%);
+    z-index: 0;
+  }
+
+  .bg-grid-layer {
+    mask: linear-gradient(#000000fc 0%, #000000e8 9%, transparent 100%);
+    -webkit-mask: linear-gradient(#000000fc 0%, #000000e8 9%, transparent 100%);
+    z-index: 5;
+    display: none;
+  }
+
+  /* ≥768 才显示点阵层（触屏不需要） */
+  @media (min-width: 768px) {
+    .bg-grid-layer {
+      display: block;
+    }
+  }
+</style>

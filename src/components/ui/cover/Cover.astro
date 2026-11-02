@@ -1,4 +1,5 @@
 ---
+import InteractiveBg from '@components/effects/InteractiveBg.astro';
 import { siteConfig } from '@constants/site-config';
 import { getPostCount } from '@lib/content';
 import { getPostReadingTime } from '@lib/content/posts';
@@ -71,6 +72,11 @@ const variant = data ? 'post' : title ? 'title' : 'home';
 
   <!-- 背景层 5：噪点 -->
   <div class="cyber-noise absolute inset-0" aria-hidden="true"></div>
+
+  <!-- 背景层 6：交互式流体噪声 + 点阵格子（参考 dshdesktop.cn） -->
+  <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+    <InteractiveBg />
+  </div>
 
   <!--
     右侧装饰同心圆：允许循环发光/旋转的三处之一（rotate 90s，无闪烁）
