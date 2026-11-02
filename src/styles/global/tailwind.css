@@ -228,6 +228,22 @@
 
 /* utils */
 @layer components {
+  /* ---------------------------------------------------------------------------
+   * 全局图标柔化（恬谧版）
+   * 68 枚离线图标统一 1.5 描边 / 圆头圆角；此处再补一层透明度微调，
+   * 让图标在暖奶油→雾紫渐变上更轻盈、不喧宾夺主。
+   * 品牌图标（GitHub/B站/知乎等 fill 版）不受影响——它们需要实心辨识度。
+   * ------------------------------------------------------------------------- */
+  svg[data-icon]:not([data-icon^="ri:github"]):not([data-icon^="ri:bilibili"]):not([data-icon^="ri:zhihu"]):not([data-icon^="ri:twitter"]):not([data-icon^="ri:telegram"]):not([data-icon^="ri:chrome"]):not([data-icon^="ri:netease"]) {
+    opacity: 0.78;
+    transition: opacity 0.2s ease;
+  }
+  a:hover svg[data-icon],
+  button:hover svg[data-icon],
+  [aria-current] svg[data-icon] {
+    opacity: 1;
+  }
+
   /* §10-13：粉色实心外扩（0 0 0.75rem var(--color-pink-a3)）改为克制青光 */
   .shoka-button-shadow {
     box-shadow: var(--glow-cyan-sm);
