@@ -315,10 +315,10 @@ function generateLinkPreviewHTML(ogData: OGData): string {
       : sanitizeText(originUrl.length > 60 ? `${originUrl.substring(0, 60)}...` : originUrl);
 
     return `<div class="link-preview-block not-prose" data-state="error">
-  <a href="${safeUrl}" target="_blank" class="hover:border-primary/50 group block rounded-lg border border-border bg-card p-4 transition-all hover:shadow-md" aria-label="${safeDisplayText}">
+  <a href="${safeUrl}" target="_blank" class="hover:border-primary/50 group block border border-border bg-card p-4 transition-all" aria-label="${safeDisplayText}">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0 flex-1">
-        <div class="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+        <div class="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center">
           <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-dasharray="28" stroke-dashoffset="28" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 6l2 -2c1 -1 3 -1 4 0l1 1c1 1 1 3 0 4l-5 5c-1 1 -3 1 -4 0M11 18l-2 2c-1 1 -3 1 -4 0l-1 -1c-1 -1 -1 -3 0 -4l5 -5c1 -1 3 -1 4 0"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="28;0"/></path></svg>
         </div>
         <div class="min-w-0 flex-1">
@@ -343,7 +343,7 @@ function generateLinkPreviewHTML(ogData: OGData): string {
   const safeLogo = logo ? sanitizeUrl(logo) : '';
   const safeImage = image ? sanitizeUrl(image) : '';
   return `<div class="link-preview-block not-prose" data-state="success">
-  <a href="${safeUrl}" target="_blank" class="group block overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50 hover:shadow-md" aria-label="${safeTitle} - ${safeDomain}">
+  <a href="${safeUrl}" target="_blank" class="group block overflow-hidden border border-border transition-all hover:border-primary/50" aria-label="${safeTitle} - ${safeDomain}">
     <div class="bg-card flex md:flex-col flex-row">
       <div class="flex-1 p-4">
         <div class="mb-2 flex items-center gap-2">

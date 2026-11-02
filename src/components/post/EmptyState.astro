@@ -109,7 +109,7 @@ const desc = description ?? copy.description;
   .empty-state__icon {
     /* 白名单里的发光位置，只取一档 */
     box-shadow: var(--glow-cyan-sm);
-    border-radius: 12px;
+    border-radius: 0;
     line-height: 0;
   }
 
@@ -147,7 +147,7 @@ const desc = description ?? copy.description;
     justify-content: center;
     height: 40px;
     padding: 0 20px;
-    border-radius: 8px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: 600;
     line-height: 1;
@@ -163,12 +163,11 @@ const desc = description ?? copy.description;
     /* 青 → 深青渐变，取 §2.4 的按钮渐变变量，不手写色值 */
     background: var(--gradient-shoka-button);
     color: hsl(var(--primary-foreground));
-    box-shadow: 0 2px 12px hsl(var(--primary) / 0.18);
+    box-shadow: 0 1px 2px rgba(21, 22, 19, 0.05), 0 8px 24px rgba(21, 22, 19, 0.07);
   }
 
   .empty-btn--primary:hover {
     filter: brightness(1.08);
-    transform: translateY(-1px);
     /* hover 态：唯一一处发光 */
     box-shadow: var(--glow-cyan-sm);
   }
@@ -191,7 +190,7 @@ const desc = description ?? copy.description;
     margin-top: 24px;
     padding: 6px 12px;
     border: 1px dashed hsl(var(--border));
-    border-radius: 6px;
+    border-radius: 0;
     color: hsl(var(--muted-foreground));
     font-family: var(--font-mono);
     font-size: 12px;

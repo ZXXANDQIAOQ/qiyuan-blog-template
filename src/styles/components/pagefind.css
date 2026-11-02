@@ -9,8 +9,8 @@
   --pagefind-ui-border: #e5e5e5;
   --pagefind-ui-tag: rgba(237, 110, 160, 0.15);
   --pagefind-ui-border-width: 1px;
-  --pagefind-ui-border-radius: 0.75rem;
-  --pagefind-ui-image-border-radius: 0.5rem;
+  --pagefind-ui-border-radius: 0;
+  --pagefind-ui-image-border-radius: 0;
   --pagefind-ui-font: inherit;
 }
 
@@ -29,7 +29,7 @@
 .pagefind-ui__search-input {
   width: 100%;
   interpolate-size: allow-keywords;
-  @apply !h-10 !rounded-lg !px-4 !py-0 !font-normal transition-all duration-300 md:!px-2 md:!text-sm;
+  @apply !h-10 !px-4 !py-0 !font-normal transition-all duration-300 md:!px-2 md:!text-sm;
 }
 
 .pagefind-ui__search-input:not(:placeholder-shown) {
@@ -47,7 +47,7 @@
 
 /* Clear Button */
 .search-dialog .pagefind-ui__search-clear {
-  @apply text-primary bg-primary/20 top-0 h-10 cursor-pointer rounded-lg border-none px-2 py-1 text-sm font-medium whitespace-nowrap transition-all duration-200;
+  @apply text-primary bg-primary/20 top-0 h-10 cursor-pointer border-none px-2 py-1 text-sm font-medium whitespace-nowrap transition-all duration-200;
   @apply md:px-2.5 md:py-0.5;
 }
 .pagefind-ui__search-clear:hover {
@@ -69,7 +69,7 @@
 .pagefind-ui__result {
   background: rgba(0, 0, 0, 0.03);
   transition: all 0.25s ease;
-  @apply bg-accent mb-2 rounded-lg !border-none !p-3;
+  @apply bg-accent mb-2 !border-none !p-3;
 }
 
 .dark .pagefind-ui__result {

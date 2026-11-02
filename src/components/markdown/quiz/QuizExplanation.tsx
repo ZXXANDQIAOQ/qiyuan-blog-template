@@ -25,7 +25,7 @@ export function QuizExplanation({ html, visible }: QuizExplanationProps) {
           className="overflow-hidden"
         >
           <div
-            className="mt-3 rounded-lg border border-blue-200/60 bg-blue-50/50 px-4 py-3 text-sm dark:border-blue-800/40 dark:bg-blue-950/20 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+            className="mt-3 border border-blue-200/60 bg-blue-50/50 px-4 py-3 text-sm dark:border-blue-800/40 dark:bg-blue-950/20 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
             // biome-ignore lint/security/noDangerouslySetInnerHtml: Content from build-time Markdown
             dangerouslySetInnerHTML={{ __html: replaceEmoji(html) }}
           />

@@ -51,16 +51,16 @@ const avatarSize = isDrawer ? 72 : 88;
 
 // 侧栏菜单项（§6.5）：默认/hover/激活三态，左侧 2px 竖条作为「颜色 + 实心条」双信号
 const menuItemClass =
-  'group relative flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 ease-in-out hover:bg-white/[0.04] hover:text-foreground';
+  'group relative flex h-10 w-full items-center gap-2.5 px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 ease-in-out hover:bg-white/[0.04] hover:text-foreground';
 
 const menuItemBarClass =
-  'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:scale-y-0 before:rounded-full before:bg-primary/50 before:transition-transform before:duration-200 before:ease-[cubic-bezier(0.25,1,0.5,1)] before:content-[""] group-hover:before:scale-y-100';
+  'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:scale-y-0 before:bg-primary/50 before:transition-transform before:duration-200 before:ease-[cubic-bezier(0.25,1,0.5,1)] before:content-[""] group-hover:before:scale-y-100';
 
 const menuItemActiveClass =
-  'bg-primary/[0.09] font-semibold text-primary before:scale-y-100 before:bg-primary before:shadow-[0_0_12px_hsl(var(--primary)/0.55)]';
+  'bg-primary/[0.09] font-semibold text-primary before:scale-y-100 before:bg-primary';
 
 const subItemClass =
-  'group relative flex h-9 w-full items-center gap-2 rounded-lg pl-9 pr-3 text-[13px] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.04] hover:text-foreground';
+  'group relative flex h-9 w-full items-center gap-2 pl-9 pr-3 text-[13px] text-muted-foreground transition-colors duration-200 hover:bg-white/[0.04] hover:text-foreground';
 
 const subItemActiveClass = 'bg-primary/[0.06] font-medium text-primary';
 ---
@@ -72,7 +72,7 @@ const subItemActiveClass = 'bg-primary/[0.06] font-medium text-primary';
     <div class="group relative shrink-0" style={getLqipStyle(siteConfig.avatar ?? '/img/avatar.svg')}>
       <img
         transition:persist="page-home-info-avatar"
-        class="max-w-none rounded-[20px] border border-primary/25 object-cover shadow-[0_0_24px_hsl(var(--primary)/0.16)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03] group-hover:shadow-[0_0_32px_hsl(var(--primary)/0.28)]"
+        class="max-w-none border border-primary/25 object-cover transition-[border-color] duration-200 group-hover:border-primary/40"
         style={`width:${avatarSize}px;height:${avatarSize}px`}
         src={avatarSrc}
         alt="站点作者头像"
@@ -84,7 +84,7 @@ const subItemActiveClass = 'bg-primary/[0.06] font-medium text-primary';
       <!-- 1px 内描边，把头像压进玻璃卡而不是「贴上去」 -->
       <span
         aria-hidden="true"
-        class="pointer-events-none absolute inset-0 rounded-[20px] ring-1 ring-inset ring-white/10"
+        class="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10"
       ></span>
     </div>
 

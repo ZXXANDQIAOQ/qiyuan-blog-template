@@ -24,7 +24,7 @@ const resolveSocialUrl = (url: string): string => (url.startsWith('/') ? withBas
       const { url, icon } = config;
       return (
         <a
-          class="flex size-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-[color,border-color,box-shadow] duration-200 ease-in-out hover:border-primary/40 hover:text-primary hover:shadow-[var(--glow-cyan-sm)]"
+          class="flex size-7 items-center justify-center border border-border/60 text-muted-foreground transition-[color,border-color,box-shadow] duration-200 ease-in-out hover:border-primary/40 hover:text-primary hover:shadow-[var(--glow-cyan-sm)]"
           data-platform={key}
           href={resolveSocialUrl(url)}
           title={capitalize(key)}

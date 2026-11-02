@@ -169,7 +169,7 @@ function SummaryPanel({ summary, source = 'ai', typingSpeed = 25, className }: S
        * 左条 2px、底色 primary/6%，左角不倒圆 —— 色条必须贴齐正文左缘，
        * 圆角会把条的头尾切掉一截，看起来像贴歪的胶带。
        * 只改外观，isExpanded / 打字机 / 三种来源的判定逻辑原样保留。 */}
-      <div className={cn('overflow-hidden rounded-r-lg border-primary border-l-2 bg-primary/[0.06]', className)}>
+      <div className={cn('overflow-hidden border-primary border-l-2 bg-primary/[0.06]', className)}>
         {/* 触发按钮 */}
         <button
           type="button"

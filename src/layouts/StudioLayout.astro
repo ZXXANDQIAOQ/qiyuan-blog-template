@@ -74,8 +74,8 @@ import '@styles/index.css';
         padding: 8px 14px;
         /* 触控目标 ≥44px（design-spec.md §7.2） */
         min-height: 44px;
-        border-radius: 12px;
-        border: 1px solid rgba(122, 111, 214, 0.22);
+        border-radius: 0;
+        border: 1px solid rgba(21, 22, 19, 0.14);
         background: var(--color-background-primary, rgba(255, 255, 255, 0.85));
         color: inherit;
         font-family: inherit;
@@ -90,9 +90,8 @@ import '@styles/index.css';
       }
 
       .studio-btn:hover:not(:disabled) {
-        transform: translateY(-1px);
-        border-color: rgba(122, 111, 214, 0.4);
-        box-shadow: 0 6px 18px rgba(122, 111, 214, 0.14);
+        border-color: rgba(21, 22, 19, 0.28);
+        box-shadow: 0 1px 2px rgba(21, 22, 19, 0.05), 0 8px 24px rgba(21, 22, 19, 0.07);
       }
 
       .studio-btn:disabled {
@@ -120,8 +119,8 @@ import '@styles/index.css';
         padding: 8px 12px;
         /* 触控目标 ≥44px（design-spec.md §7.2） */
         min-height: 44px;
-        border-radius: 12px;
-        border: 1px solid rgba(122, 111, 214, 0.22);
+        border-radius: 0;
+        border: 1px solid rgba(21, 22, 19, 0.14);
         background: var(--color-background-primary, rgba(255, 255, 255, 0.85));
         color: inherit;
         font-family: inherit;
@@ -133,8 +132,8 @@ import '@styles/index.css';
       }
 
       .studio-input:focus {
-        border-color: rgba(122, 111, 214, 0.55);
-        box-shadow: 0 0 0 3px rgba(122, 111, 214, 0.12);
+        border-color: rgba(21, 22, 19, 0.35);
+        box-shadow: 0 0 0 2px rgba(21, 22, 19, 0.12);
       }
 
       /* Markdown 编辑区（等宽、可拉伸） */
@@ -172,7 +171,7 @@ import '@styles/index.css';
         display: inline-flex;
         align-items: center;
         padding: 2px 6px;
-        border-radius: 4px;
+        border-radius: 0;
         font-size: 12px;
         line-height: 1.5;
         border: 0.5px solid currentColor;
@@ -202,18 +201,18 @@ import '@styles/index.css';
       /* 登录卡 */
       .studio-card-login {
         background: rgba(255, 255, 255, 0.88);
-        border: 1px solid rgba(122, 111, 214, 0.18);
-        border-radius: 16px;
+        border: 1px solid rgba(21, 22, 19, 0.14);
+        border-radius: 0;
         padding: 32px;
-        box-shadow: 0 18px 48px rgba(122, 111, 214, 0.16);
+        box-shadow: 0 1px 2px rgba(21, 22, 19, 0.05), 0 8px 24px rgba(21, 22, 19, 0.07);
         max-width: 380px;
       }
 
       /* 文章列表行 / 通用卡片 */
       .studio-card {
         background: rgba(255, 255, 255, 0.82);
-        border: 1px solid rgba(122, 111, 214, 0.16);
-        border-radius: 14px;
+        border: 1px solid rgba(21, 22, 19, 0.12);
+        border-radius: 0;
         padding: 14px;
         transition:
           transform 0.2s ease,
@@ -221,22 +220,21 @@ import '@styles/index.css';
       }
 
       .studio-card:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 22px rgba(122, 111, 214, 0.12);
+        box-shadow: 0 1px 2px rgba(21, 22, 19, 0.05), 0 8px 24px rgba(21, 22, 19, 0.07);
       }
 
       /* 编辑器面板 */
       .studio-panel {
         background: rgba(255, 255, 255, 0.85);
-        border: 1px solid rgba(122, 111, 214, 0.16);
-        border-radius: 14px;
+        border: 1px solid rgba(21, 22, 19, 0.12);
+        border-radius: 0;
       }
 
       /* 错误横幅 */
       .studio-banner-error {
         background: rgba(168, 67, 63, 0.08);
         color: var(--color-text-danger, #a8433f);
-        border-radius: 12px;
+        border-radius: 0;
         padding: 12px;
         font-size: 13px;
         margin: 12px 16px 0;
@@ -245,8 +243,8 @@ import '@styles/index.css';
       /* 信息横幅 */
       .studio-banner-info {
         background: rgba(255, 255, 255, 0.85);
-        border: 1px solid rgba(122, 111, 214, 0.3);
-        border-radius: 12px;
+        border: 1px solid rgba(21, 22, 19, 0.18);
+        border-radius: 0;
         padding: 12px;
         font-size: 13px;
       }
@@ -266,7 +264,7 @@ import '@styles/index.css';
         min-width: 34px;
         height: 34px;
         padding: 0 8px;
-        border-radius: 10px;
+        border-radius: 0;
         border: 1px solid transparent;
         background: transparent;
         color: inherit;
@@ -282,8 +280,8 @@ import '@styles/index.css';
       }
 
       .studio-tb-btn:hover {
-        background: rgba(122, 111, 214, 0.12);
-        color: #6a5fd0;
+        background: rgba(21, 22, 19, 0.05);
+
         opacity: 1;
       }
 

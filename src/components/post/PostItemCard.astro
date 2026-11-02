@@ -309,7 +309,7 @@ const coverSizes = isFeature
     gap: 20px;
     padding: 16px;
     border: 1px solid transparent;
-    border-radius: 12px;
+    border-radius: 0;
     background-image:
       linear-gradient(var(--glass-bg), var(--glass-bg)),
       linear-gradient(160deg, var(--glass-border-top), var(--glass-border-bottom) 55%, var(--glass-border-bottom));
@@ -324,14 +324,12 @@ const coverSizes = isFeature
       background-image var(--dur-ui) var(--ease-in-out);
   }
 
-  /* hover：位移 2px + 一处发光（--glow-cyan-sm），不叠加第二层光 */
+  /* hover：边框加深 + 轻墨影，无位移 */
   .post-card:hover {
-    transform: translateY(-2px);
     box-shadow:
       var(--glass-inner-glow),
       var(--shadow-card),
-      0 0 0 1px hsl(var(--primary) / 0.18),
-      var(--glow-cyan-sm);
+      0 0 0 1px hsl(var(--primary) / 0.18);
   }
 
   .post-card:active {
@@ -352,7 +350,7 @@ const coverSizes = isFeature
     top: 12px;
     bottom: 12px;
     width: 2px;
-    border-radius: 2px;
+    border-radius: 0;
     background: var(--article-accent, hsl(var(--primary)));
     opacity: 0;
     transform: scaleY(0.4);
@@ -381,7 +379,7 @@ const coverSizes = isFeature
     left: 8px;
     z-index: 2;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: 0;
     background: hsl(var(--background) / 0.62);
     color: hsl(var(--muted-foreground));
     font-family: var(--font-mono);
@@ -403,7 +401,7 @@ const coverSizes = isFeature
     width: 248px;
     height: 156px;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: 0;
     background-color: hsl(var(--surface-2));
     background-size: cover;
     background-position: center;
@@ -553,7 +551,7 @@ const coverSizes = isFeature
     height: 22px;
     padding: 0 8px;
     border: 1px solid hsl(var(--primary) / 0.3);
-    border-radius: 6px;
+    border-radius: 0;
     background: hsl(var(--primary) / 0.12);
     color: hsl(var(--primary));
     font-size: 12px;
@@ -609,7 +607,7 @@ const coverSizes = isFeature
     gap: 4px;
     height: 22px;
     padding: 0 8px;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: 12px;
     font-weight: 600;
     line-height: 1;
@@ -638,7 +636,7 @@ const coverSizes = isFeature
     overflow: hidden;
     padding: 0;
     height: 272px;
-    border-radius: 14px;
+    border-radius: 0;
   }
 
   .post-card--feature .post-cover {
@@ -686,7 +684,7 @@ const coverSizes = isFeature
     padding: 0 8px;
     margin-bottom: 14px;
     border: 1px solid hsl(var(--primary) / 0.3);
-    border-radius: 6px;
+    border-radius: 0;
     background: hsl(var(--primary) / 0.16);
     color: hsl(var(--primary));
     font-size: 11px;

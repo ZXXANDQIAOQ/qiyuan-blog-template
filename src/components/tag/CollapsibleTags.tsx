@@ -51,7 +51,7 @@ export function CollapsibleTags({ tags, locale }: CollapsibleTagsProps) {
       >
         <span>{isExpanded ? t('common.collapse') : t('tag.expandAll')}</span>
         {/* §6.14 中性芯片：高 22 / padding 0 8 / 圆角 6 / 12px 600 */}
-        <span className="inline-flex h-[22px] items-center rounded-md border border-border bg-white/5 px-2 font-mono text-xs font-semibold tracking-[0.04em] text-muted-foreground">
+        <span className="inline-flex h-[22px] items-center border border-border bg-white/5 px-2 font-mono text-xs font-semibold tracking-[0.04em] text-muted-foreground">
           {tags.length}
         </span>
         <svg

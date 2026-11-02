@@ -13,5 +13,5 @@ const BADGE_CONFIG: Record<QuizType, { labelKey: TranslationKey; color: string }
 export function QuizBadge({ type }: { type: QuizType }) {
   const { t } = useTranslation();
   const { labelKey, color } = BADGE_CONFIG[type];
-  return <span className={cn('mr-2 inline-block rounded-md px-2 py-0.5 font-semibold text-xs', color)}>{t(labelKey)}</span>;
+  return <span className={cn('mr-2 inline-block px-2 py-0.5 font-semibold text-xs', color)}>{t(labelKey)}</span>;
 }

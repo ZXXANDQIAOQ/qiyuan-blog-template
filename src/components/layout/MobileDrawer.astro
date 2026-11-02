@@ -38,7 +38,7 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
       {localeEntries.length > 1 && (
         <details class="language-switcher group relative">
           <summary
-            class="flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground [&::-webkit-details-marker]:hidden"
+            class="flex cursor-pointer list-none items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground [&::-webkit-details-marker]:hidden"
             aria-label={t(locale, 'common.language')}
           >
             <Icon name="ri:translate" class="size-4" />
@@ -46,7 +46,7 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
             <Icon name="ri:arrow-down-s-line" class="size-4 transition-transform duration-200 group-open:rotate-180" />
           </summary>
           <div
-            class="cyber-panel absolute top-full left-0 z-10 mt-1 flex min-w-32 flex-col overflow-hidden rounded-[10px] py-1"
+            class="cyber-panel absolute top-full left-0 z-10 mt-1 flex min-w-32 flex-col overflow-hidden py-1"
           >
             {localeEntries.map((entry) => {
               const isActive = entry.code === locale;
@@ -71,7 +71,7 @@ const locale = getLocaleFromUrl(Astro.url.pathname);
       <button
         id="close-drawer"
         aria-label={t(locale, 'drawer.close')}
-        class="ml-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:text-primary"
+        class="ml-auto flex size-8 items-center justify-center text-muted-foreground transition-colors duration-200 hover:text-primary"
       >
         <Icon name="ri:close-line" class="h-5 w-5" />
       </button>

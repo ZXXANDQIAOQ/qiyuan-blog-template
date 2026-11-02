@@ -40,7 +40,7 @@ export const Segmented = <T extends string | number = string | number>({
   return (
     <div
       className={cn(
-        'flex w-fit cursor-pointer select-none rounded-sm bg-muted p-1 font-semibold text-xs backdrop-blur-lg',
+        'flex w-fit cursor-pointer select-none bg-muted p-1 font-semibold text-xs backdrop-blur-lg',
         className,
       )}
     >
@@ -51,7 +51,7 @@ export const Segmented = <T extends string | number = string | number>({
         return (
           <motion.div
             className={cn(
-              'relative flex-center cursor-pointer gap-1.5 px-3 py-1 first:rounded-l-xs last:rounded-r-xs',
+              'relative flex-center cursor-pointer gap-1.5 px-3 py-1',
               { 'text-primary-foreground': selected },
               { 'opacity-50': !selected },
               itemClass,
@@ -90,7 +90,7 @@ export const Segmented = <T extends string | number = string | number>({
             {selected && (
               <motion.div
                 layoutId={`segmented_selected_bg_${id ?? 'default'}`}
-                className={cn('absolute inset-0 -z-10 rounded-sm bg-gradient-shoka-button', indicateClass)}
+                className={cn('absolute inset-0 -z-10 bg-gradient-shoka-button', indicateClass)}
                 transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 30 }}
                 style={{ willChange: shouldReduceMotion ? 'auto' : 'transform' }}
               />

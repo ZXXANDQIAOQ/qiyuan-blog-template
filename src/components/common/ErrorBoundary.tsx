@@ -26,7 +26,7 @@ export const ErrorFallback: FC<ErrorFallbackProps> = ({
   actions,
 }) => {
   return (
-    <div className="flex w-full flex-col items-center gap-4 rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900/50 dark:bg-red-950/20">
+    <div className="flex w-full flex-col items-center gap-4 border border-red-200 bg-red-50 p-6 dark:border-red-900/50 dark:bg-red-950/20">
       <div className="flex-center gap-2 font-medium text-lg text-red-700 dark:text-red-400">
         <svg className="size-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path
@@ -39,7 +39,7 @@ export const ErrorFallback: FC<ErrorFallbackProps> = ({
       </div>
 
       {showDetails && error?.message && (
-        <div className="w-full rounded-md bg-red-100 p-3 font-mono text-red-800 text-sm dark:bg-red-900/30 dark:text-red-300">
+        <div className="w-full bg-red-100 p-3 font-mono text-red-800 text-sm dark:bg-red-900/30 dark:text-red-300">
           <p className="font-semibold">Error: {error.message}</p>
           {import.meta.env.DEV && error?.stack && (
             <pre className="mt-2 max-h-32 overflow-auto whitespace-pre-wrap text-xs opacity-70">{error.stack}</pre>

@@ -33,7 +33,7 @@ export function SeriesPostList({ posts, currentPostSlug, className, locale }: Se
             key={post.slug}
             href={href}
             className={cn(
-              'group relative flex items-center gap-3 rounded-md px-1 py-2 transition-colors',
+              'group relative flex items-center gap-3 px-1 py-2 transition-colors',
               'hover:bg-accent/50',
               isActive && 'font-medium text-primary',
             )}

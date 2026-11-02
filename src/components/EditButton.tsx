@@ -74,7 +74,7 @@ export default function EditButton({ postId }: EditButtonProps) {
         <button
           type="button"
           className={cn(
-            'flex items-center gap-1 rounded-full px-2.5 py-1 transition-all duration-200',
+            'flex items-center gap-1 px-2.5 py-1 transition-all duration-200',
             'bg-primary/10 text-primary hover:bg-primary/20',
             'text-sm',
           )}

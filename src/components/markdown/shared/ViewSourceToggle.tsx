@@ -24,7 +24,7 @@ export function ViewSourceToggle({ isSourceView, onToggle, disabled, className }
       onClick={onToggle}
       disabled={disabled}
       className={cn(
-        'flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors',
+        'flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors',
         'hover:bg-accent hover:text-accent-foreground active:scale-95',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,

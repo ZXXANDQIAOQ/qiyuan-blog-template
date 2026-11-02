@@ -50,7 +50,7 @@ const HeadingTreeItemComponent = ({
           onHeadingClick(heading.id);
         }}
         className={cn(
-          'heading-link group relative flex items-center rounded-md py-2 text-sm transition-all duration-200 hover:border-l-2 hover:bg-foreground/5',
+          'heading-link group relative flex items-center py-2 text-sm transition-all duration-200 hover:border-l-2 hover:bg-foreground/5',
           {
             'border-l-primary bg-primary/10 font-medium text-primary hover:bg-primary/10 hover:text-primary': isActive,
           },

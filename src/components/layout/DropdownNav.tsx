@@ -23,7 +23,7 @@ const DropdownNavComponent = ({ item, currentPath, className, locale = defaultLo
     () => (
       /* 下拉面板（§6.1）：宽 200 / 玻璃 / 圆角 10 / 顶部 1px 高光 / --shadow-pop */
       <div
-        className="flex w-[200px] flex-col gap-0.5 rounded-[10px] border border-white/10 bg-[var(--glass-bg-strong)] p-1 shadow-[var(--shadow-pop)] backdrop-blur-[20px]"
+        className="flex w-[200px] flex-col gap-0.5 border border-white/10 bg-[var(--glass-bg-strong)] p-1 shadow-[var(--shadow-pop)] backdrop-blur-[20px]"
       >
         {children?.length
           ? children.map((child: Router) => {
@@ -36,7 +36,7 @@ const DropdownNavComponent = ({ item, currentPath, className, locale = defaultLo
                   href={childUrl}
                   aria-current={isChildActive ? 'page' : undefined}
                   className={cn(
-                    'flex h-9 items-center gap-2 rounded-md px-3 text-[13px] transition-colors duration-200',
+                    'flex h-9 items-center gap-2 px-3 text-[13px] transition-colors duration-200',
                     isChildActive
                       ? 'bg-primary/[0.09] font-medium text-primary'
                       : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
@@ -58,7 +58,7 @@ const DropdownNavComponent = ({ item, currentPath, className, locale = defaultLo
       <button
         type="button"
         className={cn(
-          'relative flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold tracking-[0.06em] whitespace-nowrap',
+          'relative flex items-center gap-1 px-3 py-2 text-sm font-semibold tracking-[0.06em] whitespace-nowrap',
           'text-muted-foreground transition-colors duration-200 ease-in-out hover:bg-white/5 hover:text-foreground',
           isOpen && 'bg-white/5 text-foreground',
           className,

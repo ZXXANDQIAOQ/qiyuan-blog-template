@@ -4,9 +4,9 @@
  * 2D Canvas 实现：90px 间距的点阵网格，鼠标靠近时点被推开，
  * 点之间用细线连接，点离鼠标越近越大越亮。
  *
- * 调色板适配「恬谧版」双主题：
- *   - 浅色模式：暖奶油底 → 深紫灰点（低对比融入渐变底）
- *   - 深色模式：深蓝黑底 → 浅灰白点（原始效果）
+ * 调色板适配「编辑部极简版」双主题：
+ *   - 浅色模式：暖灰底 → 墨色点/线，hover 染铁锈红
+ *   - 深色模式：深炭底 → 米白点/线，hover 染橙红
  *
  * 技术要点：
  *   - 每个点有 restX/restY（静止位置）+ x/y（实际位置）+ vx/vy（速度）
@@ -42,6 +42,16 @@ const LINE_PADDING = 10;
 /** 帧率上限（ms/帧） */
 const FRAME_INTERVAL = 1000 / 30;
 
+type Rgb = [number, number, number];
+
+/** 按比例把 a 向 b 混合，返回 rgb() 字符串（透明度由 globalAlpha 控制） */
+function mixRgb(a: Rgb, b: Rgb, t: number): string {
+  const r = Math.round(a[0] + (b[0] - a[0]) * t);
+  const g = Math.round(a[1] + (b[1] - a[1]) * t);
+  const bl = Math.round(a[2] + (b[2] - a[2]) * t);
+  return `rgb(${r}, ${g}, ${bl})`;
+}
+
 /** 检测当前是否暗色模式 */
 function isDarkMode(): boolean {
   return document.documentElement.classList.contains('dark');
@@ -73,19 +83,23 @@ export default function InteractiveDotGrid() {
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const mouse = { x: NaN, y: NaN };
 
-    /** 根据主题取色 */
+    /** 根据主题取色（编辑部极简：墨色/米白点线 + 锈红 hover 染色） */
     function getColors() {
       if (isDarkMode()) {
         return {
-          line: 'rgba(255, 255, 255, 0.08)',
-          dot: 'rgba(255, 255, 255, 0.16)',
-          dotHoverBoost: 0.4,
+          line: 'rgba(240, 241, 237, 0.09)',
+          dot: 'rgba(240, 241, 237, 0.18)',
+          dotRgb: [240, 241, 237] as Rgb,
+          accentRgb: [240, 100, 73] as Rgb,
+          dotHoverBoost: 0.55,
         };
       }
       return {
-        line: 'rgba(108, 95, 199, 0.12)',
-        dot: 'rgba(108, 95, 199, 0.18)',
-        dotHoverBoost: 0.35,
+        line: 'rgba(21, 22, 19, 0.10)',
+        dot: 'rgba(21, 22, 19, 0.20)',
+        dotRgb: [21, 22, 19] as Rgb,
+        accentRgb: [185, 59, 40] as Rgb,
+        dotHoverBoost: 0.55,
       };
     }
 
@@ -206,16 +220,18 @@ export default function InteractiveDotGrid() {
         }
       }
 
-      // 画点
-      ctx.fillStyle = colors.dot;
+      // 画点（鼠标附近的点按距离向锈红/橙红混合，形成 spotlight 感）
       for (const d of dots) {
         let size = 1.8;
         let alpha = 0.16;
+        let fill = colors.dot;
         if (!Number.isNaN(mouse.x) && !Number.isNaN(mouse.y)) {
           const dist = Math.max(0, 1 - Math.hypot(d.x - mouse.x, d.y - mouse.y) / MOUSE_RADIUS);
           size = 1.8 + 2 * dist;
           alpha += colors.dotHoverBoost * dist;
+          if (dist > 0.02) fill = mixRgb(colors.dotRgb, colors.accentRgb, dist * 0.9);
         }
+        ctx.fillStyle = fill;
         ctx.globalAlpha = alpha;
         ctx.fillRect(d.x - size, d.y - size, 2 * size, 2 * size);
       }

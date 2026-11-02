@@ -48,7 +48,7 @@ const editHref = withBase(`/studio/posts/${encodeURIComponent(slug)}`);
     align-items: center;
     gap: 5px;
     padding: 4px 12px;
-    border-radius: 9999px;
+    border-radius: 0;
     border: 1px solid hsl(var(--primary) / 0.25);
     background: var(--color-background-primary, rgba(255, 255, 255, 0.72));
     color: hsl(var(--primary));
@@ -64,7 +64,6 @@ const editHref = withBase(`/studio/posts/${encodeURIComponent(slug)}`);
   }
 
   .studio-entry:hover {
-    transform: translateY(-1px);
     border-color: hsl(var(--primary) / 0.45);
     box-shadow: var(--shadow-card, 0 10px 28px rgba(122, 111, 214, 0.12));
   }

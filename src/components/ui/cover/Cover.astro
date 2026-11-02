@@ -30,32 +30,26 @@ const postCount = await getPostCount(locale);
  * 三种变体（design-spec §6.3 / §5.1 / §5.2 / §5.3）
  * - post：文章详情页，160px，面包屑 + 40px 标题 + 元信息 + 复制链接
  * - title：列表/归档/分类/标签页，220px，单标题
- * - home：首页，320px，eyebrow + 44px 主标 + 副标 + meta
+ * - home：首页，320px，eyebrow + 超大主标（编辑部风 clamp 3–5rem）+ 副标 + 1px 分隔线
  */
 const variant = data ? 'post' : title ? 'title' : 'home';
 ---
 
 <!--
-  Hero Banner（design-spec §6.3）
-  五层背景：深空底 / 双色光晕 / 32px 网格 / 海报纹理（opacity .12 + 灰阶）/ 噪点
-  · /video/top.mp4 及 canplaythrough 逻辑已整体删除（性能优先，静音阅读场景不需要自动播放）
-  · 全站唯一允许「文字发光」的地方就是这里的 H1
+  Hero Banner（编辑部极简风，参考 ljj.world）
+  三层背景：暖灰纯色底（--hero-bg）/ 海报纹理（opacity .08 + 灰阶）/ 噪点 / 交互背景
+  · 双色光晕层与 32px 网格层已随「编辑部风」移除（纯色底 + 1px 细线，不要网格底纹）
+  · 全站不允许「文字发光」，H1 已去除 glow
 -->
 <header
   class="cyber-hero relative z-0 flex w-full overflow-hidden"
   data-variant={variant}
   transition:name="page-cover-banner"
 >
-  <!-- 背景层 1：恬谧渐变（浅色 #FFFFD0→#D2CDFF / 暗色保持深空，走 --hero-bg） -->
+  <!-- 背景层 1：暖灰纯色底（编辑部风，走 --hero-bg） -->
   <div class="absolute inset-0" style="background: var(--hero-bg);" aria-hidden="true"></div>
 
-  <!-- 背景层 2：双色光晕 -->
-  <div class="cyber-glow-field pointer-events-none absolute inset-0" aria-hidden="true"></div>
-
-  <!-- 背景层 3：32px 网格（上下淡出） -->
-  <div class="cyber-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
-
-  <!-- 背景层 4：海报降级为纹理（opacity .12 + grayscale + luminosity），≤768 整层隐藏 -->
+  <!-- 背景层 2：海报降级为纹理（opacity .08 + grayscale + luminosity），≤768 整层隐藏 -->
   <div class="hero-poster pointer-events-none absolute inset-0" aria-hidden="true">
     <picture>
       <source srcset={withBase('/img/top-poster.webp')} type="image/webp" />
@@ -70,10 +64,10 @@ const variant = data ? 'post' : title ? 'title' : 'home';
     </picture>
   </div>
 
-  <!-- 背景层 5：噪点 -->
+  <!-- 背景层 3：噪点 -->
   <div class="cyber-noise absolute inset-0" aria-hidden="true"></div>
 
-  <!-- 背景层 6：交互式流体噪声 + 点阵格子（参考 dshdesktop.cn） -->
+  <!-- 背景层 4：交互式流体噪声 + 点阵格子 -->
   <div class="pointer-events-none absolute inset-0" aria-hidden="true">
     <InteractiveBg />
   </div>
@@ -101,23 +95,23 @@ const variant = data ? 'post' : title ? 'title' : 'home';
       {
         variant === 'post' ? (
           <>
-            <h1 class="text-glow-cyan word-break max-w-[min(100%,26ch)] text-[clamp(26px,3.4vw+12px,40px)] leading-[1.2] font-bold tracking-[-0.025em] text-foreground">
+            <h1 class="word-break max-w-[min(100%,26ch)] text-[clamp(26px,3.4vw+12px,40px)] leading-[1.1] font-bold tracking-[-0.015em] text-foreground">
               {dataTitle ?? title}
             </h1>
             <div class="mt-3 flex flex-wrap items-center gap-3 font-mono text-xs font-medium tracking-[0.06em] text-muted-foreground uppercase">
               {date && <span>{t(locale, 'post.publishedAt', { date: displayDate.datetime(date)! })}</span>}
               {updated && (
                 <>
-                  <span aria-hidden="true" class="h-3 w-px bg-white/[0.12]" />
+                  <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
                   <span>{t(locale, 'post.updatedAt', { date: displayDate.datetime(updated)! })}</span>
                 </>
               )}
-              <span aria-hidden="true" class="h-3 w-px bg-white/[0.12]" />
+              <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
               <span>{t(locale, 'post.wordCount', { count: readState?.words ?? 0 })}</span>
-              <span aria-hidden="true" class="h-3 w-px bg-white/[0.12]" />
+              <span aria-hidden="true" class="h-3 w-px bg-[hsl(var(--border))]" />
               <span>{readState?.text}</span>
               {isDraft && (
-                <span class="inline-flex items-center gap-1 rounded-md border border-[hsl(var(--neon-amber)/0.3)] bg-[hsl(var(--neon-amber)/0.12)] px-2 py-0.5 text-[11px] text-[hsl(var(--neon-amber))] normal-case">
+                <span class="inline-flex items-center gap-1 border border-[hsl(var(--primary)/0.3)] bg-[hsl(var(--primary)/0.08)] px-2 py-0.5 text-[11px] text-[hsl(var(--primary))] normal-case">
                   <Icon name="ri:file-edit-line" class="size-3" />
                   {t(locale, 'post.draft')}
                 </span>
@@ -125,7 +119,7 @@ const variant = data ? 'post' : title ? 'title' : 'home';
             </div>
             <button
               type="button"
-              class="copy-link-btn absolute right-[var(--page-pad-x)] bottom-6 hidden items-center gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-primary hover:[text-shadow:0_0_12px_hsl(var(--primary)/0.35)] tablet:flex"
+              class="copy-link-btn absolute right-[var(--page-pad-x)] bottom-6 hidden items-center gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-primary tablet:flex"
               aria-label={t(locale, 'cover.copyLink')}
               title={t(locale, 'cover.copyLink')}
               onclick="navigator.clipboard.writeText(window.location.href)"
@@ -134,7 +128,7 @@ const variant = data ? 'post' : title ? 'title' : 'home';
             </button>
           </>
         ) : variant === 'title' ? (
-          <h1 class="text-glow-cyan word-break max-w-[min(100%,30ch)] text-[clamp(24px,3.6vw+8px,36px)] leading-[1.2] font-bold tracking-[-0.025em] text-foreground">
+          <h1 class="word-break max-w-[min(100%,30ch)] text-[clamp(2.25rem,4vw+8px,3.5rem)] leading-[1.05] font-bold tracking-[-0.015em] text-foreground">
             {title}
           </h1>
         ) : (
@@ -146,22 +140,23 @@ const variant = data ? 'post' : title ? 'title' : 'home';
                 {postCount} {t(locale, 'footer.postUnit')}
               </span>
             </p>
-            <h1 class="text-glow-cyan mt-3 text-[clamp(26px,4vw+12px,44px)] leading-[1.15] font-bold tracking-[-0.03em] text-foreground">
+            <h1 class="mt-4 max-w-[min(100%,16ch)] text-[clamp(3rem,5vw,5rem)] leading-[0.95] font-bold tracking-[-0.01em] text-foreground [font-weight:730]">
               {siteConfig?.title}
             </h1>
             {siteSubtitle && (
-              <p class="hero-subtitle mt-3 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground">{siteSubtitle}</p>
+              <p class="hero-subtitle mt-4 max-w-[46ch] text-[15px] leading-[1.7] text-muted-foreground">{siteSubtitle}</p>
             )}
+            <hr class="hero-rule mt-6" aria-hidden="true" />
           </>
         )
       }
     </div>
   </div>
 
-  <!-- 底边 1px 渐变线（替代原来的波纹 SVG）；恬谧全局渐变下减淡为轻收束 -->
+  <!-- 底边 1px 细线（编辑部网格感：纯色细线，不用渐变） -->
   <div
     class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-    style="background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.28), transparent);"
+    style="background: hsl(var(--border));"
     aria-hidden="true">
   </div>
 </header>
@@ -182,6 +177,15 @@ const variant = data ? 'post' : title ? 'title' : 'home';
     .hero-inner {
       padding-top: 44px;
     }
+  }
+
+  /*
+   * 编辑部风 1px 分隔线：home 变体标题区下方的细线，配合底边 1px 细线形成网格感
+   */
+  .hero-rule {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid hsl(var(--border));
   }
 
   /*
@@ -213,13 +217,14 @@ const variant = data ? 'post' : title ? 'title' : 'home';
       height: 180px;
     }
 
-    /* 移动端只保留底 + 光晕 + 网格（省流量） */
+    /* 移动端只保留底 + 噪点（省流量） */
     .hero-poster {
       display: none;
     }
 
     /* 180px 装不下 eyebrow + 标题 + 副标，副标让位给标题 */
-    .hero-subtitle {
+    .hero-subtitle,
+    .hero-rule {
       display: none;
     }
   }
@@ -244,7 +249,7 @@ const variant = data ? 'post' : title ? 'title' : 'home';
   /* 装饰同心圆：恬谧版改为 7s 呼吸（缩放微动，无旋转无闪烁） */
   .hero-orbit {
     border: 1.5px solid hsl(var(--primary) / 0.16);
-    border-radius: 9999px;
+    border-radius: 0;
     box-shadow: inset 0 0 0 52px rgba(255, 255, 255, 0.28);
     animation: hero-orbit-breathe 7s ease-in-out infinite;
   }
@@ -255,7 +260,7 @@ const variant = data ? 'post' : title ? 'title' : 'home';
     left: 50%;
     transform: translate(-50%, -50%);
     border: 1.5px solid hsl(var(--primary) / 0.1);
-    border-radius: 9999px;
+    border-radius: 0;
   }
 
   @keyframes hero-orbit-breathe {

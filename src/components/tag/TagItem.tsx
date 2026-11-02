@@ -51,7 +51,7 @@ export function TagItem({ tag, count, tone = 'neutral', locale }: TagItemProps) 
       href={localizedPath(buildTagPath(tag), locale)}
       aria-label={t(locale ?? defaultLocale, 'tag.viewTagPosts', { tag, count })}
       className={[
-        'relative inline-flex h-7 items-center rounded-md border px-3 text-[13px] leading-none font-medium',
+        'relative inline-flex h-7 items-center border px-3 text-[13px] leading-none font-medium',
         'transition-colors duration-200',
         // 44×44 触控区（§9.3）：透明外扩 8px，视觉尺寸不变
         "after:absolute after:-inset-2 after:content-['']",

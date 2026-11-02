@@ -82,7 +82,7 @@ export function MobileTOCDropdown({
               <motion.div
                 ref={refs.setFloating}
                 style={floatingStyles}
-                className="z-50 max-h-[60vh] w-72 overflow-auto rounded-2xl border border-border bg-background/80 p-3 backdrop-blur-md"
+                className="z-50 max-h-[60vh] w-72 overflow-auto border border-border bg-background/80 p-3 backdrop-blur-md"
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1, originY: 0 }}
                 exit={{ opacity: 0, scale: 0.85 }}

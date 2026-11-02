@@ -63,7 +63,7 @@ export default function DiagramFullscreen() {
               <div className="fixed inset-0 z-50 grid place-items-center px-4">
                 <motion.div
                   ref={refs.setFloating}
-                  className="relative flex h-[80vh] w-[90vw] max-w-6xl flex-col overflow-hidden overscroll-none rounded-xl bg-background shadow-2xl md:max-w-[90vw]"
+                  className="relative flex h-[80vh] w-[90vw] max-w-6xl flex-col overflow-hidden overscroll-none bg-background shadow-[0_1px_2px_rgba(21,22,19,0.05),0_8px_24px_rgba(21,22,19,0.07)] md:max-w-[90vw]"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
@@ -111,7 +111,7 @@ function DiagramToolbar({ data, zoomLevel, onReset }: { data: DiagramFullscreenD
         <button
           type="button"
           onClick={onReset}
-          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex items-center gap-2 px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           title={t('diagram.resetZoom')}
         >
           <Icon icon="ri:refresh-line" className="size-4" />

@@ -47,7 +47,7 @@ const LanguageSwitcherComponent = ({ locale: _ssrLocale, className }: LanguageSw
   const renderDropdownContent = useCallback(
     () => (
       <div className="flex flex-col">
-        {localeEntries.map((entry, index) => {
+        {localeEntries.map((entry) => {
           const isActive = entry.code === locale;
           const targetUrl = getAlternateUrl(currentPath, entry.code);
           return (
@@ -58,8 +58,6 @@ const LanguageSwitcherComponent = ({ locale: _ssrLocale, className }: LanguageSw
               className={cn(
                 'group px-4 py-2 text-sm outline-hidden transition-colors duration-300 hover:bg-gradient-shoka-button',
                 {
-                  'rounded-ss-2xl': index === 0,
-                  'rounded-ee-2xl': index === localeEntries.length - 1,
                   'bg-gradient-shoka-button text-muted': isActive,
                 },
               )}

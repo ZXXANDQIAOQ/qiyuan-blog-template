@@ -19,7 +19,7 @@ export function QuizGap({ answer, revealed, onClick, isMistake }: QuizGapProps) 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           className={cn(
-            'inline-block rounded px-1.5 py-0.5 font-semibold',
+            'inline-block px-1.5 py-0.5 font-semibold',
             isMistake
               ? 'bg-red-100 text-red-600 line-through dark:bg-red-950/40 dark:text-red-400'
               : 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300',

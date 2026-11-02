@@ -106,7 +106,7 @@ function SemanticSearch() {
         }}
         onKeyDown={onKeyDown}
         placeholder={t('search.semanticPlaceholder')}
-        className="w-full rounded-lg border border-border bg-muted px-4 py-3 text-sm text-foreground outline-none transition-colors focus:ring-2 focus:ring-ring"
+        className="w-full border border-border bg-muted px-4 py-3 text-sm text-foreground outline-none transition-colors focus:ring-2 focus:ring-ring"
       />
       <div className="mt-4 min-h-[40vh] space-y-3">
         {loading && (
@@ -129,7 +129,7 @@ function SemanticSearch() {
             onClick={closeModal}
             onMouseEnter={() => setActive(i)}
             className={cn(
-              'block rounded-lg border border-border px-4 py-3 transition-colors',
+              'block border border-border px-4 py-3 transition-colors',
               i === active ? 'bg-muted ring-1 ring-ring' : 'hover:bg-muted',
             )}
           >
@@ -215,7 +215,7 @@ export default function SearchDialog() {
                 transition={{ duration: 0.2 }}
               >
                 <motion.div
-                  className="w-full max-w-3xl overflow-auto rounded-xl bg-gradient-start text-foreground shadow-box"
+                  className="w-full max-w-3xl overflow-auto bg-gradient-start text-foreground shadow-box"
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -245,7 +245,7 @@ export default function SearchDialog() {
                           type="button"
                           onClick={() => setMode('keyword')}
                           className={cn(
-                            'rounded-full px-3 py-1 text-xs transition-colors',
+                            'px-3 py-1 text-xs transition-colors',
                             mode === 'keyword' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
                           )}
                         >
@@ -255,7 +255,7 @@ export default function SearchDialog() {
                           type="button"
                           onClick={() => setMode('semantic')}
                           className={cn(
-                            'rounded-full px-3 py-1 text-xs transition-colors',
+                            'px-3 py-1 text-xs transition-colors',
                             mode === 'semantic' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
                           )}
                         >

@@ -17,7 +17,7 @@ export function QuizOption({ index, html, isCorrect, isSelected, revealed, disab
     <button
       type="button"
       className={cn(
-        'flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left transition-all',
+        'flex w-full items-start gap-2 border px-3 py-2 text-left transition-all',
         !revealed && !disabled && 'cursor-pointer hover:border-primary/30 hover:bg-primary/5',
         !revealed && isSelected && 'border-primary/50 bg-primary/10',
         revealed && isCorrect && 'border-green-500/60 bg-green-50 dark:bg-green-950/30',

@@ -90,7 +90,7 @@ export function MermaidToolbar({ preElement }: MermaidToolbarProps) {
       <button
         type="button"
         onClick={handleFullscreen}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:scale-95"
+        className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:scale-95"
         aria-label={t('diagram.fullscreen')}
         title={t('diagram.fullscreen')}
       >

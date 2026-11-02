@@ -60,7 +60,7 @@ export function MultiChoiceQuiz({ quiz }: { quiz: ParsedQuiz }) {
           onClick={handleSubmit}
           disabled={selected.size === 0}
           className={cn(
-            'rounded-lg px-4 py-2 font-medium text-sm transition-all',
+            'px-4 py-2 font-medium text-sm transition-all',
             selected.size > 0
               ? 'bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98]'
               : 'cursor-not-allowed bg-muted text-muted-foreground',
@@ -72,7 +72,7 @@ export function MultiChoiceQuiz({ quiz }: { quiz: ParsedQuiz }) {
       <output
         aria-live="polite"
         className={cn(
-          'block rounded-lg px-3 py-2 font-medium text-sm',
+          'block px-3 py-2 font-medium text-sm',
           !revealed && 'hidden',
           isAllCorrect
             ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300'

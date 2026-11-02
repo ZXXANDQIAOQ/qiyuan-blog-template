@@ -36,7 +36,7 @@ export function TrueFalseQuiz({ quiz }: { quiz: ParsedQuiz }) {
           aria-label={t('quiz.optionTrue')}
           aria-pressed={answer === true}
           className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 font-medium transition-all',
+            'flex flex-1 items-center justify-center gap-2 border-2 px-4 py-3 font-medium transition-all',
             !revealed && 'cursor-pointer hover:border-green-400/50 hover:bg-green-50 dark:hover:bg-green-950/20',
             revealed && answer === true && isCorrect && 'border-green-500 bg-green-50 dark:bg-green-950/30',
             revealed && answer === true && !isCorrect && 'border-red-500 bg-red-50 dark:bg-red-950/30',
@@ -57,7 +57,7 @@ export function TrueFalseQuiz({ quiz }: { quiz: ParsedQuiz }) {
           aria-label={t('quiz.optionFalse')}
           aria-pressed={answer === false}
           className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 px-4 py-3 font-medium transition-all',
+            'flex flex-1 items-center justify-center gap-2 border-2 px-4 py-3 font-medium transition-all',
             !revealed && 'cursor-pointer hover:border-red-400/50 hover:bg-red-50 dark:hover:bg-red-950/20',
             revealed && answer === false && isCorrect && 'border-green-500 bg-green-50 dark:bg-green-950/30',
             revealed && answer === false && !isCorrect && 'border-red-500 bg-red-50 dark:bg-red-950/30',
@@ -75,7 +75,7 @@ export function TrueFalseQuiz({ quiz }: { quiz: ParsedQuiz }) {
       <output
         aria-live="polite"
         className={cn(
-          'block rounded-lg px-3 py-2 font-medium text-sm',
+          'block px-3 py-2 font-medium text-sm',
           !revealed && 'hidden',
           isCorrect
             ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300'

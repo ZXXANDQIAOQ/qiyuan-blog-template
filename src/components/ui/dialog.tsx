@@ -117,7 +117,7 @@ const DialogContent = forwardRef<React.ComponentRef<typeof DialogPrimitive.Conte
               <motion.div
                 key="dialog-content"
                 className={cn(
-                  'fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg gap-4 rounded-xl border bg-background p-6 shadow-lg',
+                  'fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-[0_1px_2px_rgba(21,22,19,0.05),0_8px_24px_rgba(21,22,19,0.07)]',
                   'duration-200',
                   className,
                 )}
@@ -128,7 +128,7 @@ const DialogContent = forwardRef<React.ComponentRef<typeof DialogPrimitive.Conte
               >
                 {children}
                 {showClose && (
-                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                  <DialogPrimitive.Close className="absolute top-4 right-4 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"

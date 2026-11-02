@@ -90,7 +90,7 @@ const brand = alternate || title;
     align-items: center;
     justify-content: center;
     color: hsl(var(--primary) / 0.75);
-    border-radius: 6px;
+    border-radius: 0;
     box-shadow: var(--glow-cyan-sm);
     transition:
       color var(--dur-base) var(--ease-in-out),
@@ -100,7 +100,7 @@ const brand = alternate || title;
   .logo-link:hover .logo-mark,
   .logo-link:focus-visible .logo-mark {
     color: hsl(var(--primary));
-    box-shadow: 0 0 18px hsl(var(--primary) / 0.35);
+    box-shadow: var(--glow-cyan-md);
   }
 
   @media (max-width: 992px) {

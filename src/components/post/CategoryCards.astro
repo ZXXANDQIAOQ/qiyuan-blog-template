@@ -136,7 +136,7 @@ const COVER_H = 928;
     aspect-ratio: 16 / 9;
     min-height: 168px;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 0;
     /* 圆角裁切后焦点环会被吃掉，用 inset 焦点环兜底（见 :focus-visible） */
     background-color: hsl(var(--surface-2));
     box-shadow: 0 0 0 1px hsl(var(--border) / 0.7);
@@ -146,7 +146,6 @@ const COVER_H = 928;
   }
 
   .cat-card:hover {
-    transform: translateY(-2px);
     box-shadow: 0 0 0 1px hsl(var(--primary) / 0.22);
   }
 
@@ -159,7 +158,7 @@ const COVER_H = 928;
   .cat-card:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-    border-radius: 12px;
+    border-radius: 0;
   }
 
   .cat-card__img {
@@ -193,7 +192,7 @@ const COVER_H = 928;
   .cat-card__border {
     position: absolute;
     inset: 0;
-    border-radius: 12px;
+    border-radius: 0;
     padding: 1px;
     background: linear-gradient(135deg, hsl(var(--primary) / 0.55), hsl(var(--neon-violet) / 0.35));
     /* mask 里的 black 只是遮罩通道（决定哪里保留/挖空），不是视觉色值 */
@@ -237,7 +236,7 @@ const COVER_H = 928;
     top: 10px;
     right: 10px;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 0;
     background: hsl(var(--background) / 0.65);
     color: hsl(var(--neon-cyan));
     font-family: var(--font-mono);

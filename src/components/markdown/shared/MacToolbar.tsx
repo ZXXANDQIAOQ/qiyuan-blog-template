@@ -22,7 +22,7 @@ export function MacToolbar({ language, title, url, linkText, className, children
     <div
       className={cn(
         'flex shrink-0 flex-col border border-border border-b-0 bg-muted/50 backdrop-blur-sm',
-        'rounded-t-xl shadow-md',
+        'shadow-md',
         'dark:bg-muted/30',
         className,
       )}

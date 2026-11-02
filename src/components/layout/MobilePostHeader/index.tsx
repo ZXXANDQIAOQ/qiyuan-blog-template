@@ -110,7 +110,7 @@ export function MobilePostHeader({
               trigger={
                 <button
                   type="button"
-                  className="flex w-[calc(100vw-12rem)] items-center gap-2.5 rounded-full bg-foreground/10 py-1 pr-3 pl-1.5 backdrop-blur-sm transition-colors hover:bg-foreground/20"
+                  className="flex w-[calc(100vw-12rem)] items-center gap-2.5 bg-foreground/10 py-1 pr-3 pl-1.5 backdrop-blur-sm transition-colors hover:bg-foreground/20"
                   aria-label={t('toc.expand')}
                 >
                   {/* Progress circle - fixed size container */}

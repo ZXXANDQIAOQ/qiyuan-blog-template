@@ -5,9 +5,9 @@
  *   Pass 1（flowmap）：低分辨率 ping-pong FBO，记录鼠标轨迹与速度场。
  *   Pass 2（display）：全分辨率，用 simplex noise + 流场扭曲生成有机流动图案。
  *
- * 调色板适配「恬谧版」双主题：
- *   - 浅色模式：暖奶油→雾紫渐变噪声，紫色发光拖尾
- *   - 深色模式：深蓝→紫渐变噪声，青色发光拖尾
+ * 调色板适配「编辑部极简版」双主题：
+ *   - 浅色模式：暖灰底（#f3f4f1 系）噪声，铁锈红发光拖尾
+ *   - 深色模式：深炭底（#171815 系）噪声，橙红发光拖尾
  *
  * 技术要点：
  *   - WebGL2 不可用时回退纯色背景
@@ -281,15 +281,15 @@ function createFBO(
   return { framebuffer, texture };
 }
 
-// ─── 调色板（恬谧版双主题） ───────────────────────────────────
+// ─── 调色板（编辑部极简版双主题） ────────────────────────────
 
-/** 浅色模式：暖奶油→雾紫（#FFFFD0→#D2CDFF） */
-const PALETTE_LIGHT = ['#fefde8', '#f5f0e0', '#e8e0f0', '#d5cfee', '#c0b8e8'] as const;
-const GLOW_LIGHT = ['#8b7fd4', '#a78bfa', '#c4b5fd'] as const;
+/** 浅色模式：暖灰纯色底 + 铁锈红强调（#f3f4f1 / #b93b28） */
+const PALETTE_LIGHT = ['#f3f4f1', '#e9eae6', '#dedfd9', '#d9dad5', '#cfd0ca'] as const;
+const GLOW_LIGHT = ['#b93b28', '#d4694f', '#f3d8d0'] as const;
 
-/** 深色模式：深蓝→紫 */
-const PALETTE_DARK = ['#0b0e14', '#12152a', '#1a1f3c', '#252550', '#352d6b'] as const;
-const GLOW_DARK = ['#a78bfa', '#818cf8', '#6ee7f9'] as const;
+/** 深色模式：深炭底 + 橙红强调（#171815 / #f06449） */
+const PALETTE_DARK = ['#171815', '#1d1e1b', '#222420', '#2a2c27', '#30322d'] as const;
+const GLOW_DARK = ['#f06449', '#ff7a60', '#4b2922'] as const;
 
 function isDark(): boolean {
   return document.documentElement.classList.contains('dark');

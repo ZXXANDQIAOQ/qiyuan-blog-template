@@ -88,7 +88,7 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
       onMouseLeave={handleMouseLeave}
     >
       <motion.div
-        className="relative h-full w-full rounded-2xl bg-white p-3 shadow-xl ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10"
+        className="relative h-full w-full bg-white p-3 shadow-[0_1px_2px_rgba(21,22,19,0.05),0_8px_24px_rgba(21,22,19,0.07)] ring-1 ring-gray-900/5 dark:bg-gray-800 dark:ring-white/10"
         style={{
           transformStyle: 'preserve-3d',
           rotateX,
@@ -96,7 +96,7 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
         }}
       >
         {/* Inner Card Container */}
-        <div className="relative h-full w-full overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900">
+        <div className="relative h-full w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
           {/* Background Image / Color */}
           <div
             className="absolute inset-0 h-16 w-full"
@@ -105,7 +105,7 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
 
           {/* Avatar */}
           <div className="absolute top-8 left-1/2 -translate-x-1/2">
-            <div className="relative h-14 w-14 overflow-hidden rounded-full border-4 border-white bg-white shadow-lg dark:border-gray-800 dark:bg-gray-800">
+            <div className="relative h-14 w-14 overflow-hidden rounded-full border-4 border-white bg-white shadow-sm dark:border-gray-800 dark:bg-gray-800">
               <img
                 src={avatarImage}
                 alt={friend.owner}
@@ -130,7 +130,7 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
 
         {/* Spotlight Overlay */}
         <motion.div
-          className="pointer-events-none absolute inset-0 z-10 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           style={{
             background: spotlight,
           }}
@@ -138,7 +138,7 @@ export default function FriendCard({ friend, index }: FriendCardProps) {
 
         {/* Border Glow */}
         <div
-          className="absolute inset-0 -z-10 rounded-2xl opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-60"
+          className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-60"
           style={{ background: cardColor }}
         />
       </motion.div>

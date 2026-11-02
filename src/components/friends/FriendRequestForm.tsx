@@ -53,7 +53,7 @@ color: "${formData.color || '#ffc0cb'}"`;
 
   return (
     <div className="mb-4 w-full">
-      <div className="relative overflow-hidden rounded-3xl border-2 border-gray-100 bg-white p-6 shadow-sm md:p-3 dark:border-gray-800 dark:bg-gray-900">
+      <div className="relative overflow-hidden border-2 border-gray-100 bg-white p-6 shadow-sm md:p-3 dark:border-gray-800 dark:bg-gray-900">
         {/* Cute Corner Decor */}
         <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-pink-100/50 dark:bg-pink-900/20" />
         <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-blue-100/50 dark:bg-blue-900/20" />
@@ -81,7 +81,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                     name="site"
                     value={formData.site}
                     onChange={handleChange}
-                    className="w-full rounded-xl border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
+                    className="w-full border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
                     placeholder={t('friends.sitePlaceholder')}
                   />
                 </div>
@@ -98,7 +98,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                     name="owner"
                     value={formData.owner}
                     onChange={handleChange}
-                    className="w-full rounded-xl border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
+                    className="w-full border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
                     placeholder={t('friends.ownerPlaceholder')}
                   />
                 </div>
@@ -114,7 +114,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                   name="url"
                   value={formData.url}
                   onChange={handleChange}
-                  className="w-full rounded-xl border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
+                  className="w-full border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
                   placeholder="https://your-site.com"
                 />
               </div>
@@ -129,7 +129,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                   value={formData.desc}
                   onChange={handleChange}
                   rows={2}
-                  className="w-full resize-none rounded-xl border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
+                  className="w-full resize-none border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
                   placeholder={t('friends.descPlaceholder')}
                 />
               </div>
@@ -148,7 +148,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                     name="image"
                     value={formData.image}
                     onChange={handleChange}
-                    className="w-full rounded-xl border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
+                    className="w-full border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
                     placeholder="https://..."
                   />
                 </div>
@@ -160,7 +160,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                     {t('friends.themeColor')}
                   </label>
                   <div className="flex items-center gap-3">
-                    <div className="relative h-10 w-10 overflow-hidden rounded-xl border-2 border-gray-100 shadow-sm transition-transform hover:scale-105 dark:border-gray-700">
+                    <div className="relative h-10 w-10 overflow-hidden border-2 border-gray-100 shadow-sm transition-transform hover:scale-105 dark:border-gray-700">
                       <input
                         id="friend-color"
                         type="color"
@@ -174,7 +174,7 @@ color: "${formData.color || '#ffc0cb'}"`;
                       type="text"
                       value={formData.color}
                       onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="flex-1 rounded-xl border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
+                      className="flex-1 border-2 border-gray-100 bg-gray-50/50 px-4 py-2.5 font-bold text-gray-700 text-sm transition-all focus:border-pink-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-pink-100 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-200 dark:focus:border-pink-700 dark:focus:bg-gray-800 dark:focus:ring-pink-900/30"
                     />
                   </div>
                 </div>
@@ -183,7 +183,7 @@ color: "${formData.color || '#ffc0cb'}"`;
           </div>
 
           {/* Right Side: Preview / Code */}
-          <div className="relative flex flex-col justify-center rounded-xl bg-gray-50 p-6 md:p-3 dark:bg-gray-800/50">
+          <div className="relative flex flex-col justify-center bg-gray-50 p-6 md:p-3 dark:bg-gray-800/50">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-bold text-xl uppercase tracking-wider">{t('friends.previewTitle')}</h3>
               <button
@@ -191,18 +191,18 @@ color: "${formData.color || '#ffc0cb'}"`;
                 onClick={handleCopy}
                 className="group relative px-3 py-2 font-bold text-base transition-transform hover:-translate-y-1 dark:text-white"
               >
-                <div className="absolute inset-0 rotate-[1deg] rounded-lg border-2 border-foreground border-dashed transition-all group-hover:rotate-0 dark:border-white"></div>
+                <div className="absolute inset-0 rotate-[1deg] border-2 border-foreground border-dashed transition-all group-hover:rotate-0 dark:border-white"></div>
                 {copied ? t('friends.copiedConfig') : t('friends.copyConfig')}
               </button>
             </div>
 
-            <div className="relative flex-1 overflow-hidden rounded-xl border-2 border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-950/50">
+            <div className="relative flex-1 overflow-hidden border-2 border-gray-100 bg-white p-4 dark:border-gray-700 dark:bg-gray-950/50">
               <pre className="whitespace-pre-wrap font-mono text-gray-600 text-xs leading-relaxed dark:text-gray-300">
                 {generateText()}
               </pre>
             </div>
 
-            <div className="mt-6 flex items-center gap-3 rounded-xl bg-pink-50 p-4 font-medium text-pink-600 text-xs dark:bg-pink-900/20 dark:text-pink-300">
+            <div className="mt-6 flex items-center gap-3 bg-pink-50 p-4 font-medium text-pink-600 text-xs dark:bg-pink-900/20 dark:text-pink-300">
               {t('friends.hint')}
             </div>
           </div>

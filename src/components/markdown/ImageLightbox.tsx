@@ -156,7 +156,7 @@ export default function ImageLightbox() {
               <div ref={refs.setFloating} className="fixed inset-0 flex items-center justify-center" {...getFloatingProps()}>
                 {/* Toolbar: vertical right on desktop, horizontal top on tablet */}
                 <motion.div
-                  className="absolute tablet:top-4 top-1/2 right-4 tablet:right-auto tablet:left-1/2 z-10 flex tablet:-translate-x-1/2 -translate-y-1/2 tablet:translate-y-0 tablet:flex-row flex-col items-center gap-1 rounded-2xl bg-black/50 p-1.5 backdrop-blur-sm"
+                  className="absolute tablet:top-4 top-1/2 right-4 tablet:right-auto tablet:left-1/2 z-10 flex tablet:-translate-x-1/2 -translate-y-1/2 tablet:translate-y-0 tablet:flex-row flex-col items-center gap-1 bg-black/50 p-1.5 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.2, delay: 0.1 }}
@@ -205,7 +205,7 @@ export default function ImageLightbox() {
                     <motion.img
                       src={data.src}
                       alt={data.alt}
-                      className="max-h-[80vh] max-w-[90vw] origin-center rounded-lg object-contain shadow-2xl will-change-transform"
+                      className="max-h-[80vh] max-w-[90vw] origin-center object-contain shadow-[0_8px_24px_rgba(0,0,0,0.4)] will-change-transform"
                       animate={{ scale: state.scale, rotate: rotation, opacity: imageLoaded ? 1 : 0 }}
                       transition={{
                         scale: { type: 'tween', duration: 0.15, ease: 'easeOut' },
@@ -225,7 +225,7 @@ export default function ImageLightbox() {
 
                 {/* Navigation bar */}
                 {data.images.length > 1 && (
-                  <div className="absolute bottom-12 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-black/50 p-1 backdrop-blur-sm">
+                  <div className="absolute bottom-12 left-1/2 flex -translate-x-1/2 items-center gap-0.5 bg-black/50 p-1 backdrop-blur-sm">
                     <NavButton direction={-1} disabled={data.currentIndex === 0} onClick={() => navigateTo(-1)} />
                     <span className="min-w-14 px-1 text-center font-mono text-sm text-white/80 tabular-nums">
                       {data.currentIndex + 1} / {data.images.length}
@@ -312,7 +312,7 @@ function ZoomHint() {
 
   return (
     <motion.div
-      className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-4 py-2 text-white/70 text-xs"
+      className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 text-white/70 text-xs"
       initial={{ opacity: 0 }}
       animate={{ opacity: visible ? 1 : 0 }}
       transition={{ duration: 0.3 }}

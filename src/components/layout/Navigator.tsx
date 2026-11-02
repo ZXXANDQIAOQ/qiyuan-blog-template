@@ -60,13 +60,13 @@ function ButtonLink({ url, label, isActive, children }: ButtonLinkProps) {
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'relative flex items-center rounded-md px-3 py-2 text-sm font-semibold tracking-[0.06em] whitespace-nowrap',
+        'relative flex items-center px-3 py-2 text-sm font-semibold tracking-[0.06em] whitespace-nowrap',
         'transition-colors duration-200 ease-in-out',
         'hover:bg-white/5 hover:text-foreground',
         isActive ? 'bg-primary/[0.09] text-primary' : 'text-muted-foreground',
         // 下缘 2px 条：hover 只出 30% 短条（「我在这里」），激活才是 60% + 光（「你现在在这」）
         'after:absolute after:bottom-0.5 after:left-1/2 after:block after:h-0.5 after:w-0 after:-translate-x-1/2',
-        'after:rounded-full after:bg-primary after:transition-[width] after:duration-200',
+        'after:bg-primary after:transition-[width] after:duration-200',
         'after:ease-[cubic-bezier(0.25,1,0.5,1)]',
         'hover:after:w-[30%]',
         // 光值走统一档位（12px / 0.18），不手写透明度
