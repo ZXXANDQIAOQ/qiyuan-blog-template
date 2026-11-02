@@ -27,10 +27,9 @@
   }
 
   /* ---------------------------------------------------------------------------
-   * 全局背景（§2.1 / §10-44）
-   * 「全局渐变底 + 双色柔光 + 32px 网格」多层纯 CSS 方案：0 请求、不抖、可换主题。
-   * 渐变放最底层并 fixed：整页上奶油下雾紫，滚动时视口内颜色恒定平滑，
-   * Hero、列表、页脚共享同一条渐变，不再出现「横线上下一块紫一块黄」的断层。
+   * 全局背景（编辑部极简 v3）
+   * 「纯色暖灰底 + 极淡光斑 + 24px 点阵」多层纯 CSS 方案：0 请求、不抖、可换主题。
+   * 网格线换成极淡点阵，底色压平为纯色，光斑保留引用（值已在 shadcn.css 压淡）。
    * ------------------------------------------------------------------------- */
   body {
     overscroll-behavior-y: none;
@@ -38,13 +37,12 @@
     background-image:
       var(--page-glow-1),
       var(--page-glow-2),
-      linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      radial-gradient(var(--dot-line) 1px, transparent 1px),
       var(--page-bg);
     background-size:
       auto,
       auto,
-      32px 32px,
-      32px 32px,
+      24px 24px,
       auto;
     background-position: center top;
     background-attachment: fixed;

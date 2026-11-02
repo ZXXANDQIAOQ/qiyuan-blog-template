@@ -1,3 +1,8 @@
+/* 编辑部极简 v3：自托管可变字体（Manrope 标题 / Geist 正文 / Geist Mono 等宽） */
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
 @import "./theme/shadcn.css";
 @import "./theme/index.css";
 @import "./theme/theme-transition.css";
